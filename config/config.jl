@@ -14,7 +14,8 @@ Pkg.activate("amod_env")
 
 # Adding dependencies ... 
 display("** Adding dependencies ... **")
-Pkg.add("NetCDF")
+Pkg.add("NCDatasets")
+Pkg.add("DataStructures")
 
 # Check status
 Pkg.status()

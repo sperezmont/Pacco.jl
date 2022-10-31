@@ -1,7 +1,8 @@
 name = "amod_env"
-uuid = "75f04b76-9f94-45c4-9033-048ac6395252"
+uuid = "1297595c-b72a-4bb7-b976-03eeb4dda9bb"
 authors = ["sperezmont <sergio.perez.mont@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"

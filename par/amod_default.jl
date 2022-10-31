@@ -11,9 +11,9 @@ T_init        = -20.0          # [degC] Initial condition for ice temperature
 A_init        = 1e-16          # [] Initial condition for Glenns law coefficient
 
 # Radiative parameters
-ins_min       = 425.0          # [] Insolation minimum value (June 21 65N)
-ins_max       = 565.0          # [] Insolation maximum value (June 21 65N)
-ins_prei      = 480.0          # [] Default preindustrial 
+ins_min       = 425.0          # [W/m²] Insolation minimum value (June 21 65N)
+ins_max       = 565.0          # [W/m²] Insolation maximum value (June 21 65N)
+ins_prei      = 480.0          # [W/m²] Default preindustrial 
 co2_prei      = 280.0          # [ppm] Default preindustrial 
 T_0           = 0.0            # [degC] Reference freezing temperature 
 T_ref         = 0.0            # [degC] Reference climatic temperature (-18 works fine with defaults values) 

@@ -9,7 +9,7 @@ function load_out(main_path, args)
     isdir("./output/"*outfldr) || mkdir("output/"*outfldr)
 
     output_path = main_path*"/output/"*outfldr*"/"
-    return output_path
+    return output_path, outfldr
 end
 
 function load_parf(main_path, out_path, args)
