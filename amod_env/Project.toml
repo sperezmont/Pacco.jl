@@ -1,8 +1,0 @@
-name = "amod_env"
-uuid = "1297595c-b72a-4bb7-b976-03eeb4dda9bb"
-authors = ["sperezmont <sergio.perez.mont@gmail.com>"]
-version = "0.1.0"
-
-[deps]
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
