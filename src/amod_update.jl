@@ -4,43 +4,6 @@
 # =============================
 using DataStructures
 
-function update_amod(old_vals::OrderedDict)
-    return OrderedDict("time"      => old_vals["time"]::Real,            # updates model variables at t = time
-                "H"         => old_vals["H"]::Real,
-                "Hsed"      => old_vals["Hsed"]::Real,
-                "T"         => old_vals["T"]::Real,
-                "A"         => old_vals["A"]::Real,    
-                "T_sl"      => old_vals["T_sl"]::Real, 
-                "TMB"       => old_vals["TMB"]::Real,       
-                "S"         => old_vals["S"]::Real,       
-                "B"         => old_vals["B"]::Real,           
-                "M"         => old_vals["M"]::Real,    
-                "Acc"       => old_vals["Acc"]::Real,   
-                "SMB"       => old_vals["SMB"]::Real,
-                "U_d"       => old_vals["U_d"]::Real,       
-                "U_b"       => old_vals["U_b"]::Real,  
-                "U"         => old_vals["U"]::Real,      
-                "T_surf"    => old_vals["T_surf"]::Real,
-                "tau_b"     => old_vals["tau_b"]::Real,
-                "tau_d"     => old_vals["tau_d"]::Real,     
-                "Q_dif"     => old_vals["Q_dif"]::Real,  
-                "Q_difup"   => old_vals["Q_difup"]::Real,
-                "Q_difdown" => old_vals["Q_difdown"]::Real,      
-                "Q_drag"    => old_vals["Q_drag"]::Real,   
-                "alpha"     => old_vals["alpha"]::Real,  
-                "Q_adv"     => old_vals["Q_adv"]::Real,               
-                "fstream"   => old_vals["fstream"]::Real,
-                "fstream_ref"=> old_vals["fstream_ref"]::Real,
-                "Hdot"      => old_vals["Hdot"]::Real,   
-                "Hseddot"   => old_vals["Hseddot"]::Real,  
-                "Bdot"      => old_vals["Bdot"]::Real,  
-                "Tdot"      => old_vals["Tdot"]::Real,   
-                "fstreamdot"=> old_vals["fstreamdot"]::Real,
-                "ins"       => old_vals["ins"]::Real,
-                "co2"       => old_vals["co2"]::Real
-                )
-end
-
 function update_amod_out(d::OrderedDict, vals::OrderedDict)
     for (key, value) in vals
         push!(d[key], vals[key])
@@ -49,6 +12,43 @@ function update_amod_out(d::OrderedDict, vals::OrderedDict)
 end
 
 # OLD CODE
+
+# function update_amod(old_vals::OrderedDict)
+#     return OrderedDict("time"      => old_vals["time"]::Real,            # updates model variables at t = time
+#                 "H"         => old_vals["H"]::Real,
+#                 "Hsed"      => old_vals["Hsed"]::Real,
+#                 "T"         => old_vals["T"]::Real,
+#                 "A"         => old_vals["A"]::Real,    
+#                 "T_sl"      => old_vals["T_sl"]::Real, 
+#                 "TMB"       => old_vals["TMB"]::Real,       
+#                 "S"         => old_vals["S"]::Real,       
+#                 "B"         => old_vals["B"]::Real,           
+#                 "M"         => old_vals["M"]::Real,    
+#                 "Acc"       => old_vals["Acc"]::Real,   
+#                 "SMB"       => old_vals["SMB"]::Real,
+#                 "U_d"       => old_vals["U_d"]::Real,       
+#                 "U_b"       => old_vals["U_b"]::Real,  
+#                 "U"         => old_vals["U"]::Real,      
+#                 "T_surf"    => old_vals["T_surf"]::Real,
+#                 "tau_b"     => old_vals["tau_b"]::Real,
+#                 "tau_d"     => old_vals["tau_d"]::Real,     
+#                 "Q_dif"     => old_vals["Q_dif"]::Real,  
+#                 "Q_difup"   => old_vals["Q_difup"]::Real,
+#                 "Q_difdown" => old_vals["Q_difdown"]::Real,      
+#                 "Q_drag"    => old_vals["Q_drag"]::Real,   
+#                 "alpha"     => old_vals["alpha"]::Real,  
+#                 "Q_adv"     => old_vals["Q_adv"]::Real,               
+#                 "fstream"   => old_vals["fstream"]::Real,
+#                 "fstream_ref"=> old_vals["fstream_ref"]::Real,
+#                 "Hdot"      => old_vals["Hdot"]::Real,   
+#                 "Hseddot"   => old_vals["Hseddot"]::Real,  
+#                 "Bdot"      => old_vals["Bdot"]::Real,  
+#                 "Tdot"      => old_vals["Tdot"]::Real,   
+#                 "fstreamdot"=> old_vals["fstreamdot"]::Real,
+#                 "ins"       => old_vals["ins"]::Real,
+#                 "co2"       => old_vals["co2"]::Real
+#                 )
+# end
 
 # function amod_init(runset_vars::Dict, incond_vars::Dict, par_vars::Dict)
 #     # This function assigns initial conditions to the model variables
@@ -104,7 +104,7 @@ end
 # end
 
 # function amod_init()    # initialize the model
-    
+
 #     now_init = NOW(ctl.time_init,        # time
 #                 inicond.H_init,     # H
 #                 inicond.Hsed_init,  # H_sed

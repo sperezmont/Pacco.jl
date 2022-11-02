@@ -7,28 +7,28 @@ using DataStructures
 
 # We define run parameters as dictionaries and model variables as a vector 
 # -- run control settings
-CTL = OrderedDict("time_init"  => time_init::Real,      
+global CTL = OrderedDict("time_init"  => time_init::Real,      
                     "time_end"  => time_end::Real,       
                     "dt"        => dt::Real,             
                     "dt_out"    => dt_out::Real         
                     )
 
 # -- initial conditions
-INCOND = OrderedDict("H_init"       => H_init::Real,        
+global INCOND = OrderedDict("H_init"       => H_init::Real,        
                "Hsed_init"    => Hsed_init::Real,     
                "T_init"       => T_init::Real,        
                "A_init"       => A_init::Real    
                 )
 
 # -- run parameters
-PAR = OrderedDict( "ins_min"     => ins_min::Real,         # Radiative Parameters
+global PAR = OrderedDict( "ins_min"     => ins_min::Real,         # Radiative Parameters
             "ins_max"     => ins_max::Real,
             "ins_prei"    => ins_prei::Real,
             "co2_prei"    => co2_prei::Real,
             "ins_max"     => ins_max::Real,
             "T_0"         => T_0::Real,
             "T_ref"       => T_ref::Real,
-            "orbital_mode"=> orbital_mode::String,  # Orbital Parameters
+            "orb_case"=> orb_case::String,  # Orbital Parameters
             "P_obl"       => P_obl::Real,
             "tau_obl"     => tau_obl::Real,
             "P_pre"       => P_pre::Real,
@@ -49,14 +49,20 @@ PAR = OrderedDict( "ins_min"     => ins_min::Real,         # Radiative Parameter
             "L"           => L::Real,
             "C_s"         => C_s::Real,
             "k"           => k::Real,
-            "c"           => c::Real,               # Thermodynamics
-            "A_m"         => A_m::Real,
+            "c"           => c::Real,
+            "vel_case"    => vel_case::String,
+            "glen_n"      => glen_n::Real,           
+            "ub_case"    => ub_case::String,    
+            "A_m"         => A_m::Real,             # Thermodynamics
             "A_t"         => A_t::Real,
-            "lambda"      => lambda::Real
+            "lambda"      => lambda::Real,
+            "stream_boundary" => stream_boundary::Real,
+            "melt_offset" => melt_offset::Real,
+            "tsurf_case"  => tsurf_case::String
             )
 
 # -- simulated variables
-OUT = OrderedDict( "time"      => [],            # values of the entire simulation
+global OUT = OrderedDict( "time"      => [],            # values of the entire simulation
                 "H"         => [],
                 "Hsed"      => [],
                 "T"         => [],
@@ -92,7 +98,7 @@ OUT = OrderedDict( "time"      => [],            # values of the entire simulati
             )
 
 # Assign initial conditions
-amod_INCOND = OrderedDict(
+global amod_INCOND = OrderedDict(
     "time"    => CTL["time_init"],        
     "H"       => INCOND["H_init"],
     "Hsed"    => INCOND["Hsed_init"],
