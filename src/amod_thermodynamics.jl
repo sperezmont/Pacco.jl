@@ -19,7 +19,19 @@ end
     calc_snowfall: calculates snowfall rate
 """
 function calc_snowfall(now_t, par_t)
-    # STOP, TENGO QUE PASAR TODO LO ANTERIOR A LA DOCIUMENTACION PARA PENSAR DETALLADAMENTE -- spm 2022.11.01
+    t = now_t["T_surf"] - degK    # conversion to ºC
+
+    # First, calculate the saturation vapor pressure e_s
+    if par_t["cc_case"] == "AERKi"
+        e_s = 6.1121 * exp((22.587 * t) / (t + 273.86))     # Alduchov and Eskridge (1996)
+    else
+        write(f, "ERROR, e_s option not recognized")
+    end
+
+    # Now, compute the amount of water
+
+
+    # Then, calculate the percentage of snow in precipitation
 
 end
 

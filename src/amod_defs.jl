@@ -48,7 +48,6 @@ global PAR = OrderedDict( "ins_min"     => ins_min::Real,         # Radiative Pa
             "fstream_max" => fstream_max::Real,
             "L"           => L::Real,
             "C_s"         => C_s::Real,
-            "k"           => k::Real,
             "c"           => c::Real,
             "vel_case"    => vel_case::String,
             "glen_n"      => glen_n::Real,           
@@ -56,9 +55,11 @@ global PAR = OrderedDict( "ins_min"     => ins_min::Real,         # Radiative Pa
             "A_m"         => A_m::Real,             # Thermodynamics
             "A_t"         => A_t::Real,
             "lambda"      => lambda::Real,
-            "stream_boundary" => stream_boundary::Real,
+            "T_sb"        => T_sb::Real,
             "melt_offset" => melt_offset::Real,
-            "tsurf_case"  => tsurf_case::String
+            "tsurf_case"  => tsurf_case::String,
+            "k"           => k::Real,
+            "cc_case"     => cc_case::String
             )
 
 # -- simulated variables
@@ -138,7 +139,6 @@ global amod_INCOND = OrderedDict(
 
 # Output file settings
 out_precc = Float64
-out_groups = ["Time", "Radiation", "Geometry", "Dynamics", "Thermodynamics", "Derivatives"] # NOT IMPLEMENTED YET   -- spm 2022.10.28
 out_attr = OrderedDict("time"=>Dict("units"=>"yr", "long_name"=>"Simulation Time", "group"=>"Time"),                    # Time
                 "ins"=>Dict("units"=>"W/m²", "long_name"=>"Insolation", "group"=>"Radiation"),                        # Radiation
                 "co2"=>Dict("units"=>"ppm", "long_name"=>"co2 concentration", "group"=>"Radiation"),

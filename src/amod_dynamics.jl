@@ -29,8 +29,8 @@ end
 
 """
 function calc_Ud(now_d, par_d)
-    if (par_d["vel_case"] == "glen")
-        return 2.0 * now_d["A"] * now_d["H"] * now_d["tau_d"]^par_d["glen_n"] / 5.0 
+    if (par_d["vel_case"] == "sia")
+        return 2.0 * now_d["A"] * now_d["H"] * now_d["tau_d"]^par_d["glen_n"] / (par_d["glen_n"] + 2) 
     else
         write(f, "ERROR, velocity option not recognized")
         return now_d["U_d"]

@@ -8,7 +8,7 @@ dt_out    =     1000.0         # [yr] Frequency of writing
 H_init        = 0.0            # [m] Initial condition for ice thickness
 Hsed_init     = 1.0            # [--] Initial condition for sediments thickness
 T_init        = -20.0          # [ºC] Initial condition for ice temperature 
-A_init        = 1e-16          # [] Initial condition for Glenns law coefficient
+A_init        = 1e-16          # [] Initial condition for the flow parameter of the Glen's flow law
 
 # Radiative parameters
 ins_min       = 425.0          # [W/m²] Insolation minimum value (June 21 65N)
@@ -44,17 +44,19 @@ fstream_min   = 0.4             # [--] Mininimal Fraction of the ice sheet consi
 fstream_max   = 0.4             # [--] Maximal Fraction of the ice sheet considered streaming
 L             = 1e6            # [m] Aspect ratio of the model representing the necessary scaling for converting dS/dx to H/L (typically 10³ km)
 C_s           = 1e-7           # [m yr^(-1) Pa^(-2)] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
-k             = 2.1            # [J s^(-1) m^(-1) K^(-1)] Ice thermal conductivity, EISMINT value
 c             = 2009.0         # [J Kg^(-1) K^(-1)] Ice specific heat capacity, EISMINT value 
-vel_case      = "glen"         # flow type: "glen"
+vel_case      = "sia"         # Ice flow approximation: "sia"
 glen_n        = 3.0            # [--] Glen's flow law exponent
 ub_case       = "weertmanq"     # parameterization of basal velocity: "weertman"
 
 # -- thermodynamics
-stream_boundary = 5.0            # [ºC] Represents the thermal state of the boundary between deformational and streaming part -- jas (it allows a smooth transition between frozen bed and not frozen bec)
+T_sb = 5.0                       # [ºC] Represents the thermal state of the boundary between deformational and streaming part -- jas 
 melt_offset     = 10.0           # [ºC] Temperature threshold that allows melting  
 tsurf_case      = "linear"       # Surface temperature method: "linear"
 A_m             = 0.5            # Amplitude of the cosinus for M (surface mass balance) # 0.1 default
 A_t             = 25.0           # Amplitude of the cosinus for T (surface temperatures)
 lambda          = 0.1            # proportionality between positive temperatures and surface melt (m / yr /K )
+k               = 2.1            # [J s^(-1) m^(-1) K^(-1)] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
+cc_case         = "AERKi"        # Clausius-Clapeyron approximation: "AERKi" works well between -80 and 0ºC Alduchov and Eskridge (1996)
+
 
