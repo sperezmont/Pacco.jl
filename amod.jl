@@ -30,23 +30,23 @@ parf = load_parf(amod_path, output_path, ARGS)
 include("./src/amod_defs.jl")
 
 # -- load Earth constants 
-include("./par/earth_const.jl") 
+include("./par/earth_const.jl")
 
 ## Open out.out
 # if out.out exists remove it
-isfile(output_path * "/out.out") && rm(output_path * "/out.out")    
+isfile(output_path * "/out.out") && rm(output_path * "/out.out")
 global f = open(output_path * "/out.out", "w")
 write(f, "**** Starting AMOD " * outfldr * " ... ****\n")
 
 ## Initialize
 # NOW contains the values of time step = time
-global NOW = amod_INCOND 
+global NOW = copy(amod_INCOND)
 OUT = update_amod_out(OUT, NOW)
-write(f, "time = " * string(NOW["time"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+write(f, "time = " * string(NOW["time"]) * " --> " * "H = " * string(NOW["H"]) * " --> " * "T = " * string(NOW["T"]) * " --> " * "T_surf = " * string(NOW["T_surf"]) * "\n")
 
 ## Let's run!
 time_length = ceil((CTL["time_end"] - CTL["time_init"]) / CTL["dt"])
-for n in 1:time_length 
+for n in 1:time_length
 
     # update simulation time
     NOW["time"] = CTL["time_init"] + n * CTL["dt"]
@@ -57,18 +57,25 @@ for n in 1:time_length
     run_amod(CTL, PAR, NOW)
 
     # only update output variable at desired frequency
-    if mod(NOW["time"], CTL["dt_out"]) == 0 
+    if mod(NOW["time"], CTL["dt_out"]) == 0
         global OUT = update_amod_out(OUT, NOW)
-        write(f, "time = " * string(NOW["time"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+        write(f, "time = " * string(NOW["time"]) * " --> " * "H = " * string(NOW["H"]) * " --> " * "T = " * string(NOW["T"]) * " --> " * "T_surf = " * string(NOW["T_surf"]) * "\n")
     end
+
+    # Check for NaN'S
+    # for (key, value) in NOW
+    #     if isnan(value)
+    #         error("NaN value found in " * key * " at time = " * string(NOW["time"]))
+    #     end
+    # end
 end
 
 ## Create output nc file
 # if outfile exists remove it
-isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")    
+isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")
 genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr);
 
-write(f, "**** AMOD " * outfldr * " done! ****"*"\n")
+write(f, "**** AMOD " * outfldr * " done! ****" * "\n")
 close(f)
 
 ## Done!

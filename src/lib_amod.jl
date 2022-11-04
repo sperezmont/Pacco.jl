@@ -12,7 +12,7 @@ function run_amod(ctl, par, now)
 
     # Define some local variables and parameteres
     kt_ann = par["k"] * sec_year
-    qgeo_ann = par["Q_geo"] * sec_year * 1e-3 
+    qgeo_ann = par["Q_geo"] * sec_year * 1e-3
 
     tau_kin = par["L"] / par["v_kin"]   # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
 
@@ -47,7 +47,8 @@ function run_amod(ctl, par, now)
     now["U_b"] = calc_Ub(now, par)
 
     # Update stream fraction
-    now["fstream"] = calc_fstream(ctl, now, par, tau_kin)
+    now["fstreamdot"] = calc_fstreamdot(now, par, tau_kin)
+    now["fstream"] = max(now["fstream"] + now["fstreamdot"] * ctl["dt"], 0.0)
 
     # Update total velocity
     now["U"] = now["U_d"] + now["fstream"] * now["U_b"]
@@ -57,7 +58,40 @@ function run_amod(ctl, par, now)
 
     # Update bedrock temperature (currently prescribed -- jas)
 
-    # Update surface mass balance
-    now["Acc"] = calc_Acc(now, par)
+    # Update total pressure
+    now["P"] = P_sl * exp((-now["S"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
 
+    # Update surface mass balance
+    now["SMB"] = calc_SMB(now, par)
+
+    # If there is no ice
+    if now["H"] < 10.0
+        now["Q_dif"] = 0.0
+        now["Q_drag"] = 0.0
+        now["T"] = now["T_sl"]
+    end
+
+    # Thermodynamics
+    # -- update total diffusion
+    calc_Qdif(now, PAR, kt_ann)
+
+    # -- update basal drag heat
+    now["Q_drag"] = now["fstream"] * now["tau_b"] * now["U_b"] / (par["c"] * rho)
+
+    # -- update advective heat ??
+
+    # Time evolution
+    # -- ice thickness
+    now["Hdot"] = now["SMB"] - now["U"] * now["H"] / par["L"]
+
+    # -- sediment thickness
+    now["Hseddot"] = par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
+
+    # -- bedrock elevation
+    now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] / 3) / par["tau_bed"] # -- ajr: improve 1/3 to use densities, etc...
+
+    # -- temperature
+    now["Tdot"] = now["Q_dif"] + now["Q_drag"]
+
+    return
 end

@@ -10,8 +10,7 @@ function calc_T_surf(now_t, par_t)
     if par_t["tsurf_case"] == "linear"
         return now_t["T_sl"] - grad * now_t["S"]
     else
-        write(f, "ERROR, T_surf option not recognized")
-        return now_t["T_surf"]
+        error("ERROR, T_surf option not recognized")
     end
 end
 
@@ -19,41 +18,81 @@ end
     calc_snowfall: calculates snowfall rate
 """
 function calc_snowfall(now_t, par_t)
-    t = now_t["T_surf"] - degK    # conversion to ºC
-
     # First, calculate the saturation vapor pressure e_s
-    if par_t["cc_case"] == "AERKi"
-        e_s = 6.1121 * exp((22.587 * t) / (t + 273.86))     # Alduchov and Eskridge (1996)
+    if par_t["cc_case"] == "cc"
+        T_0 = t_0 + degK
+        e_s = 0.6113 * exp(Lv / Rv * (1 / T_0 - 1 / now_t["T_surf"]))          # Clausius-Clapeyron differential equation direct approximation
+    elseif par_t["cc_case"] == "AERKi"
+        t = now_t["T_surf"] - degK    # conversion to ºC
+        e_s = 6.1121 * exp((22.587 * t) / (t + 273.86))     # Alduchov and Eskridge (1996)  
     else
-        write(f, "ERROR, e_s option not recognized")
+        error("ERROR, Clausius-Clapeyron option not recognized")
     end
 
-    # Now, compute the amount of water
+    # now_t, compute specific humidity
+    eps = Rd / Rv
+    q_s = (eps * e_s) / (now_t["P"] - e_s * (1 - eps))
+    q = q_s * par_t["RH"]
 
+    # Then, calculate precipitation
+    pr = (1 + k_pr * now_t["S"] / par_t["L"]) * q / par_t["tau_w"]  # REMBO by Robinson et al. (2010)
 
-    # Then, calculate the percentage of snow in precipitation
+    # Calculate the fraction of snow
+    if now_t["T_surf"] <= (par_t["t_snow"] + degK) # if below t_snow, full snowfall
+        snf = pr
+    elseif now_t["T_surf"] >= (par_t["t_rain"] + degK) # if above t_rain, full rain
+        snf = 0
+    else # smooth transition
+        f_snow = (now_t["T_surf"] - degK - par_t["t_rain"]) / (par_t["t_snow"] - par_t["t_rain"])  # assume linear transition
+        snf = f_snow * pr
+    end
+    return snf
+end
 
+@doc """
+    calc_surfmelt: calculates surface melting rate
+"""
+function calc_surfmelt(now_t, par_t)
+    if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
+        if now_t["T_surf"] >= (par_t["melt_offset"] + degK)
+            return par_t["lambda"] * (now_t["T_surf"] + par_t["melt_offset"])
+        else
+            return 0.0
+        end
+    elseif par_t["sm_case"] == "ITM"
+        error("ERROR, surface melt option not implemented yet")
+    else
+        error("ERROR, surface melt option not recognized")
+    end
 end
 
 @doc """
     calc_SMB: calculates surface mass balance
 """
 function calc_SMB(now_t, par_t)
-
     # First, calculates Accumulation
-    now["Acc"] = calc_snowfall(now_t, par_t) 
+    now_t["Acc"] = calc_snowfall(now_t, par_t)  # accumulation is assumed to be full snowfall
 
+    # Second, calculate Melting
+    now_t["M"] = calc_surfmelt(now_t, par_t)
 
-    now%M = par%Am*cos(2.0*PI*now%time/40000.0)
-    now%Acc = par%Am*(1.1+cos(2.0*PI*now%time/40000.0))+par%Am*0.1*cos(2.0*PI*now%time/100000.0)
+    # Third, return SMB
+    return now_t["Acc"] + now_t["M"]
+end
 
-    # DEFINIR DE TAL FORMA QUE ACC DEPENDA DE LA T_SL
-    # 10 es un offset para dejar fundir entre -10 y 0
-    if (now%Tsurf.ge.-10.0) then          ! assuming there is some melt when mean annual T > -5º C 
-        now%M = par%lambda*(now%Tsurf+10.0)     ! The 5.0 offset calibrates the Melt to be 0 for a mean annual T of -5ºC  
-    else
-        now%M = 0.0 
-    endif
-    
-            now%SMB = now%Acc - now%M
+@doc """
+    calc_Qdif: calculates diffusive heat
+"""
+function calc_Qdif(now_t, par_t, ann_kt)
+    # Uupdate air diffusion
+    now_t["Q_difup"] = -2 * (now_t["T"] - now_t["T_surf"]) / (now_t["H"]^2) * ann_kt / (par_t["c"] * rho)
+
+    # Update diffusion from the Mantle
+    now_t["Q_difdown"] = -2 * (now_t["T"] - par_t["t_mantle"] + degK) / (par_t["H_mantle"]^2) * ann_kt / (par_t["c"] * rho)
+
+    # Update diffusion from geothermal flux
+
+    # Compute the total
+    return now_t["Q_difup"] + now_t["Q_difdown"]
+
 end
