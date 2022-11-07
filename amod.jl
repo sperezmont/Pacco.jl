@@ -20,6 +20,7 @@ include("./libs/load_args.jl")
 include("./libs/nc.jl")
 include("./src/amod_update.jl")
 include("./src/lib_amod.jl")
+include("./src/amod_orbital.jl")
 
 ## Now we load command line arguments
 output_path, outfldr = load_out(amod_path, ARGS)
@@ -49,9 +50,10 @@ time_length = ceil((CTL["time_end"] - CTL["time_init"]) / CTL["dt"])
 for n in 1:time_length
 
     # update simulation time
-    NOW["time"] = CTL["time_init"] + n * CTL["dt"]
+    NOW["time"] = present + CTL["time_init"] + n * CTL["dt"]
 
     # update contour variables
+    NOW["ins"] = calc_ins(CTL, PAR, NOW)
 
     # run AMOD
     run_amod(CTL, PAR, NOW)

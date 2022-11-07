@@ -7,21 +7,25 @@ using DataStructures
 
 # We define run parameters as dictionaries and model variables as a vector 
 # -- run control settings
-global CTL = OrderedDict("time_init" => time_init::Real,
+global CTL = OrderedDict(
+    "time_init" => time_init::Real,
     "time_end" => time_end::Real,
     "dt" => dt::Real,
     "dt_out" => dt_out::Real
 )
 
 # -- initial conditions
-global INCOND = OrderedDict("H_init" => H_init::Real,
+global INCOND = OrderedDict(
+    "H_init" => H_init::Real,
     "Hsed_init" => Hsed_init::Real,
     "T_init" => (t_init + degK)::Real,
     "A_init" => A_init::Real
 )
 
 # -- run parameters
-global PAR = OrderedDict("ins_min" => ins_min::Real,         # Radiative Parameters
+global PAR = OrderedDict(
+    "ins_case" => ins_case::String,     # Radiative Parameters
+    "ins_min" => ins_min::Real,         
     "ins_max" => ins_max::Real,
     "ins_prei" => ins_prei::Real,
     "co2_prei" => co2_prei::Real,
@@ -68,14 +72,15 @@ global PAR = OrderedDict("ins_min" => ins_min::Real,         # Radiative Paramet
 )
 
 # -- simulated variables
-global OUT = OrderedDict("time" => [],            # values of the entire simulation
+global OUT = OrderedDict(
+    "time" => [],            # values of the entire simulation
     "H" => [],
     "Hsed" => [],
     "T" => [],
     "A" => [],
     "T_sl" => [],
     "TMB" => [],
-    "S" => [],
+    "Z" => [],
     "B" => [],
     "M" => [],
     "Acc" => [],
@@ -113,9 +118,8 @@ global amod_INCOND = OrderedDict(
     "A" => INCOND["A_init"],
     "T_sl" => t_ref + degK,
     "TMB" => 0.0,
-    "S" => 0.0,
+    "Z" => 0.0,
     "TMB" => 0.0,
-    "S" => 0.0,
     "B" => 0.0,
     "M" => 0.0,
     "Acc" => 0.0,
@@ -146,10 +150,11 @@ global amod_INCOND = OrderedDict(
 
 # Output file settings
 out_precc = Float64
-out_attr = OrderedDict("time" => Dict("units" => "yr", "long_name" => "Simulation Time", "group" => "Time"),                    # Time
+out_attr = OrderedDict(
+    "time" => Dict("units" => "yr", "long_name" => "Simulation Time", "group" => "Time"),                    # Time
     "ins" => Dict("units" => "W/m²", "long_name" => "Insolation", "group" => "Radiation"),                        # Radiation
     "co2" => Dict("units" => "ppm", "long_name" => "co2 concentration", "group" => "Radiation"),
-    "S" => Dict("units" => "m", "long_name" => "Surface Elevation", "group" => "Geometry"),                   # Geometry
+    "Z" => Dict("units" => "m", "long_name" => "Surface Elevation", "group" => "Geometry"),                   # Geometry
     "B" => Dict("units" => "m", "long_name" => "Bedrock Elevation", "group" => "Geometry"),
     "H" => Dict("units" => "m", "long_name" => "Ice Thickness", "group" => "Geometry"),
     "Hsed" => Dict("units" => "m", "long_name" => "Sediment Thickness", "group" => "Geometry"),

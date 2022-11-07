@@ -5,21 +5,21 @@
 
 @doc """
     calc_taud: calculates total driving stress through
-        taud = rho * g * H * S / L 
+        taud = rho * g * H * Z_s / L 
 """
 function calc_taud(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["S"] / par_d["L"]
+    return rho * g * now_d["H"] * now_d["Z_s"] / par_d["L"]
 end
 
 @doc """
     calc_taub: calculates total basal stress through
-        taub = rho * g * H * S / L 
+        taub = rho * g * H * Z_s / L 
         It is assumed that tau_d = tau_b as in the SIA.     -- jas
         SIA --> The basal shear stress balances out completely the driving stress
 
 """
 function calc_taub(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["S"] / par_d["L"]
+    return rho * g * now_d["H"] * now_d["Z_s"] / par_d["L"]
 end
 
 @doc """
