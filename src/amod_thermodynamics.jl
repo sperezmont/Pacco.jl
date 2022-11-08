@@ -38,12 +38,12 @@ function calc_snowfall(now_t, par_t)
     pr = (1 + k_pr * now_t["S"] / par_t["L"]) * q / par_t["tau_w"]  # REMBO by Robinson et al. (2010)
 
     # Calculate the fraction of snow
-    if now_t["T_surf"] <= (par_t["t_snow"] + degK) # if below t_snow, full snowfall
+    if now_t["T_surf"] <= (par_t["T_snow"]) # if below t_snow, full snowfall
         snf = pr
-    elseif now_t["T_surf"] >= (par_t["t_rain"] + degK) # if above t_rain, full rain
+    elseif now_t["T_surf"] >= (par_t["T_rain"]) # if above t_rain, full rain
         snf = 0
     else # smooth transition
-        f_snow = (now_t["T_surf"] - degK - par_t["t_rain"]) / (par_t["t_snow"] - par_t["t_rain"])  # assume linear transition
+        f_snow = (now_t["T_surf"] - par_t["T_rain"]) / (par_t["T_snow"] - par_t["T_rain"])  # assume linear transition
         snf = f_snow * pr
     end
     return snf
@@ -54,7 +54,7 @@ end
 """
 function calc_surfmelt(now_t, par_t)
     if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-        if now_t["T_surf"] >= (par_t["melt_offset"] + degK)
+        if now_t["T_surf"] >= (par_t["melt_offset"])
             return par_t["lambda"] * (now_t["T_surf"] + par_t["melt_offset"])
         else
             return 0.0
@@ -88,7 +88,7 @@ function calc_Qdif(now_t, par_t, ann_kt)
     now_t["Q_difup"] = -2 * (now_t["T"] - now_t["T_surf"]) / (now_t["H"]^2) * ann_kt / (par_t["c"] * rho)
 
     # Update diffusion from the Mantle
-    now_t["Q_difdown"] = -2 * (now_t["T"] - par_t["t_mantle"] + degK) / (par_t["H_mantle"]^2) * ann_kt / (par_t["c"] * rho)
+    now_t["Q_difdown"] = -2 * (now_t["T"] - par_t["T_mantle"]) / (par_t["H_mantle"]^2) * ann_kt / (par_t["c"] * rho)
 
     # Update diffusion from geothermal flux
 

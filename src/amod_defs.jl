@@ -25,9 +25,12 @@ global INCOND = OrderedDict(
 # -- run parameters
 global PAR = OrderedDict(
     "ins_case" => ins_case::String,     # Radiative Parameters
+    "ins_day" => ins_day::Real,
+    "ins_lat" => ins_lat::Real,
     "ins_min" => ins_min::Real,         
     "ins_max" => ins_max::Real,
     "ins_prei" => ins_prei::Real,
+    "active_radco2" => active_radco2::String,
     "co2_prei" => co2_prei::Real,
     "ins_max" => ins_max::Real,
     "orb_case" => orb_case::String,  # Orbital Parameters
@@ -40,7 +43,7 @@ global PAR = OrderedDict(
     "active_iso" => active_iso::Bool,      # Geophysical Parameters
     "B_eq" => B_eq::Real,
     "tau_bed" => tau_bed::Real,
-    "t_mantle" => t_mantle::Real,
+    "T_mantle" => (t_mantle + degK)::Real,
     "H_mantle" => H_mantle::Real,
     "Q_geo" => Q_geo::Real,
     "v_kin" => v_kin::Real,           # Dynamics
@@ -56,18 +59,18 @@ global PAR = OrderedDict(
     "glen_n" => glen_n::Real,
     "ub_case" => ub_case::String,
     "A_m" => A_m::Real,             # Thermodynamics
-    "A_t" => A_t::Real,
+    "A_t" => (A_t + degK)::Real,
     "lambda" => lambda::Real,
-    "t_sb" => t_sb::Real,
-    "melt_offset" => melt_offset::Real,
+    "T_sb" => (t_sb + degK)::Real,
+    "melt_offset" => (melt_offset + degK)::Real,
     "tsurf_case" => tsurf_case::String,
     "k" => k::Real,
     "cc_case" => cc_case::String,
     "RH" => RH::Real,
     "k_pr" => k_pr::Real,
     "tau_w" => t_snow::Real,
-    "t_snow" => t_snow::Real,
-    "t_rain" => t_rain::Real,
+    "T_snow" => (t_snow + degK)::Real,
+    "T_rain" => (t_rain + degK)::Real,
     "sm_case" => sm_case::String
 )
 
@@ -106,7 +109,10 @@ global OUT = OrderedDict(
     "fstreamdot" => [],
     "ins" => [],
     "co2" => [],
-    "P" => []
+    "P" => [],
+    "exc" => [],
+    "long_peri" => [],
+    "obl" => []
 )
 
 # Assign initial conditions
@@ -145,7 +151,10 @@ global amod_INCOND = OrderedDict(
     "fstreamdot" => 0.0,
     "ins" => PAR["ins_prei"],
     "co2" => PAR["co2_prei"],
-    "P" => P_sl
+    "P" => P_sl,
+    "exc" => 0.0,
+    "long_peri" => 0.0,
+    "obl" => 0.0    
 )
 
 # Output file settings
