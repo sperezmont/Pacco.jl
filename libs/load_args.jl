@@ -1,6 +1,7 @@
 # =============================
 #     Program: load_args.jl
 #     Aim: functions to load arguments from the command line
+#     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 
 function load_out(main_path, args)

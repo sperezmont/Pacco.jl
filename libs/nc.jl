@@ -1,6 +1,7 @@
 # =============================
 #     Program: nc.jl
 #     Aim: several functions to handle netCDF files
+#     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 
 # Load dependencies
@@ -33,5 +34,9 @@ function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict
     end
 
     close(ds)
+end
+
+function load_nc(filename::AbstractString, vars::Any)
+    return [NCDataset(filename)[v] for v in vars]
 end
 

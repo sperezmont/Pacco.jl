@@ -6,8 +6,12 @@
 using DataStructures
 
 # We define run parameters as dictionaries and model variables as a vector 
+# -- Earth constants
+global T_0 = t_0 + degK
+global T_ref = t_ref + degK
+
 # -- run control settings
-global CTL = OrderedDict(
+CTL = OrderedDict(
     "time_init" => time_init::Real,
     "time_end" => time_end::Real,
     "dt" => dt::Real,
@@ -15,7 +19,7 @@ global CTL = OrderedDict(
 )
 
 # -- initial conditions
-global INCOND = OrderedDict(
+INCOND = OrderedDict(
     "H_init" => H_init::Real,
     "Hsed_init" => Hsed_init::Real,
     "T_init" => (t_init + degK)::Real,
@@ -23,16 +27,19 @@ global INCOND = OrderedDict(
 )
 
 # -- run parameters
-global PAR = OrderedDict(
+PAR = OrderedDict(
     "ins_case" => ins_case::String,     # Radiative Parameters
     "ins_day" => ins_day::Real,
     "ins_lat" => ins_lat::Real,
+    "ins_ref" => ins_ref::Real,
     "ins_min" => ins_min::Real,         
     "ins_max" => ins_max::Real,
     "ins_prei" => ins_prei::Real,
-    "active_radco2" => active_radco2::String,
+    "active_radco2" => active_radco2::Bool,
     "co2_prei" => co2_prei::Real,
     "ins_max" => ins_max::Real,
+    "A_t" => A_t::Real,
+    "A_ins" => A_t::Real,
     "orb_case" => orb_case::String,  # Orbital Parameters
     "P_obl" => P_obl::Real,
     "tau_obl" => tau_obl::Real,
@@ -59,7 +66,6 @@ global PAR = OrderedDict(
     "glen_n" => glen_n::Real,
     "ub_case" => ub_case::String,
     "A_m" => A_m::Real,             # Thermodynamics
-    "A_t" => (A_t + degK)::Real,
     "lambda" => lambda::Real,
     "T_sb" => (t_sb + degK)::Real,
     "melt_offset" => (melt_offset + degK)::Real,
@@ -75,7 +81,7 @@ global PAR = OrderedDict(
 )
 
 # -- simulated variables
-global OUT = OrderedDict(
+OUT = OrderedDict(
     "time" => [],            # values of the entire simulation
     "H" => [],
     "Hsed" => [],
@@ -83,11 +89,11 @@ global OUT = OrderedDict(
     "A" => [],
     "T_sl" => [],
     "TMB" => [],
+    "SMB" => [],
     "Z" => [],
     "B" => [],
     "M" => [],
     "Acc" => [],
-    "SMB" => [],
     "U_d" => [],
     "U_b" => [],
     "U" => [],
@@ -116,20 +122,19 @@ global OUT = OrderedDict(
 )
 
 # Assign initial conditions
-global amod_INCOND = OrderedDict(
+amod_INCOND = OrderedDict(
     "time" => CTL["time_init"],
-    "H" => INCOND["H_init"] + 1e-6,     # Add 1e-6 just to avoid NaN when calculating Q_dif
+    "H" => INCOND["H_init"],     # Add 1e-6 just to avoid NaN when calculating Q_dif
     "Hsed" => INCOND["Hsed_init"],
     "T" => INCOND["T_init"],
     "A" => INCOND["A_init"],
     "T_sl" => t_ref + degK,
     "TMB" => 0.0,
+    "SMB" => 0.0,
     "Z" => 0.0,
-    "TMB" => 0.0,
     "B" => 0.0,
     "M" => 0.0,
     "Acc" => 0.0,
-    "SMB" => 0.0,
     "U_d" => 0.0,
     "U_b" => 0.0,
     "U" => 0.0,
@@ -156,6 +161,11 @@ global amod_INCOND = OrderedDict(
     "long_peri" => 0.0,
     "obl" => 0.0    
 )
+if PAR["ins_case"] == "artificial" # initialize orbital parameters
+    amod_INCOND["long_peri"], amod_INCOND["obl"], amod_INCOND["exc"] = orbital_params(amod_INCOND["time"])
+else
+    amod_INCOND["long_peri"], amod_INCOND["obl"], amod_INCOND["exc"] = 0, 0, 0
+end
 
 # Output file settings
 out_precc = Float64
@@ -178,19 +188,20 @@ out_attr = OrderedDict(
     "SMB" => Dict("units" => "m/a", "long_name" => "Surface Mass Balance", "group" => "Thermodynamics"),
     "Acc" => Dict("units" => "m/a", "long_name" => "Surface Accumulation", "group" => "Thermodynamics"),
     "M" => Dict("units" => "m/a", "long_name" => "Surface Melt", "group" => "Thermodynamics"),
-    "T" => Dict("units" => "ºC", "long_name" => "Ice Temperature", "group" => "Thermodynamics"),
-    "Q_dif" => Dict("units" => "K/a", "long_name" => "Temperature Solver", "group" => "Thermodynamics"),
-    "Q_difup" => Dict("units" => "K/a", "long_name" => "Temperature Solver Term", "group" => "Thermodynamics"),
-    "Q_difdown" => Dict("units" => "K/a", "long_name" => "Temperature Solver Term", "group" => "Thermodynamics"),
+    "T" => Dict("units" => "K", "long_name" => "Ice Temperature", "group" => "Thermodynamics"),
+    "Q_dif" => Dict("units" => "K/a", "long_name" => "Diffusive heat", "group" => "Thermodynamics"),
+    "Q_difup" => Dict("units" => "K/a", "long_name" => "Atmosphere diffusive heat", "group" => "Thermodynamics"),
+    "Q_difdown" => Dict("units" => "K/a", "long_name" => "Basal diffusive heat", "group" => "Thermodynamics"),
     "Q_adv" => Dict("units" => "K/a", "long_name" => "Advective Heat Dissipation", "group" => "Thermodynamics"),
     "Q_drag" => Dict("units" => "K/a", "long_name" => "Basal Friction Heating", "group" => "Thermodynamics"),
     "alpha" => Dict("units" => "--", "long_name" => "Temperate Smoothing Function", "group" => "Thermodynamics"),
-    "T_surf" => Dict("units" => "ºC", "long_name" => "Surface Temperature", "group" => "Thermodynamics"),
-    "T_sl" => Dict("units" => "ºC", "long_name" => "Sea-level Temperature", "group" => "Thermodynamics"),
+    "T_surf" => Dict("units" => "K", "long_name" => "Surface Temperature", "group" => "Thermodynamics"),
+    "T_sl" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Thermodynamics"),
+    "P" => Dict("units" => "Pa", "long_name" => "Air Pressure", "group" => "Thermodynamics"),
     "Hdot" => Dict("units" => "m/a", "long_name" => "Ice Thickness Change", "group" => "Derivatives"),              # Derivatives
     "Hseddot" => Dict("units" => "m/a", "long_name" => "Sediment Thickness Change", "group" => "Derivatives"),
     "Bdot" => Dict("units" => "m/a", "long_name" => "Bedrock Elevation Change", "group" => "Derivatives"),
-    "Tdot" => Dict("units" => "ºC/a", "long_name" => "Ice Temperature Change", "group" => "Derivatives"),
+    "Tdot" => Dict("units" => "K/a", "long_name" => "Ice Temperature Change", "group" => "Derivatives"),
     "fstreamdot" => Dict("units" => "--", "long_name" => "Stream fraction change", "group" => "Derivatives")
 )
 

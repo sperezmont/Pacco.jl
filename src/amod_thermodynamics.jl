@@ -8,7 +8,7 @@
 """
 function calc_T_surf(now_t, par_t)
     if par_t["tsurf_case"] == "linear"
-        return now_t["T_sl"] - grad * now_t["S"]
+        return now_t["T_sl"] - grad * now_t["Z"]
     else
         error("ERROR, T_surf option not recognized")
     end
@@ -20,7 +20,6 @@ end
 function calc_snowfall(now_t, par_t)
     # First, calculate the saturation vapor pressure e_s
     if par_t["cc_case"] == "cc"
-        T_0 = t_0 + degK
         e_s = 0.6113 * exp(Lv / Rv * (1 / T_0 - 1 / now_t["T_surf"]))          # Clausius-Clapeyron differential equation direct approximation
     elseif par_t["cc_case"] == "AERKi"
         t = now_t["T_surf"] - degK    # conversion to ºC
@@ -35,7 +34,7 @@ function calc_snowfall(now_t, par_t)
     q = q_s * par_t["RH"]
 
     # Then, calculate precipitation
-    pr = (1 + k_pr * now_t["S"] / par_t["L"]) * q / par_t["tau_w"]  # REMBO by Robinson et al. (2010)
+    pr = max((1 + k_pr * now_t["Z"] / par_t["L"]) * q / par_t["tau_w"], 0.0)  # REMBO by Robinson et al. (2010)
 
     # Calculate the fraction of snow
     if now_t["T_surf"] <= (par_t["T_snow"]) # if below t_snow, full snowfall
@@ -75,9 +74,10 @@ function calc_SMB(now_t, par_t)
 
     # Second, calculate Melting
     now_t["M"] = calc_surfmelt(now_t, par_t)
-
+    
     # Third, return SMB
-    return now_t["Acc"] + now_t["M"]
+    now_t["SMB"] = now_t["Acc"] + now_t["M"]
+    return now_t
 end
 
 @doc """
@@ -93,6 +93,6 @@ function calc_Qdif(now_t, par_t, ann_kt)
     # Update diffusion from geothermal flux
 
     # Compute the total
-    return now_t["Q_difup"] + now_t["Q_difdown"]
-
+    now_t["Q_dif"] = now_t["Q_difup"] + now_t["Q_difdown"]
+    return now_t
 end

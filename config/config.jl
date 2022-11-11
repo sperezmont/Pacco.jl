@@ -7,6 +7,11 @@ Aim: This script configures the dependencies for using AMOD, by Jorge Alvarez-So
 
 """
 
+# Check if environment exists
+if isdir("amod_env") # check if amod_env is activated 
+    rm("amod_env", recursive=true)
+end
+
 # Environment generation
 using Pkg
 Pkg.generate("amod_env")
@@ -17,7 +22,7 @@ display("** Adding dependencies ... **")
 Pkg.add("NCDatasets")
 Pkg.add("DataStructures")
 Pkg.add("Insolation")
-Pkg.add("Dates")
+Pkg.add("CairoMakie")
 
 # Check status
 Pkg.status()

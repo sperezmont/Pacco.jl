@@ -2,14 +2,15 @@
 include("./amod_dynamics.jl")
 include("./amod_thermodynamics.jl")
 
-function run_amod(ctl, par, now)
-    # =============================
-    #     Module: run_amod
-    #     Model: AMOD (adimensional ice-sheet-sediment model)
-    #            by Jorge Alvarez-Solas (Fortran, 2017)
-    # =============================
-    #     Adapted to Julia by Sergio Pérez-Montero
-
+@doc """
+        ===========================================================
+            Function: run_amod
+            Model: AMOD (adimensional ice-sheet-sediment model)
+                 by Jorge Alvarez-Solas (Fortran, 2017)
+        ===========================================================
+            Adapted to Julia by Sergio Pérez-Montero
+"""
+function run_amod(now, par, ctl)
     # Define some local variables and parameteres
     kt_ann = par["k"] * sec_year
     qgeo_ann = par["Q_geo"] * sec_year * 1e-3
@@ -32,11 +33,11 @@ function run_amod(ctl, par, now)
     end
 
     # -- ice temperature
-    now["T"] = now["T"] + now["Tdot"] * ctl["dt"]
-    now["T"] = min(now["T"], 0.0)       # we do not allow ice above 0ºC
+    now["T"] = min(now["T"] + now["Tdot"] * ctl["dt"], degK)       # we do not allow ice above 0ºC
 
     # -- thermomechanical coupling (For now, the rate factor A is constant -- jas)
 
+    ## Ice Dynamics
     # -- driving stress
     now["tau_d"] = calc_taud(now, par)
 
@@ -48,7 +49,7 @@ function run_amod(ctl, par, now)
     now["U_b"] = calc_Ub(now, par)
 
     # -- stream fraction
-    now["fstreamdot"] = calc_fstreamdot(now, par, tau_kin)
+    now = calc_fstreamdot(now, par, tau_kin)
     now["fstream"] = max(now["fstream"] + now["fstreamdot"] * ctl["dt"], 0.0)
 
     # -- total velocity
@@ -63,23 +64,22 @@ function run_amod(ctl, par, now)
     now["P"] = P_sl * exp((-now["Z"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
 
     # -- surface mass balance
-    now["SMB"] = calc_SMB(now, par)
+    now = calc_SMB(now, par)
 
-    # Now, compute thermodynamics
-    # -- check if there is no ice
-    if now["H"] < 10.0
+    ## Ice thermodynamics
+    if now["H"] < 10.0  # -- check if there is no ice
         now["Q_dif"] = 0.0
         now["Q_drag"] = 0.0
         now["T"] = now["T_sl"]
+    else
+        # -- update total diffusion
+        now = calc_Qdif(now, PAR, kt_ann)
+
+        # -- update basal drag heat
+        now["Q_drag"] = now["fstream"] * now["tau_b"] * now["U_b"] / (par["c"] * rho)
+
+        # -- update advective heat ??
     end
-
-    # -- update total diffusion
-    calc_Qdif(now, PAR, kt_ann)
-
-    # -- update basal drag heat
-    now["Q_drag"] = now["fstream"] * now["tau_b"] * now["U_b"] / (par["c"] * rho)
-
-    # -- update advective heat ??
 
     # Calculate time evolution
     # -- ice thickness
@@ -93,6 +93,37 @@ function run_amod(ctl, par, now)
 
     # -- temperature
     now["Tdot"] = now["Q_dif"] + now["Q_drag"]
+    
+    return now
+end
 
-    return
+@doc """
+    amod_loop: contains the time loop of the model
+"""
+function amod_loop(now, out, par, ctl, file)
+    time_length = ceil((ctl["time_end"] - ctl["time_init"]) / ctl["dt"])
+    for n in 1:time_length
+        # update simulation time
+        now["time"] = ctl["time_init"] + n * ctl["dt"]
+        
+        # update contour variables
+        now["T_sl"] = calc_Tsl(now, par)
+    
+        # run AMOD
+        now = run_amod(now, par, ctl)
+        
+        # only update output variable at desired frequency
+        if mod(now["time"], ctl["dt_out"]) == 0
+            out = update_amod_out(out, now)
+            write(file, "time = " * string(now["time"]) * " --> " * "ins = " * string(now["ins"]) * " --> " * "T_sl = " * string(now["T_sl"]) * " --> " * "H = " * string(now["H"]) * "\n")
+        end
+    
+        #Check for NaN'S
+        # for (key, value) in NOW
+        #     if isnan(value)
+        #         error("NaN value found in " * key * " at time = " * string(NOW["time"]))
+        #     end
+        # end
+    end
+    return out
 end

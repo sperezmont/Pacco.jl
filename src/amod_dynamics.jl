@@ -5,21 +5,21 @@
 
 @doc """
     calc_taud: calculates total driving stress through
-        taud = rho * g * H * Z_s / L 
+        taud = rho * g * H * Z / L 
 """
 function calc_taud(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["Z_s"] / par_d["L"]
+    return rho * g * now_d["H"] * now_d["Z"] / par_d["L"]
 end
 
 @doc """
     calc_taub: calculates total basal stress through
-        taub = rho * g * H * Z_s / L 
+        taub = rho * g * H * Z / L 
         It is assumed that tau_d = tau_b as in the SIA.     -- jas
         SIA --> The basal shear stress balances out completely the driving stress
 
 """
 function calc_taub(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["Z_s"] / par_d["L"]
+    return rho * g * now_d["H"] * now_d["Z"] / par_d["L"]
 end
 
 @doc """
@@ -58,10 +58,11 @@ end
 """
 function calc_fstreamdot(now_d, par_d, tau_kin)
     # streaming inland propagation
-    now_d["alpha"] = max(0.0, min(1.0, (now_d["T"] + par_d["t_sb"] + degK) / (par_d["t_sb"] + degK)))
+    now_d["alpha"] = max(0.0, min(1.0, (now_d["T"] + par_d["T_sb"]) / (par_d["T_sb"])))
     now_d["fstream_ref"] = (par_d["fstream_max"] - par_d["fstream_min"]) * now_d["alpha"] + par_d["fstream_min"]  # the reference value of the streaming fraction is linear with alpha (thus temperature) -- jas
 
     # change in the stream fraction 
-    return (now_d["fstream_ref"] - now_d["fstream"]) / tau_kin
+    now_d["fstreamdot"] = (now_d["fstream_ref"] - now_d["fstream"]) / tau_kin
+    return now_d
 end
 

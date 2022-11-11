@@ -9,7 +9,7 @@ global year_len = 360.0             # year length in days (360 as suggested by A
 global sec_year = 31556926.0        # [s] Seconds in a year, EISMINT value
 
 global P_sl = 101325                # [Pa] Pressure at sea level
-global ins_0 = 1365.0               # [Wm⁻²] Solar constant
+global S_0 = 1365.0               # [Wm⁻²] Solar constant
 global rho = 910.0                  # [kg/m³] Ice density 
 global g = 9.81                     # [m/s²] Gravitational acceleration
 
