@@ -23,6 +23,7 @@ Pkg.add("NCDatasets")
 Pkg.add("DataStructures")
 Pkg.add("Insolation")
 Pkg.add("CairoMakie")
+Pkg.add("FFTW")
 
 # Check status
 Pkg.status()

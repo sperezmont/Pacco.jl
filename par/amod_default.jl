@@ -27,11 +27,11 @@ A_t = 25.0                      # [ºC or K] Amplitude of temperature forcing (s
 ## Orbital parameters
 orb_case = "ope"                # o, op, oe, pe, ope # Tsl formula 
 P_obl = 1.0                     # Power of obliquity (normalised to At)
-tau_obl = 41000.0               # [yr] Obliquity period
+tau_obl = 41e3                  # [yr] Obliquity period
 P_pre = 1.0                     # Power of precession (normalised to At)
-tau_pre = 23000.0               # [yr] Precession period
+tau_pre = 23e3                  # [yr] Precession period
 P_exc = 1.0                     # Power of excentricity (normalised to At)
-tau_exc = 100000.0              # [yr] Excentricity period
+tau_exc = 100e3                 # [yr] Excentricity period
 
 ## Geophysical parameters
 active_iso = true               # Switch: include active isostatic rebound?

@@ -17,9 +17,9 @@ function load_parf(main_path, out_path, args)
     # Load parameters and Earth constants
     (args == []) ? (file_param = "amod_default.jl") : (file_param = args[2])
 
-    cp(main_path*"/par/"*file_param, output_path*file_param, force=true)
+    cp(main_path*"/par/"*file_param, output_path*"namelist.jl", force=true)
     cp(main_path*"/par/earth_const.jl", output_path*"earth_const.jl", force=true)
 
-    include(out_path*file_param)
+    include(out_path*"namelist.jl")
     include(out_path*"earth_const.jl")
 end

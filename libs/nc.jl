@@ -37,6 +37,6 @@ function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict
 end
 
 function load_nc(filename::AbstractString, vars::Any)
-    return [NCDataset(filename)[v] for v in vars]
+    return [NCDataset(filename)[v] for v in vars], NCDataset(filename)["time"]
 end
 

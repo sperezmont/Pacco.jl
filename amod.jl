@@ -9,9 +9,7 @@
 
 ## First, load external libraries, activate amod environment and save pwd 
 using Pkg
-if Pkg.project().name != "amod_env" # check if amod_env is activated # RETHINK -- spm
-    Pkg.activate("amod_env")
-end
+Pkg.activate("amod_env")
 amod_path = pwd()
 
 ## Second, load dependencies
