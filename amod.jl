@@ -9,7 +9,9 @@
 
 ## First, load external libraries, activate amod environment and save pwd 
 using Pkg
-Pkg.activate("amod_env")
+if isfile("amod_env/Project.toml") && isfile("amod_env/Manifest.toml")
+    Pkg.activate("amod_env")
+end
 amod_path = pwd()
 
 ## Second, load dependencies

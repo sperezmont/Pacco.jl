@@ -4,7 +4,7 @@
 #     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 using FFTW 
-
+# blackman TUCKEY -- mirar como posible metodo espectral, jas 2022.17.11
 @doc """
     calc_spectrum uses FFTW.jl to calculate the periodogram of d 
         d :: Vector --> time series
@@ -16,8 +16,9 @@ using FFTW
 function calc_spectrum(d::Vector, fs::Real) 
     F = fftshift(fft(d))
     freqs = fftshift(fftfreq(length(d), fs))  
-
-    return (abs.(F).^2) ./2, freqs   # power, frequencies
+    
+    F, freqs = F[freqs .> 0], freqs[freqs .> 0] # now eliminate freqs < 0
+    return F, freqs   # power, frequencies
 end
 
 # C = [480 + 100 * (

@@ -25,7 +25,8 @@ function calc_Tsl(now_r, par_r)
     ins_norm = 2.0 * ins_norm - 1.0                                                          # between 1 and -1, norm = 2
 
     # Third, calculate sea-level temperature 
-    return T_ref + par_r["A_t"] * ins_norm
+    now_r["T_sl"] = T_ref + par_r["A_t"] * ins_norm
+    return now_r
 end
 
 

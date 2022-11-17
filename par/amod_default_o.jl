@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
 time_init = -2e6          # [yr] Starting time (model years)
-time_end = 0            # [yr] Ending time (model years)  
+time_end = 2e6            # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 
@@ -15,22 +15,22 @@ A_init = 1e-16                  # [] Initial condition for the flow parameter of
 ins_case = "artificial"         # Insolation case: "artificial", "laskar" 
 ins_day = 170.0                 # [day] Day in which calculate insolation (170 = June 21)
 ins_lat = 65.0                  # [ºN] Latitude in which calculate insolation [-90, 90]ºN
-ins_ref = 480.0                 # [W/m²] Reference insolation value for "artificial" case
+ins_ref = 480.0                   # [W/m²] Reference insolation value for "artificial" case
 ins_min = 425.0                 # [W/m²] Insolation minimum value
 ins_max = 565.0                 # [W/m²] Insolation maximum value
 ins_prei = 480.0                # [W/m²] Default preindustrial 
 co2_prei = 280.0                # [ppm] Default preindustrial 
 active_radco2 = false           # Switch: include co2 radiative forcing?
-A_ins = 30.0                    # [W/m²] Amplitude of artificial insolation forcing
-A_t = 30.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+A_ins = 80.0                    # [W/m²] Amplitude of artificial insolation forcing
+A_t = 25.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 ## Orbital parameters
-orb_case = "ope"                # o, op, oe, pe, ope # Tsl formula 
+orb_case = "o"                # o, op, oe, pe, ope # Tsl formula 
 P_obl = 1.0                     # Power of obliquity (normalised to At)
 tau_obl = 41e3                  # [yr] Obliquity period
-P_pre = 0.0                     # Power of precession (normalised to At)
+P_pre = 1.0                     # Power of precession (normalised to At)
 tau_pre = 23e3                  # [yr] Precession period
-P_exc = 0.1                     # Power of excentricity (normalised to At)
+P_exc = 1.0                     # Power of excentricity (normalised to At)
 tau_exc = 100e3                 # [yr] Excentricity period
 
 ## Geophysical parameters
@@ -68,6 +68,6 @@ t_snow = -11.6                  # [ºC] Air temperature below which we consider 
 t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
 sm_case = "PDD"                 # Surface melting case: "PDD", "ITM"
 lambda = 0.1                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
-melt_offset = -10.0             # [ºC or K] Temperature threshold that allows melting  
+melt_offset = 10.0              # [ºC] Temperature threshold that allows melting  
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 

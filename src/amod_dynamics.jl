@@ -5,21 +5,21 @@
 
 @doc """
     calc_taud: calculates total driving stress through
-        taud = rho * g * H * Z / L 
+        taud = rhoi * g * H * Z / L 
 """
 function calc_taud(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["Z"] / par_d["L"]
+    return rhoi * g * now_d["H"] * now_d["Z"] / par_d["L"]
 end
 
 @doc """
     calc_taub: calculates total basal stress through
-        taub = rho * g * H * Z / L 
+        taub = rhoi * g * H * Z / L 
         It is assumed that tau_d = tau_b as in the SIA.     -- jas
         SIA --> The basal shear stress balances out completely the driving stress
 
 """
 function calc_taub(now_d, par_d)
-    return rho * g * now_d["H"] * now_d["Z"] / par_d["L"]
+    return rhoi * g * now_d["H"] * now_d["Z"] / par_d["L"]
 end
 
 @doc """
@@ -30,7 +30,7 @@ end
 """
 function calc_Ud(now_d, par_d)
     if (par_d["ud_case"] == "sia")
-        return 2.0 * now_d["A"] * now_d["H"] * now_d["tau_d"]^par_d["glen_n"] / (par_d["glen_n"] + 2)
+        return (2.0 * now_d["A"] * now_d["H"] * now_d["tau_d"]^par_d["glen_n"]) / (par_d["glen_n"] + 2)
     else
         error("ERROR, velocity option not recognized")
     end

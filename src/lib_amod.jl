@@ -13,24 +13,25 @@ include("./amod_thermodynamics.jl")
 function run_amod(now, par, ctl)
     # Define some local variables and parameteres
     kt_ann = par["k"] * sec_year
-    qgeo_ann = par["Q_geo"] * sec_year * 1e-3
+    #qgeo_ann = par["Q_geo"] * sec_year * 1e-3
 
     tau_kin = par["L"] / par["v_kin"]   # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
 
     # Update variables
     # -- thicknesses
     now["H"] = max(now["H"] + now["Hdot"] * ctl["dt"], 0.0)
-    now["Hsed"] = max(now["Hsed"] + now["Hseddot"] * ctl["dt"], 0.0)
+    now["Hsed"] = min(max(now["Hsed"] + now["Hseddot"] * ctl["dt"], 0.0), 1.0)  # sediments go from 0 to 1
 
     # -- bedrock
     now["B"] = now["B"] + now["Bdot"] * ctl["dt"]
 
-    # -- surface
+    # -- ice surface
     if par["active_iso"]
-        now["Z"] = now["H"] + now["B"]
+        now["Z"] = max(now["H"] + now["B"], 0.0)
     else
-        now["Z"] = now["H"] + par["B_eq"]
+        now["Z"] = max(now["H"] + par["B_eq"], 0.0)
     end
+    (now["H"] < 10.0) && (now["Z"] = 0.0) # if there is no ice, Z = 0
 
     # -- ice temperature
     now["T"] = min(now["T"] + now["Tdot"] * ctl["dt"], degK)       # we do not allow ice above 0ºC
@@ -61,10 +62,15 @@ function run_amod(now, par, ctl)
     # -- bedrock temperature (currently prescribed -- jas)
 
     # -- total pressure
-    now["P"] = P_sl * exp((-now["Z"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
+    if now["H"] < 10.0
+        now["P"] = copy(P_sl)
+    else
+        now["P"] = P_sl * exp((-now["Z"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
+    end
 
     # -- surface mass balance
     now = calc_SMB(now, par)
+    now["TMB"] = now["SMB"] + 0.0   # for now, TMB = SMB -- 2022.11.17 spm
 
     ## Ice thermodynamics
     if now["H"] < 10.0  # -- check if there is no ice
@@ -73,23 +79,23 @@ function run_amod(now, par, ctl)
         now["T"] = now["T_sl"]
     else
         # -- update total diffusion
-        now = calc_Qdif(now, PAR, kt_ann)
+        now = calc_Qdif(now, par, kt_ann)
 
         # -- update basal drag heat
-        now["Q_drag"] = now["fstream"] * now["tau_b"] * now["U_b"] / (par["c"] * rho)
+        now = calc_Qdrag(now, par)
 
         # -- update advective heat ??
     end
 
     # Calculate time evolution
     # -- ice thickness
-    now["Hdot"] = now["SMB"] - now["U"] * now["H"] / par["L"]
+    now["Hdot"] = now["TMB"] - now["U"] * now["H"] / par["L"]
 
     # -- sediment thickness
-    now["Hseddot"] = par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
+    now["Hseddot"] = - par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
 
     # -- bedrock elevation
-    now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] / 3) / par["tau_bed"] # -- ajr: improve 1/3 to use densities, etc...
+    now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] * rhoi / rhom) / par["tau_bed"] # needs further improvement -- spm 2022.11.17
 
     # -- temperature
     now["Tdot"] = now["Q_dif"] + now["Q_drag"]
@@ -107,7 +113,7 @@ function amod_loop(now, out, par, ctl, file)
         now["time"] = ctl["time_init"] + n * ctl["dt"]
         
         # update contour variables
-        now["T_sl"] = calc_Tsl(now, par)
+        now = calc_Tsl(now, par)
     
         # run AMOD
         now = run_amod(now, par, ctl)
@@ -117,13 +123,6 @@ function amod_loop(now, out, par, ctl, file)
             out = update_amod_out(out, now)
             write(file, "time = " * string(now["time"]) * " --> " * "ins = " * string(now["ins"]) * " --> " * "T_sl = " * string(now["T_sl"]) * " --> " * "H = " * string(now["H"]) * "\n")
         end
-    
-        #Check for NaN'S
-        # for (key, value) in NOW
-        #     if isnan(value)
-        #         error("NaN value found in " * key * " at time = " * string(NOW["time"]))
-        #     end
-        # end
     end
     return out
 end

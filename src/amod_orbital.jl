@@ -28,7 +28,7 @@ function calc_artificial_insolation(now_o, par_o)
     end
 
     # Return artificial insolation -- I have to discuss this with jas
-    return par_o["ins_ref"] + par_o["A_ins"] * (
+    return par_o["ins_ref"] - par_o["A_ins"] * (
            wo * par_o["P_obl"] * cos(2.0*pi*now_o["time"] / par_o["tau_obl"]) +
            wp * par_o["P_pre"] * cos(2.0*pi*now_o["time"] / par_o["tau_pre"]) + 
            we * par_o["P_exc"] * cos(2.0*pi*now_o["time"] / par_o["tau_exc"]))
