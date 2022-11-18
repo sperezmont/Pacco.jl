@@ -36,4 +36,7 @@ julia plot_amod.jl [OUT] [VARS]
 ```
 where `[OUT]` is the name of the experiment and `[VARS]` are the variables we want to plot separated by spaces. If none of the arguments are provided, `plot_amod.jl` will plot the results of `test_default` and some default variables. 
 
+# Documentation
+I am currently working on the documentation of the model.
+
 # Examples
