@@ -29,9 +29,9 @@ function calc_artificial_insolation(now_o, par_o)
 
     # Return artificial insolation -- I have to discuss this with jas
     return par_o["ins_ref"] - par_o["A_ins"] * (
-           wo * par_o["P_obl"] * cos(2.0*pi*now_o["time"] / par_o["tau_obl"]) +
-           wp * par_o["P_pre"] * cos(2.0*pi*now_o["time"] / par_o["tau_pre"]) + 
-           we * par_o["P_exc"] * cos(2.0*pi*now_o["time"] / par_o["tau_exc"]))
+        wo * par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
+        wp * par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
+        we * par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))
 
 end
 
@@ -51,21 +51,21 @@ end
 """
 function calc_solar_longitude(now_o, par_o)
     # Convert to radians
-    long_peri_rad = deg2rad(now_o["long_peri"]) 
-    
+    long_peri_rad = deg2rad(now_o["long_peri"])
+
     # Calculate the distance to vernal equinox
-    delta_omega = (day - 80.) * 2*pi / year_len
+    delta_omega = (day - 80.0) * 2 * pi / year_len
 
     # Calculate beta
     beta = sqrt(1 - now_o["exc"]^2)
 
     # Compute solar longitude
-    omega_long_m = -2*((now_o["exc"]/2 + (now_o["exc"]^3)/8) * (1 + beta) * sin(-long_peri_rad) -
-                      (now_o["exc"]^2)/4 * (1/2 + beta) * sin(-2*long_peri_rad) + (now_o["exc"]^3)/8 *
-                      (1/3 + beta) * sin(-3*long_peri_rad)) + delta_omega
-    omega_long = (omega_long_m + (2*now_o["exc"] - (now_o["exc"]^3)/4) * sin(omega_long_m - long_peri_rad) +
-                 (5/4)*(now_o["exc"]^2) * sin(2*(omega_long_m - long_peri_rad)) + (13/12)*(now_o["exc"]^3)
-                 * sin(3*(omega_long_m - long_peri_rad)))
+    omega_long_m = -2 * ((now_o["exc"] / 2 + (now_o["exc"]^3) / 8) * (1 + beta) * sin(-long_peri_rad) -
+                         (now_o["exc"]^2) / 4 * (1 / 2 + beta) * sin(-2 * long_peri_rad) + (now_o["exc"]^3) / 8 *
+                                                                                           (1 / 3 + beta) * sin(-3 * long_peri_rad)) + delta_omega
+    omega_long = (omega_long_m + (2 * now_o["exc"] - (now_o["exc"]^3) / 4) * sin(omega_long_m - long_peri_rad) +
+                  (5 / 4) * (now_o["exc"]^2) * sin(2 * (omega_long_m - long_peri_rad)) + (13 / 12) * (now_o["exc"]^3)
+                                                                                         * sin(3 * (omega_long_m - long_peri_rad)))
     return omega_long
 end
 
@@ -111,12 +111,12 @@ function calc_insol_day(now_o, par_o)
     if par_o["ins_case"] == "artificial"
         now_o["long_peri"], now_o["obl"], now_o["exc"] = 0, 0, 0
         return calc_artificial_insolation(now_o, par_o)
-    elseif  par_o["ins_case"] == "laskar"
+    elseif par_o["ins_case"] == "laskar"
         error("ERROR, laskar option not implemented yet")
         return calc_laskar_insolation(now_o, par_o)
     else
         error("ERROR, insolation option not recognized")
     end
-    
+
 end
 

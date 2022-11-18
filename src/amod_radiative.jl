@@ -7,7 +7,7 @@
 """
 function calc_rad_co2(CO2)
     CO2_0 = 280.0
-    RCO2_fac = 5.35 
+    RCO2_fac = 5.35
     return RCO2_fac * log(CO2 / CO2_0)
 end
 

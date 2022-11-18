@@ -32,7 +32,7 @@ PAR = OrderedDict(
     "ins_day" => ins_day::Real,
     "ins_lat" => ins_lat::Real,
     "ins_ref" => ins_ref::Real,
-    "ins_min" => ins_min::Real,         
+    "ins_min" => ins_min::Real,
     "ins_max" => ins_max::Real,
     "ins_prei" => ins_prei::Real,
     "active_radco2" => active_radco2::Bool,
@@ -138,7 +138,7 @@ amod_INCOND = OrderedDict(
     "U_d" => 0.0,
     "U_b" => 0.0,
     "U" => 0.0,
-    "T_surf" => 0.0 + degK,     # this should depend on if there is or not ice
+    "T_surf" => t_ref + degK,     # this should depend on if there is or not ice
     "tau_b" => 0.0,
     "tau_d" => 0.0,
     "Q_dif" => 0.0,
@@ -159,7 +159,7 @@ amod_INCOND = OrderedDict(
     "P" => P_sl,
     "exc" => 0.0,
     "long_peri" => 0.0,
-    "obl" => 0.0    
+    "obl" => 0.0
 )
 if PAR["ins_case"] == "artificial" # initialize orbital parameters
     amod_INCOND["long_peri"], amod_INCOND["obl"], amod_INCOND["exc"] = orbital_params(amod_INCOND["time"])

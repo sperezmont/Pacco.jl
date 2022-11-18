@@ -24,6 +24,7 @@ Pkg.add("DataStructures")
 Pkg.add("Insolation")
 Pkg.add("CairoMakie")
 Pkg.add("FFTW")
+Pkg.add("FourierAnalysis")
 
 # Check status
 Pkg.status()

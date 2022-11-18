@@ -8,7 +8,7 @@ dt_out = 1000.0                 # [yr] Frequency of writing
 H_init = 0.0                    # [m] Initial condition for ice thickness
 Hsed_init = 1.0                 # [--] Initial condition for sediments thickness
 t_init = -20.0                  # [ºC] Initial condition for ice temperature 
-A_init = 1e-16                  # [] Initial condition for the flow parameter of the Glen's flow law
+A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the flow parameter of the Glen's flow law
 
 ### Run parameters (PAR)
 ## Radiative parameters
@@ -21,8 +21,8 @@ ins_max = 565.0                 # [W/m²] Insolation maximum value
 ins_prei = 480.0                # [W/m²] Default preindustrial 
 co2_prei = 280.0                # [ppm] Default preindustrial 
 active_radco2 = false           # Switch: include co2 radiative forcing?
-A_ins = 30.0                    # [W/m²] Amplitude of artificial insolation forcing
-A_t = 30.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+A_ins = 80.0                    # [W/m²] Amplitude of artificial insolation forcing
+A_t = 25.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 ## Orbital parameters
 orb_case = "ope"                # o, op, oe, pe, ope # Tsl formula 

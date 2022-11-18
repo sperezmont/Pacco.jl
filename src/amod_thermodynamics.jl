@@ -31,13 +31,13 @@ function calc_snowfall(now_t, par_t)
     # Compute specific humidity
     eps = Rd / Rv
     q_s = (eps * e_s) / (now_t["P"] - e_s * (1 - eps))
-    q = q_s * par_t["RH"]  
+    q = q_s * par_t["RH"]
 
     # Then, calculate precipitation
-    pr = max((1 + par_t["k_pr"] * now_t["Z"] / par_t["L"]) * q / par_t["tau_w"])  # [kg water yr⁻¹] REMBO by Robinson et al. (2010)
+    pr = (1 + par_t["k_pr"] * now_t["Z"] / par_t["L"]) * q / par_t["tau_w"]  # [kg water yr⁻¹?] REMBO by Robinson et al. (2010)
 
     # Now, change to meters of ice equivalent per year
-    surface = pi*par_t["L"]^2 # assume radial ice sheet ?? -- spm
+    surface = pi * par_t["L"]^2 # assume radial ice sheet ?? -- spm
     pr = pr * rhoi / (rhow)# * surface)
 
     # Calculate the fraction of snow
