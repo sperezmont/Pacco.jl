@@ -11,7 +11,7 @@ Go to the main `amod` directory and configure the model
 ```bash
 julia config/config.jl
 ```
-This will create the directory `amod_env` which is the virtual environment of `amod` that includes the required Julia dependencies. Once it finishes you can run the model.
+This will create the directory `amod_env` which is the virtual environment that includes the required Julia dependencies. Once it finishes you can run the model.
 
 # How to run
 ```bash
