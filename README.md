@@ -1,4 +1,7 @@
-## AMOD
+## AMOD (adimensional ice-sheet-sediment model)
+by Jorge Alvarez-Solas (Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero
+
+
 # Quick-start guide
 Clone `amod_tools`
 ```bash
