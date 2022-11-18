@@ -1,5 +1,5 @@
 ## AMOD (adimensional ice-sheet-sediment model)
-by Jorge Alvarez-Solas (Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero
+by Jorge Alvarez-Solas (Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero (2022)
 
 
 # Quick-start guide
