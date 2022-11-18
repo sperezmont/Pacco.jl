@@ -26,7 +26,7 @@ Note: If you just run
   ```
   the model will generate a directory called `test_default` (or `[OUT]`) and will use the parameter file called `amod_default.jl`.
 
-# How to quick-plot results
+# How to quick-plotting results
 `amod` store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `plot_amod.jl` is included. This script will plot the variables passed as arguments and their frequencies spectrum. `plot_amod.jl` is executed as follows:
 ```bash
 julia plot_amod.jl [OUT] [VARS]
