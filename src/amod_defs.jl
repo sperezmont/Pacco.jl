@@ -31,15 +31,12 @@ PAR = OrderedDict(
     "ins_case" => ins_case::String,     # Radiative Parameters
     "ins_day" => ins_day::Real,
     "ins_lat" => ins_lat::Real,
-    "ins_ref" => ins_ref::Real,
     "ins_min" => ins_min::Real,
     "ins_max" => ins_max::Real,
     "ins_prei" => ins_prei::Real,
     "active_radco2" => active_radco2::Bool,
     "co2_prei" => co2_prei::Real,
-    "ins_max" => ins_max::Real,
     "A_t" => A_t::Real,
-    "A_ins" => A_t::Real,
     "orb_case" => orb_case::String,  # Orbital Parameters
     "P_obl" => P_obl::Real,
     "tau_obl" => tau_obl::Real,
@@ -65,10 +62,11 @@ PAR = OrderedDict(
     "ud_case" => ud_case::String,
     "glen_n" => glen_n::Real,
     "ub_case" => ub_case::String,
-    "A_m" => A_m::Real,             # Thermodynamics
+    "pr_ref" => pr_ref::Real,             # Thermodynamics
+    "A_pr" => A_pr::Real,
     "lambda" => lambda::Real,
     "T_sb" => (t_sb + degK)::Real,
-    "melt_offset" => (melt_offset + degK)::Real,
+    "melt_offset" => melt_offset::Real,
     "tsurf_case" => tsurf_case::String,
     "k" => k::Real,
     "cc_case" => cc_case::String,
@@ -114,6 +112,7 @@ OUT = OrderedDict(
     "Tdot" => [],
     "fstreamdot" => [],
     "ins" => [],
+    "ins_norm" => [],
     "co2" => [],
     "P" => [],
     "exc" => [],
@@ -132,7 +131,7 @@ amod_INCOND = OrderedDict(
     "TMB" => 0.0,
     "SMB" => 0.0,
     "Z" => 0.0,
-    "B" => PAR["B_eq"],      # For now it is the equilibrium value, but it should depend on the amount of ice thickness -- spm 2022.11.17
+    "B" => 0.0,      # For now it is 0.0, but it should depend on the amount of ice thickness -- spm 2022.11.17
     "M" => 0.0,
     "Acc" => 0.0,
     "U_d" => 0.0,
@@ -155,6 +154,7 @@ amod_INCOND = OrderedDict(
     "Tdot" => 0.0,
     "fstreamdot" => 0.0,
     "ins" => PAR["ins_prei"],
+    "ins_norm" => 2*(PAR["ins_prei"] - PAR["ins_min"]) / (PAR["ins_max"] - PAR["ins_min"]) - 1,
     "co2" => PAR["co2_prei"],
     "P" => P_sl,
     "exc" => 0.0,
@@ -172,6 +172,7 @@ out_precc = Float64
 out_attr = OrderedDict(
     "time" => Dict("units" => "yr", "long_name" => "Simulation Time", "group" => "Time"),                    # Time
     "ins" => Dict("units" => "W/m²", "long_name" => "Insolation", "group" => "Radiation"),                        # Radiation
+    "ins_norm" => Dict("units" => "W/m²", "long_name" => "Normalized Insolation", "group" => "Radiation"),
     "co2" => Dict("units" => "ppm", "long_name" => "co2 concentration", "group" => "Radiation"),
     "Z" => Dict("units" => "m", "long_name" => "Surface Elevation", "group" => "Geometry"),                   # Geometry
     "B" => Dict("units" => "m", "long_name" => "Bedrock Elevation", "group" => "Geometry"),

@@ -19,7 +19,7 @@ include("./libs/spectrum_lib.jl")
 ## Check arguments
 if ARGS == []
     experiment = "test_default"
-    vars = ["ins", "T_sl", "T_surf", "TMB", "H", "U", "Hsed"]
+    vars = ["ins_norm", "T_sl", "T_surf", "TMB", "H", "B", "Z", "U", "Hsed"]
 elseif length(ARGS) == 1
     experiment = ARGS[1]
     vars = ["ins", "TMB", "H", "Hsed"]
@@ -55,5 +55,5 @@ for v in 1:length(vars)
 end
 
 ## Plot
-colors = [:orange, :red, :goldenrod1, :blue, :green, :black, :purple]
+colors = [:orange, :red, :firebrick, :maroon, :blue, :navy, :green, :black, :purple]
 plot_spectrum(time, data, freqs_data, G_data, vars, colors, amod_path * "/output/" * experiment * "/" * "amod_spectra.png");

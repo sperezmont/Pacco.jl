@@ -20,12 +20,12 @@ function calc_Tsl(now_r, par_r)
     end
 
     # Second, calculate insolation and normalize it
-    now_r["ins"] = calc_insol_day(now_r, par_r)
-    ins_norm = (now_r["ins"] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
-    ins_norm = 2.0 * ins_norm - 1.0                                                          # between 1 and -1, norm = 2
+    now_r = calc_insol_day(now_r, par_r)
+    insnorm = (now_r["ins"] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
+    now_r["ins_norm"] = 2.0 * insnorm - 1.0                                                          # between 1 and -1, norm = 2
 
     # Third, calculate sea-level temperature 
-    now_r["T_sl"] = T_ref + par_r["A_t"] * ins_norm
+    now_r["T_sl"] = T_ref + par_r["A_t"] * now_r["ins_norm"]
     return now_r
 end
 

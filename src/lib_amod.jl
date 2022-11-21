@@ -8,7 +8,7 @@ include("./amod_thermodynamics.jl")
             Model: AMOD (adimensional ice-sheet-sediment model)
                  by Jorge Alvarez-Solas (Fortran, 2017)
         ===========================================================
-            Adapted to Julia by Sergio Pérez-Montero
+            Adapted to Julia by Sergio Pérez-Montero (2022)
 """
 function run_amod(now, par, ctl)
     # Define some local variables and parameteres
@@ -27,11 +27,12 @@ function run_amod(now, par, ctl)
 
     # -- ice surface
     if par["active_iso"]
-        now["Z"] = max(now["H"] + now["B"], 0.0)
+        now["Z"] = max(now["H"] + now["B"], 
+                        0.0 + (1 - (rhoi/rhow) * now["H"]))     # Pattyn 2017, Robinson 2020
     else
-        now["Z"] = max(now["H"] + par["B_eq"], 0.0)
+        now["Z"] = max(now["H"] + par["B_eq"], 
+                        0.0 + (1 - (rhoi/rhow) * now["H"]))
     end
-    (now["H"] < 10.0) && (now["Z"] = 0.0) # if there is no ice, Z = 0
 
     # -- ice temperature
     now["T"] = min(now["T"] + now["Tdot"] * ctl["dt"], degK)       # we do not allow ice above 0ºC
@@ -62,11 +63,7 @@ function run_amod(now, par, ctl)
     # -- bedrock temperature (currently prescribed -- jas)
 
     # -- total pressure
-    if now["H"] < 10.0
-        now["P"] = copy(P_sl)
-    else
-        now["P"] = P_sl * exp((-now["Z"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
-    end
+    now["P"] = P_sl * exp((-now["Z"] * g) / (Rd * now["T_surf"]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
 
     # -- surface mass balance
     now = calc_SMB(now, par)
@@ -92,14 +89,14 @@ function run_amod(now, par, ctl)
     now["Hdot"] = now["TMB"] - now["U"] * now["H"] / par["L"]
 
     # -- sediment thickness
-    now["Hseddot"] = - par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
+    now["Hseddot"] = -par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
 
     # -- bedrock elevation
     now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] * rhoi / rhom) / par["tau_bed"] # needs further improvement -- spm 2022.11.17
 
     # -- temperature
     now["Tdot"] = now["Q_dif"] + now["Q_drag"]
-    
+
     return now
 end
 
@@ -111,13 +108,13 @@ function amod_loop(now, out, par, ctl, file)
     for n in 1:time_length
         # update simulation time
         now["time"] = ctl["time_init"] + n * ctl["dt"]
-        
+
         # update contour variables
         now = calc_Tsl(now, par)
-    
+
         # run AMOD
         now = run_amod(now, par, ctl)
-        
+
         # only update output variable at desired frequency
         if mod(now["time"], ctl["dt_out"]) == 0
             out = update_amod_out(out, now)

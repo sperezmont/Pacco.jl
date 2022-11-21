@@ -8,31 +8,17 @@ using Insolation
     calc_artificial_insolation: Compute daily average insolation through different parameterizations
 """
 function calc_artificial_insolation(now_o, par_o)
-    # define switches (0 or 1 to select contribution)
-    if par_o["orb_case"] == "ope"
-        wo, wp, we = 1, 1, 1
-    elseif par_o["orb_case"] == "op"
-        wo, wp, we = 1, 1, 0
-    elseif par_o["orb_case"] == "oe"
-        wo, wp, we = 1, 0, 1
-    elseif par_o["orb_case"] == "pe"
-        wo, wp, we = 0, 1, 1
-    elseif par_o["orb_case"] == "o"
-        wo, wp, we = 1, 0, 0
-    elseif par_o["orb_case"] == "p"
-        wo, wp, we = 0, 1, 0
-    elseif par_o["orb_case"] == "e"
-        wo, wp, we = 0, 0, 1
-    else
-        error("ERROR, orbital parameterization not recognized")
-    end
+    # Calculate reference and amplitude
+    ins_ref = (ins_max + ins_min) / 2
+    A_ins = (ins_max - ins_min) / 2
 
     # Return artificial insolation -- I have to discuss this with jas
-    return par_o["ins_ref"] - par_o["A_ins"] * (
-        wo * par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
-        wp * par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
-        we * par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))
+    now_o["ins"] = ins_ref - A_ins * (
+        par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
+        par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
+        par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))
 
+    return now_o
 end
 
 @doc """
@@ -110,10 +96,12 @@ end
 function calc_insol_day(now_o, par_o)
     if par_o["ins_case"] == "artificial"
         now_o["long_peri"], now_o["obl"], now_o["exc"] = 0, 0, 0
-        return calc_artificial_insolation(now_o, par_o)
+        now_o = calc_artificial_insolation(now_o, par_o)
+        return now_o
     elseif par_o["ins_case"] == "laskar"
         error("ERROR, laskar option not implemented yet")
-        return calc_laskar_insolation(now_o, par_o)
+        now_o = calc_laskar_insolation(now_o, par_o)
+        return now_o
     else
         error("ERROR, insolation option not recognized")
     end

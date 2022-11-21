@@ -15,22 +15,19 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 ins_case = "artificial"         # Insolation case: "artificial", "laskar" 
 ins_day = 170.0                 # [day] Day in which calculate insolation (170 = June 21)
 ins_lat = 65.0                  # [ºN] Latitude in which calculate insolation [-90, 90]ºN
-ins_ref = 480.0                 # [W/m²] Reference insolation value for "artificial" case
-ins_min = 425.0                 # [W/m²] Insolation minimum value
+ins_min = 425.0                 # [W/m²] Insolation minimum value 
 ins_max = 565.0                 # [W/m²] Insolation maximum value
 ins_prei = 480.0                # [W/m²] Default preindustrial 
 co2_prei = 280.0                # [ppm] Default preindustrial 
 active_radco2 = false           # Switch: include co2 radiative forcing?
-A_ins = 80.0                    # [W/m²] Amplitude of artificial insolation forcing
 A_t = 25.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 ## Orbital parameters
-orb_case = "ope"                # o, op, oe, pe, ope # Tsl formula 
 P_obl = 1.0                     # Power of obliquity (normalised to At)
 tau_obl = 41e3                  # [yr] Obliquity period
-P_pre = 0.0                     # Power of precession (normalised to At)
+P_pre = 0.0                    # Power of precession (normalised to At)
 tau_pre = 23e3                  # [yr] Precession period
-P_exc = 0.1                     # Power of excentricity (normalised to At)
+P_exc = 0.0                    # Power of excentricity (normalised to At)
 tau_exc = 100e3                 # [yr] Excentricity period
 
 ## Geophysical parameters
@@ -58,9 +55,12 @@ glen_n = 3.0                    # [--] Glen's flow law exponent
 # -- thermodynamics
 t_sb = 5.0                      # [ºC] Represents the thermal state of the boundary between deformational and streaming part -- jas 
 tsurf_case = "linear"           # Surface temperature method: "linear"
-A_m = 0.5                       # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
 k = 2.1                         # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
-cc_case = "cc"                  # Clausius-Clapeyron approximation: "cc", "AERKi" works well between -80 and 0ºC Alduchov and Eskridge (1996)
+cc_case = "ins"                 # Clausius-Clapeyron approximation: "ins", "ARM", "cc"
+pr_ref = 0.5                    # [m/yr] Reference value for precipitation
+A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
+e_0 = 332.41                    # [Pa] constant parameter for ARM CC approximation
+e_1 = 17.65                     # [Pa] constant parameter 
 RH = 0.8                        # [0-1] Relative Humidity -- spm, to calibrate or discuss
 k_pr = 50.0                     # [] Precipitation parameter, (Robinson et al. 2010 take 50.0)
 tau_w = 5 / 365                 # [yr] Water turnover time in the atmosphere (Robinson et al. 2010 take 5 days)

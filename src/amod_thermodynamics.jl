@@ -19,26 +19,31 @@ end
 """
 function calc_snowfall(now_t, par_t)
     # First, calculate the saturation vapor pressure e_s
-    if par_t["cc_case"] == "cc"
-        e_s = 611.3 * exp(Lv / Rv * (1 / degK - 1 / now_t["T_surf"]))        # Clausius-Clapeyron differential equation direct approximation http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
-    elseif par_t["cc_case"] == "AERKi"
-        t = now_t["T_surf"] - degK    # conversion to ºC
-        e_s = 6.1121 * exp((22.587 * t) / (t + 273.86))     # Alduchov and Eskridge (1996)  
+    if par_t["cc_case"] == "ins"
+        pr = par_t["pr_ref"] + par_t["A_pr"] * now_t["ins_norm"]
+
+    elseif par_t["cc_case"] == "ARM"  # August-Roche-Magnus as in Robinson et al. 2015
+        error("ERROR, ARM Clausius-Clapeyron option not implemented yet")
+        T_ns = copy(now_t["T_surf"])    
+        e_s = e_0 * exp(e_1*(T_ns - T_0) / (T_ns - T_1))
+
+    elseif par_t["cc_case"] == "cc"
+        e_s = 611.3 * exp(Lv / Rv * (1 / T_0 - 1 / now_t["T_surf"]))        # Clausius-Clapeyron differential equation direct approximation http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/  
+        
+        # Compute specific humidity
+        eps = Rd / Rv
+        q_s = (eps * e_s) / (now_t["P"] - e_s * (1 - eps))
+        q = q_s * par_t["RH"]
+
+        # Then, calculate precipitation
+        pr = (1 + par_t["k_pr"] * now_t["Z"] / par_t["L"]) * q / par_t["tau_w"]  # [kg water yr⁻¹?] REMBO by Robinson et al. (2010)
+
+        # Now, change to meters of ice equivalent per year
+        surface = pi * par_t["L"]^2 # assume radial ice sheet ?? -- spm
+        pr = pr * rhoi / (rhow)# * surface)
     else
         error("ERROR, Clausius-Clapeyron option not recognized")
     end
-
-    # Compute specific humidity
-    eps = Rd / Rv
-    q_s = (eps * e_s) / (now_t["P"] - e_s * (1 - eps))
-    q = q_s * par_t["RH"]
-
-    # Then, calculate precipitation
-    pr = (1 + par_t["k_pr"] * now_t["Z"] / par_t["L"]) * q / par_t["tau_w"]  # [kg water yr⁻¹?] REMBO by Robinson et al. (2010)
-
-    # Now, change to meters of ice equivalent per year
-    surface = pi * par_t["L"]^2 # assume radial ice sheet ?? -- spm
-    pr = pr * rhoi / (rhow)# * surface)
 
     # Calculate the fraction of snow
     if now_t["T_surf"] <= (par_t["T_snow"]) # if below t_snow, full snowfall
@@ -57,16 +62,17 @@ end
 """
 function calc_surfmelt(now_t, par_t)
     if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-        if now_t["T_surf"] >= (par_t["melt_offset"])
-            return par_t["lambda"] * (now_t["T_surf"] - par_t["melt_offset"])
+        if now_t["T_surf"] >= (par_t["melt_offset"] + degK)
+            M = par_t["lambda"] * (now_t["T_surf"] - degK + abs(par_t["melt_offset"]))
         else
-            return 0.0
+            M = 0.0
         end
     elseif par_t["sm_case"] == "ITM"
         error("ERROR, surface melt option not implemented yet")
     else
         error("ERROR, surface melt option not recognized")
     end
+    return M
 end
 
 @doc """
@@ -89,11 +95,13 @@ end
     calc_Qdif: calculates diffusive heat
 """
 function calc_Qdif(now_t, par_t, ann_kt)
-    # Uupdate air diffusion
-    now_t["Q_difup"] = -2 * (now_t["T"] - now_t["T_surf"]) / (now_t["H"]^2) * ann_kt / (par_t["c"] * rhoi)
+    # Update ice-air diffusion
+    now_t["Q_difup"] = -2 * ((now_t["T"] - now_t["T_surf"]) / (now_t["H"]^2)) *
+                       (ann_kt / (par_t["c"] * rhoi))
 
-    # Update diffusion from the Mantle
-    now_t["Q_difdown"] = -2 * (now_t["T"] - par_t["T_mantle"]) / (par_t["H_mantle"]^2) * ann_kt / (par_t["c"] * rhoi)
+    # Update ice-mantle diffusion
+    now_t["Q_difdown"] = -2 * ((now_t["T"] - par_t["T_mantle"]) / (par_t["H_mantle"]^2)) *
+                         (ann_kt / (par_t["c"] * rhoi))
 
     # Update diffusion from geothermal flux
 
@@ -106,6 +114,6 @@ end
     calc_Qdrag: calculates drag heat
 """
 function calc_Qdrag(now_t, par_t)
-    now_t["Q_drag"] = now_t["fstream"] * now_t["tau_b"] * now_t["U_b"] / (par_t["c"] * rhoi)
+    now_t["Q_drag"] = now_t["fstream"] * now_t["tau_b"] * now_t["U_b"] / (par_t["c"] * rhoi) / par_t["L"]
     return now_t
 end

@@ -4,7 +4,7 @@
 #     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 using FFTW
-using FourierAnalysis
+#using FourierAnalysis
 
 # blackman TUCKEY -- mirar como posible metodo espectral, jas 2022.17.11
 @doc """
@@ -21,11 +21,11 @@ function calc_spectrum(d::Vector, fs::Real; mode="fft")
         freqs = fftshift(fftfreq(length(d), fs))
         F, freqs = F[freqs.>0], freqs[freqs.>0] # now eliminate freqs < 0
         G = (abs.(F) .^ 2) ./ 2 # calculate the power density
-    elseif mode == "fourier"
-        S = spectra(d, Int(fs * 31536000), Int(fs * 31536000); tapering=rectangular)
-        display(S.flabels)
-        F, freqs = S.y, S.flabels
-        F, freqs = F[freqs.>0], freqs[freqs.>0] # now eliminate freqs < 0
+    # elseif mode == "fourier"
+    #     S = spectra(d, Int(fs * 31536000), Int(fs * 31536000); tapering=rectangular)
+    #     display(S.flabels)
+    #     F, freqs = S.y, S.flabels
+    #     F, freqs = F[freqs.>0], freqs[freqs.>0] # now eliminate freqs < 0
     elseif mode == "tuckey"
         error("tuckey not implemented yet")
     else
