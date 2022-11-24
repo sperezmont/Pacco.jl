@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
 time_init = -2e6                # [yr] Starting time (model years)
-time_end = 2e6                    # [yr] Ending time (model years)  
+time_end = 0                    # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 
@@ -14,7 +14,7 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 # -- Switches
 active_radco2 = false           # Switch: include co2 radiative forcing?
 active_iso = true               # Switch: include active isostatic rebound?
-active_sed = true               # Swithc: include interactive sediments?
+active_sed = false               # Swithc: include interactive sediments?
 
 # -- Cases
 ins_case = "artificial"         # Insolation case: "artificial", "laskar" 

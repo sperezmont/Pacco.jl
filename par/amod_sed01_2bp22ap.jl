@@ -14,7 +14,7 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 # -- Switches
 active_radco2 = false           # Switch: include co2 radiative forcing?
 active_iso = true               # Switch: include active isostatic rebound?
-active_sed = true               # Swithc: include interactive sediments?
+active_sed = false               # Swithc: include interactive sediments?
 
 # -- Cases
 ins_case = "artificial"         # Insolation case: "artificial", "laskar" 

@@ -1,12 +1,12 @@
 ### Run Settings (CTL)
 time_init = -2e6                # [yr] Starting time (model years)
-time_end = 2e6                    # [yr] Ending time (model years)  
+time_end = 0                    # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 
 ### Initial Conditions (INCOND)
 H_init = 0.0                    # [m] Initial condition for ice thickness
-Hsed_init = 1.0                 # [--] Initial condition for sediments thickness
+Hsed_init = 0.0                 # [--] Initial condition for sediments thickness
 t_init = -20.0                  # [ºC] Initial condition for ice temperature 
 A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the flow parameter of the Glen's flow law
 
@@ -14,7 +14,7 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 # -- Switches
 active_radco2 = false           # Switch: include co2 radiative forcing?
 active_iso = true               # Switch: include active isostatic rebound?
-active_sed = true               # Swithc: include interactive sediments?
+active_sed = false               # Swithc: include interactive sediments?
 
 # -- Cases
 ins_case = "artificial"         # Insolation case: "artificial", "laskar" 

@@ -13,7 +13,7 @@ function calc_artificial_insolation(now_o, par_o)
     A_ins = (ins_max - ins_min) / 2
 
     # Return artificial insolation -- I have to discuss this with jas
-    now_o["ins"] = ins_ref - A_ins * (
+    now_o["ins"] = ins_ref + A_ins * (
         par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
         par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
         par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))

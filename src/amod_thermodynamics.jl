@@ -62,8 +62,8 @@ end
 """
 function calc_surfmelt(now_t, par_t)
     if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-        if now_t["T_surf"] >= (par_t["melt_offset"] + degK)
-            M = par_t["lambda"] * (now_t["T_surf"] - degK + abs(par_t["melt_offset"]))
+        if now_t["T_surf"] >= (par_t["melt_offset"])
+            M = par_t["lambda"] * (now_t["T_surf"] - par_t["melt_offset"])
         else
             M = 0.0
         end
@@ -114,6 +114,6 @@ end
     calc_Qdrag: calculates drag heat
 """
 function calc_Qdrag(now_t, par_t)
-    now_t["Q_drag"] = now_t["fstream"] * now_t["tau_b"] * now_t["U_b"] / (par_t["c"] * rhoi) / par_t["L"]
+    now_t["Q_drag"] = now_t["fstream"] * now_t["tau_b"] * now_t["U_b"] / (par_t["c"] * rhoi) #/ par_t["L"] # -- spm 2022.11.24
     return now_t
 end

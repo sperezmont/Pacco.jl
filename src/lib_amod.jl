@@ -20,7 +20,10 @@ function run_amod(now, par, ctl)
     # Update variables
     # -- thicknesses
     now["H"] = max(now["H"] + now["Hdot"] * ctl["dt"], 0.0)
-    now["Hsed"] = min(max(now["Hsed"] + now["Hseddot"] * ctl["dt"], 0.0), 1.0)  # sediments go from 0 to 1
+    if active_sed
+        now["Hsed"] = min(max(now["Hsed"] + now["Hseddot"] * ctl["dt"], 0.0), 1.0)  # sediments go from 0 to 1
+    end
+
 
     # -- bedrock
     now["B"] = now["B"] + now["Bdot"] * ctl["dt"]
@@ -30,8 +33,7 @@ function run_amod(now, par, ctl)
         now["Z"] = max(now["H"] + now["B"], 
                         0.0 + (1 - (rhoi/rhow) * now["H"]))     # Pattyn 2017, Robinson 2020
     else
-        now["Z"] = max(now["H"] + par["B_eq"], 
-                        0.0 + (1 - (rhoi/rhow) * now["H"]))
+        now["Z"] = now["H"] + par["B_eq"]
     end
 
     # -- ice temperature

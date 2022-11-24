@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
 time_init = -2e6                # [yr] Starting time (model years)
-time_end = 2e6                    # [yr] Ending time (model years)  
+time_end = 0                    # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 

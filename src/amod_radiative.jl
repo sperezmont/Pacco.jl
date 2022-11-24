@@ -24,8 +24,15 @@ function calc_Tsl(now_r, par_r)
     insnorm = (now_r["ins"] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
     now_r["ins_norm"] = 2.0 * insnorm - 1.0                                                          # between 1 and -1, norm = 2
 
-    # Third, calculate sea-level temperature 
-    now_r["T_sl"] = T_ref + par_r["A_t"] * now_r["ins_norm"]
+    # Third, compute anthropogenic forcing if time >= +2000 yrs
+    if (now_r["time"] >= par_r["time_ant"]) 
+        T_ant = par_r["A_ant"] / exp((now_r["time"] - par_r["time_ant"]) / par_r["tau_ant"])
+    else
+        T_ant = 0.0
+    end
+
+    # Finally, calculate sea-level temperature 
+    now_r["T_sl"] = T_ref + par_r["A_t"] * now_r["ins_norm"] + T_ant
     return now_r
 end
 
