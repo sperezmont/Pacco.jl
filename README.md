@@ -43,6 +43,9 @@ julia> PLTAMOD.plot_amod(experiment, variables)
 ```
 This function takes as default arguments `output=test_default` and `vars=["ins_norm", "SMB", "H", "Hsed"]`.
 
+# How to run ensembles
+Currently working on that... :)
+
 # Documentation
 I am currently working on the documentation of the model.
 
