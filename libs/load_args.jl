@@ -1,29 +1,18 @@
 # =============================
 #     Program: load_args.jl
-#     Aim: functions to load arguments from the command line
-#     Author: Sergio Pérez-Montero, 2022.11.11
+#     Aim: functions to load arguments from run_amod
+#     Author: Sergio Pérez-Montero, 2022.11.25
 # =============================
-
-function load_out(main_path, args)
-    # Now check and create [OUT], if necessary
-    (args == []) ? (outfldr = "test_default") : (outfldr = args[1])
+function load_out(main_path, outfldr)
+    # Now check and create outfldr, if necessary
     isdir("./output/"*outfldr) || mkdir("output/"*outfldr)
 
     output_path = main_path*"/output/"*outfldr*"/"
-    return output_path, outfldr
+    return output_path
 end
 
-function load_parf(main_path, out_path, args)
+function load_parf(main_path, out_path, file_param)
     # Load parameters and Earth constants
-    if (args == []) || (length(args) == 1)
-        file_param = "amod_default.jl"
-    else 
-        file_param = args[2]
-    end
-
-    cp(main_path*"/par/"*file_param, output_path*"namelist.jl", force=true)
-    cp(main_path*"/par/earth_const.jl", output_path*"earth_const.jl", force=true)
-
-    include(out_path*"namelist.jl")
-    include(out_path*"earth_const.jl")
+    cp(main_path*"/par/"*file_param, out_path*"namelist.jl", force=true)
+    cp(main_path*"/par/earth_const.jl", out_path*"earth_const.jl", force=true)
 end

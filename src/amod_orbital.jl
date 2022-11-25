@@ -2,8 +2,6 @@
 #     Program: amod_radiative.jl
 #     Aim: This program contains functions to calculate orbital parameters
 # =============================
-using Insolation
-
 @doc """
     calc_artificial_insolation: Compute daily average insolation through different parameterizations
 """

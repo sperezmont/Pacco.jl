@@ -19,13 +19,14 @@ Pkg.activate("amod_env")
 
 # Adding dependencies ... 
 display("** Adding dependencies ... **")
-Pkg.add("NCDatasets")
-Pkg.add("DataStructures")
-Pkg.add("Insolation")
-Pkg.add("CairoMakie")
-Pkg.add("DSP")
-Pkg.add("FFTW")
-Pkg.add("Wavelets")
+packages = ["NCDatasets", "DataStructures", "Insolation", "CairoMakie", "DSP", "FFTW", "Wavelets"]
+for i in packages
+    Pkg.add(i)
+end
+
+# Precompile -- last very long... move to REPL
+# using PackageCompiler
+# create_sysimage(packages, sysimage_path="sys_amod.so", precompile_execution_file=["amod.jl", "plot_amod.jl"])
 
 # Check status
 Pkg.precompile()

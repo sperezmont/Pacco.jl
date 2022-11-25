@@ -2,7 +2,6 @@
 #     Program: amod_dynamics.jl
 #     Aim: This program contains functions to calculate dynamics
 # =============================
-
 @doc """
     calc_taud: calculates total driving stress through
         taud = rhoi * g * H * Z / L 

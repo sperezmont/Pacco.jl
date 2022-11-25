@@ -1,16 +1,16 @@
-# Load src modules
-include("./amod_dynamics.jl")
-include("./amod_thermodynamics.jl")
-
+# =============================
+#     Program: lib_amod.jl
+#     Aim: main functions of AMOD
+# =============================
 @doc """
         ===========================================================
-            Function: run_amod
+            Function: amod.jl
             Model: AMOD (adimensional ice-sheet-sediment model)
                  by Jorge Alvarez-Solas (Fortran, 2017)
         ===========================================================
             Adapted to Julia by Sergio Pérez-Montero (2022)
 """
-function run_amod(now, par, ctl)
+function amod(now, par, ctl)
     # Define some local variables and parameteres
     kt_ann = par["k"] * sec_year
     #qgeo_ann = par["Q_geo"] * sec_year * 1e-3
@@ -115,7 +115,7 @@ function amod_loop(now, out, par, ctl, file)
         now = calc_Tsl(now, par)
 
         # run AMOD
-        now = run_amod(now, par, ctl)
+        now = amod(now, par, ctl)
 
         # only update output variable at desired frequency
         if mod(now["time"], ctl["dt_out"]) == 0
@@ -124,4 +124,38 @@ function amod_loop(now, out, par, ctl, file)
         end
     end
     return out
+end
+
+function run_amod(out_name="test_default", par_file="amod_default.jl")
+    ## Now, load arguments
+    output_path = load_out(amod_path, out_name)
+    load_parf(amod_path, output_path, par_file)
+
+    # Assign parameters
+    # -- assign parameters, CTL, INCOND, PAR, amod_INCOND
+    CTL, amod_INCOND, PAR, OUT, out_precc, out_attr = load_defs(output_path*"namelist.jl")
+
+    ## Open out.out
+    # if out.out exists remove it
+    isfile(output_path * "/out.out") && rm(output_path * "/out.out")
+    f = open(output_path * "/out.out", "w")
+    write(f, "**** Starting AMOD " * out_name * " ... ****\n")
+
+    ## Initialize
+    NOW = copy(amod_INCOND)
+    OUT = update_amod_out(OUT, NOW) # update output
+    write(f, "time = " * string(NOW["time"]) * " --> " * "ins = " * string(NOW["ins"]) * " --> " * "T_sl = " * string(NOW["T_sl"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+
+    ## Let's run!
+    OUT = amod_loop(NOW, OUT, PAR, CTL, f)
+
+    ## Create output nc file
+    # if outfile exists remove it
+    isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")
+    genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr);
+
+    write(f, "**** AMOD " * out_name * " done! ****" * "\n")
+    close(f)
+
+    ## Done!
 end

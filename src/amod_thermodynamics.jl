@@ -2,7 +2,6 @@
 #     Program: amod_thermodynamics.jl
 #     Aim: This program contains functions to calculate thermodynamics
 # =============================
-
 @doc """
     calc_T_surf: calculates surface temperature
 """

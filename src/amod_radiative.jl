@@ -2,7 +2,6 @@
 #     Program: amod_radiative.jl
 #     Aim: This program contains functions to calculate radiative parameters
 # =============================
-
 @doc """
 """
 function calc_rad_co2(CO2)
