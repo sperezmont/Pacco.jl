@@ -18,28 +18,28 @@ First, open `julia` REPL using in your terminal
 ```bash
 julia
 ```
-Now, include AMOD module
+Include the script `run_experiment.jl`
 ```julia
 julia> include("run_experiment.jl")
 ```
-Once the module `AMOD` is loaded, you can run experiments using
+Now, you can run experiments using
 ```julia
-julia> AMOD.run_amod(output, input)
+julia> run_amod(output, input)
 ```
 where `output` is your experiment output name and `input` its input parameter file. Note that if you don't provide the function with any argument, AMOD will use `output/test_default` folder and will run with `par/amod_default.jl`.
 
 # How to quick-plotting results
-AMOD store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `PLTAMOD` module is included. First, open `julia` REPL
+AMOD store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `plot_experiment.jl` is included. First, open `julia` REPL
 ```bash
 julia 
 ```
-Now, include PLTAMOD module
+Now, include the script `plot_experiment.jl`
 ```julia
 julia> include("plot_experiment.jl")
 ```
-Once the module `PLTAMOD` is loaded, you can plot experiments using
+Once the script is loaded, you can plot experiments using
 ```julia
-julia> PLTAMOD.plot_amod(experiment, variables)
+julia> plot_amod(experiment, variables)
 ```
 This function takes as default arguments `output=test_default` and `vars=["ins_norm", "SMB", "H", "Hsed"]`.
 
