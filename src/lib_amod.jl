@@ -129,10 +129,15 @@ end
 @doc """
     run_amod: main function of AMOD
 """
-function run_amod(out_name="test_default", par_file="amod_default.jl")
+function run_amod(out_name="test_default", par_file="amod_default.jl", par2change=[])
     ## Now, load arguments
     output_path = load_out(amod_path, out_name)
     load_parf(amod_path, output_path, par_file)
+
+    # -- check if some parameters need to be changed
+    if par2change != []
+        change_namelist(amod_path, par_file, par2change)
+    end
 
     # Assign parameters
     # -- assign parameters, CTL, INCOND, PAR, amod_INCOND
@@ -162,3 +167,28 @@ function run_amod(out_name="test_default", par_file="amod_default.jl")
 
     ## Done!
 end
+
+@doc """
+    run_amod_ens: runs AMOD for a bunch of combinations of parameters
+"""
+function run_amod_ensemble(data::OrderedDict; out_name="test_default", par_file="amod_default.jl")
+    
+
+
+    return perm
+
+end
+
+# data = OrderedDict("a"=>[1000,2000,3000], "b"=>[1,2], "c"=>[10,20,30,50])
+# data_values, data_keys = collect(values(data)), collect(keys(data)) 
+# nperm = 24 
+# maxlen, minlen, nvars = 4, 2, 3
+
+# perm = copy(data_values[1])
+# for i in 2:nvars
+#     perm = Iterators.product(perm, data_values[i])
+# end
+# perm = collect(perm)
+
+
+
