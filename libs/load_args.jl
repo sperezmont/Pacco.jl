@@ -3,6 +3,12 @@
 #     Aim: functions to load arguments from run_amod
 #     Author: Sergio Pérez-Montero, 2022.11.25
 # =============================
+function check_ensemble(file_param)
+    
+    
+    return is_ensemble, new_outputs, new_par_files
+end
+
 function load_out(main_path, outfldr)
     # Now check and create outfldr, if necessary
     isdir("./output/"*outfldr) || mkdir("output/"*outfldr)

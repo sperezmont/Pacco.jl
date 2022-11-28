@@ -126,6 +126,9 @@ function amod_loop(now, out, par, ctl, file)
     return out
 end
 
+@doc """
+    run_amod: main function of AMOD
+"""
 function run_amod(out_name="test_default", par_file="amod_default.jl")
     ## Now, load arguments
     output_path = load_out(amod_path, out_name)

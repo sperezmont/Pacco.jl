@@ -4,10 +4,6 @@
 #     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 
-using NCDatasets
-using CairoMakie
-using Statistics
-
 function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, clrmp, plotpath::String; fntsz=nothing, fancy=false)
     ## First determine plot parameters
     # -- number of rows and columns
