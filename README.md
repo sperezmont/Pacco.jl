@@ -20,11 +20,11 @@ julia
 ```
 Include the script `run_experiment.jl`
 ```julia
-julia> include("run_experiment.jl")
+include("run_experiment.jl")
 ```
 Now, you can run experiments using
 ```julia
-julia> run_amod(output, input)
+run_amod(output, input)
 ```
 where `output` is your experiment output name and `input` its input parameter file. Note that if you don't provide the function with any argument, AMOD will use `output/test_default` folder and will run with `par/amod_default.jl`.
 
@@ -35,11 +35,11 @@ julia
 ```
 Now, include the script `plot_experiment.jl`
 ```julia
-julia> include("plot_experiment.jl")
+include("plot_experiment.jl")
 ```
 Once the script is loaded, you can plot experiments using
 ```julia
-julia> plot_amod(experiment, variables)
+plot_amod(experiment, variables)
 ```
 This function takes as default arguments `output=test_default` and `vars=["ins_norm", "SMB", "H", "Hsed"]`.
 
