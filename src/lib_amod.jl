@@ -30,8 +30,8 @@ function amod(now, par, ctl)
 
     # -- ice surface
     if par["active_iso"]
-        now["Z"] = max(now["H"] + now["B"], 
-                        0.0 + (1 - (rhoi/rhow) * now["H"]))     # Pattyn 2017, Robinson 2020
+        now["Z"] = max(now["H"] + now["B"],
+            0.0 + (1 - (rhoi / rhow) * now["H"]))     # Pattyn 2017, Robinson 2020
     else
         now["Z"] = now["H"] + par["B_eq"]
     end
@@ -94,7 +94,11 @@ function amod(now, par, ctl)
     now["Hseddot"] = -par["f_1"] * now["U"] + par["f_2"] * now["M"] / ctl["dt"]
 
     # -- bedrock elevation
-    now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] * rhoi / rhom) / par["tau_bed"] # needs further improvement -- spm 2022.11.17
+    if par["active_iso"]
+        now["Bdot"] = -(now["B"] - par["B_eq"] + now["H"] * rhoi / rhom) / par["tau_bed"] # needs further improvement -- spm 2022.11.17
+    else
+        now["Bdot"] = 0.0
+    end
 
     # -- temperature
     now["Tdot"] = now["Q_dif"] + now["Q_drag"]
@@ -136,12 +140,12 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
 
     # -- check if some parameters need to be changed
     if par2change != []
-        change_namelist(amod_path, par_file, par2change)
+        change_namelist(amod_path * "/output/" * out_name, "namelist.jl", par2change)
     end
 
     # Assign parameters
     # -- assign parameters, CTL, INCOND, PAR, amod_INCOND
-    CTL, amod_INCOND, PAR, OUT, out_precc, out_attr = load_defs(output_path*"namelist.jl")
+    CTL, amod_INCOND, PAR, OUT, out_precc, out_attr = load_defs(output_path * "namelist.jl")
 
     ## Open out.out
     # if out.out exists remove it
@@ -160,7 +164,7 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
     ## Create output nc file
     # if outfile exists remove it
     isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")
-    genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr);
+    genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr)
 
     write(f, "**** AMOD " * out_name * " done! ****" * "\n")
     close(f)
@@ -169,14 +173,29 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
 end
 
 @doc """
-    run_amod_ens: runs AMOD for a bunch of combinations of parameters
+    run_amod_ens: 
+        Takes an (ordered) dictionary of parameters to be exchanged
+        in order to run an ensemble and runs AMOD for each combination
 """
-function run_amod_ensemble(data::OrderedDict; out_name="test_default", par_file="amod_default.jl")
-    
+function run_amod_ensemble(par2per::OrderedDict; out_name="test_default_ens", par_file="amod_default.jl")
+    # First, obtain simulations
+    perm = calc_permutations(par2per)
 
+    # Second, get number of simulations
+    nperm = length(perm)
 
-    return perm
+    # Third, create ensemble directory and run each permutation in it
+    isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
+    for i in 1:nperm
+        if i < 10   # create subdirectory name
+            out_namei = "/s0$i" * "_" * join(perm[i].keys .* string.(perm[i].vals), "-") * "/"
+        else
+            out_namei = "/s$i" * "_" * join(perm[i].keys .* string.(perm[i].vals), "-") * "/"
+        end
+        run_amod(out_name * out_namei, par_file, perm[i])
+    end
 
+    # Done!
 end
 
 # data = OrderedDict("a"=>[1000,2000,3000], "b"=>[1,2], "c"=>[10,20,30,50])
