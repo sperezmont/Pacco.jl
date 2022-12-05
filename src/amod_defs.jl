@@ -20,7 +20,8 @@ function load_defs(par_path)
         "H_init" => H_init::Real,
         "Hsed_init" => Hsed_init::Real,
         "T_init" => (t_init + degK)::Real,
-        "A_init" => A_init::Real
+        "A_init" => A_init::Real,
+        "B_init" => B_init::Real
     )
 
     # -- run parameters
@@ -130,7 +131,7 @@ function load_defs(par_path)
         "TMB" => 0.0,
         "SMB" => 0.0,
         "Z" => 0.0,
-        "B" => PAR["B_eq"],      # For now it is 0.0, but it should depend on the amount of ice thickness -- spm 2022.11.17
+        "B" => INCOND["B_init"],      # For now it is 0.0, but it should depend on the amount of ice thickness -- spm 2022.11.17
         "M" => 0.0,
         "Acc" => 0.0,
         "U_d" => 0.0,
