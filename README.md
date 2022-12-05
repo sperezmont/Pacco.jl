@@ -39,7 +39,7 @@ include("plot_experiment.jl")
 ```
 Once the script is loaded, you can plot experiments using
 ```julia
-plot_amod(experiment="test_default", vars = ["ins_norm", "SMB", "H", "Hsed"])
+plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hsed"])
 ```
 Note: the values of the arguments are the ones set as default in the function.
 
