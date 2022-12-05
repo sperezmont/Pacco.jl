@@ -62,5 +62,3 @@ This ensemble will run 24 simulations swapping between the values of `new_parame
 
 # Documentation
 I am currently working on the documentation of the model.
-
-# Examples
