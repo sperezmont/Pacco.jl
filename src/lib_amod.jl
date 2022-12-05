@@ -24,15 +24,18 @@ function amod(now, par, ctl)
         now["Hsed"] = min(max(now["Hsed"] + now["Hseddot"] * ctl["dt"], 0.0), 1.0)  # sediments go from 0 to 1
     end
 
-
-    # -- bedrock
-    now["B"] = now["B"] + now["Bdot"] * ctl["dt"]
-
-    # -- ice surface
     if par["active_iso"]
+        # -- bedrock
+        now["B"] = now["B"] + now["Bdot"] * ctl["dt"]
+
+        # -- ice surface
         now["Z"] = max(now["H"] + now["B"],
             0.0 + (1 - (rhoi / rhow) * now["H"]))     # Pattyn 2017, Robinson 2020
     else
+        # -- bedrock
+        now["B"] = par["B_eq"]
+
+        # -- ice surface
         now["Z"] = now["H"] + par["B_eq"]
     end
 
