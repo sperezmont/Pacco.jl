@@ -29,15 +29,7 @@ run_amod(out_name="test_default", par_file="amod_default.jl", par2change=[])
 where `out_name` is your experiment output name, `par_file` its input parameter file and `par2change` a dictionary with the parameters we want to change (one value for each parameter, for ensembles see below). Note that if you don't provide the function with any argument, AMOD will use `output/test_default` folder and will run with `par/amod_default.jl`.
 
 # How to quick-plotting results
-AMOD store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `plot_experiment.jl` is included. First, open `julia` REPL
-```bash
-julia 
-```
-Now, include the script `plot_experiment.jl`
-```julia
-include("plot_experiment.jl")
-```
-Once the script is loaded, you can plot experiments using
+AMOD store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `libs/plot_lib.jl` is included. First, open `julia` REPL and include `amod.jl`. Once the script is loaded, you can plot experiments using
 ```julia
 plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hsed"])
 ```
