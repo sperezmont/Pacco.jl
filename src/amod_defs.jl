@@ -26,6 +26,7 @@ function load_defs(par_path)
 
     # -- run parameters
     PAR = OrderedDict(
+        "active_outout" => active_outout::Bool,
         "ins_case" => ins_case::String,     # Radiative Parameters
         "ins_day" => ins_day::Real,
         "ins_lat" => ins_lat::Real,
@@ -68,7 +69,7 @@ function load_defs(par_path)
         "T_sb" => (t_sb + degK)::Real,
         "melt_offset" => (melt_offset + degK)::Real,
         "tsurf_case" => tsurf_case::String,
-        "k" => k::Real,
+        "kt" => kt::Real,
         "cc_case" => cc_case::String,
         "RH" => RH::Real,
         "k_pr" => k_pr::Real,

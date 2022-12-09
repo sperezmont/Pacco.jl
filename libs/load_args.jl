@@ -11,7 +11,7 @@
 """
 function change_namelist(outpath, file, params)
     (tmppath, tmpio) = mktemp(outpath)  # create temporary files
-    open(outpath * file) do io
+    open(outpath * "/" * file) do io
         for line in eachline(io, keep=true) # keep so the new line isn't chomped
             for param in params.keys
                 if occursin(param, line)
@@ -24,7 +24,7 @@ function change_namelist(outpath, file, params)
         end
     end
     close(tmpio)
-    mv(tmppath, outpath * file, force=true)   # rewrite param file
+    mv(tmppath, outpath * "/" * file, force=true)   # rewrite param file
 end
 
 @doc """

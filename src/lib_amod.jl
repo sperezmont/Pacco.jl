@@ -12,7 +12,7 @@
 """
 function amod(now, par, ctl)
     # Define some local variables and parameteres
-    kt_ann = par["k"] * sec_year
+    kt_ann = par["kt"] * sec_year
     #qgeo_ann = par["Q_geo"] * sec_year * 1e-3
 
     tau_kin = par["L"] / par["v_kin"]   # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
@@ -127,7 +127,9 @@ function amod_loop(now, out, par, ctl, file)
         # only update output variable at desired frequency
         if mod(now["time"], ctl["dt_out"]) == 0
             out = update_amod_out(out, now)
-            write(file, "time = " * string(now["time"]) * " --> " * "ins = " * string(now["ins"]) * " --> " * "T_sl = " * string(now["T_sl"]) * " --> " * "H = " * string(now["H"]) * "\n")
+            if par["active_outout"]
+                write(file, "time = " * string(now["time"]) * " --> " * "ins = " * string(now["ins"]) * " --> " * "T_sl = " * string(now["T_sl"]) * " --> " * "H = " * string(now["H"]) * "\n")
+            end
         end
     end
     return out
@@ -154,12 +156,17 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
     # if out.out exists remove it
     isfile(output_path * "/out.out") && rm(output_path * "/out.out")
     f = open(output_path * "/out.out", "w")
-    write(f, "**** Starting AMOD " * out_name * " ... ****\n")
+    if PAR["active_outout"]
+        write(f, "**** Starting AMOD " * out_name * " ... ****\n")
+    end
 
     ## Initialize
     NOW = copy(amod_INCOND)
     OUT = update_amod_out(OUT, NOW) # update output
-    write(f, "time = " * string(NOW["time"]) * " --> " * "ins = " * string(NOW["ins"]) * " --> " * "T_sl = " * string(NOW["T_sl"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+
+    if PAR["active_outout"]
+        write(f, "time = " * string(NOW["time"]) * " --> " * "ins = " * string(NOW["ins"]) * " --> " * "T_sl = " * string(NOW["T_sl"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+    end
 
     ## Let's run!
     OUT = amod_loop(NOW, OUT, PAR, CTL, f)
@@ -169,8 +176,11 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
     isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")
     genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr)
 
-    write(f, "**** AMOD " * out_name * " done! ****" * "\n")
+    if PAR["active_outout"]
+        write(f, "**** AMOD " * out_name * " done! ****" * "\n")
+    end
     close(f)
+    (PAR["active_outout"] == false) && rm(output_path * "/out.out")
 
     ## Done!
 end

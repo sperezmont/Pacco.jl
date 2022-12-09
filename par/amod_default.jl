@@ -13,6 +13,7 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 
 ### Run parameters (PAR)
 # -- Switches
+active_outout = false           # Switch: generate out.out?
 active_radco2 = false           # Switch: include co2 radiative forcing?
 active_iso = true               # Switch: include active isostatic rebound?
 active_sed = true               # Swithc: include interactive sediments?
@@ -69,7 +70,7 @@ glen_n = 3.0                    # [--] Glen's flow law exponent
 
 # -- Thermodynamics
 t_sb = 5.0                      # [ºC] Represents the thermal state of the boundary between deformational and streaming part -- jas 
-k = 2.1                         # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
+kt = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
 pr_ref = 1                      # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
 e_0 = 332.41                    # [Pa] constant parameter for ARM CC approximation

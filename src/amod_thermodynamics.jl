@@ -23,12 +23,12 @@ function calc_snowfall(now_t, par_t)
 
     elseif par_t["cc_case"] == "ARM"  # August-Roche-Magnus as in Robinson et al. 2015
         error("ERROR, ARM Clausius-Clapeyron option not implemented yet")
-        T_ns = copy(now_t["T_surf"])    
-        e_s = e_0 * exp(e_1*(T_ns - T_0) / (T_ns - T_1))
+        T_ns = copy(now_t["T_surf"])
+        e_s = e_0 * exp(e_1 * (T_ns - T_0) / (T_ns - T_1))
 
     elseif par_t["cc_case"] == "cc"
         e_s = 611.3 * exp(Lv / Rv * (1 / T_0 - 1 / now_t["T_surf"]))        # Clausius-Clapeyron differential equation direct approximation http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/  
-        
+
         # Compute specific humidity
         eps = Rd / Rv
         q_s = (eps * e_s) / (now_t["P"] - e_s * (1 - eps))
@@ -94,7 +94,7 @@ end
     calc_Qdif: calculates diffusive heat
 """
 function calc_Qdif(now_t, par_t, ann_kt)
-    # Update ice-air diffusion
+    # Update ice-air diffusion -- CHECK units!! spm 2022.12.07
     now_t["Q_difup"] = -2 * ((now_t["T"] - now_t["T_surf"]) / (now_t["H"]^2)) *
                        (ann_kt / (par_t["c"] * rhoi))
 
