@@ -8,11 +8,10 @@ Pkg.activate("amod_env")                    # -- activate amod virtual environme
 global amod_path = pwd()                    # -- determine amod path. This line assumes we are working from the main AMOD directory
 
 # -- import dependencies
-using NCDatasets, DataStructures, Combinatorics    # amod
-using Statistics, DSP, CairoMakie                  # plotting
+using NCDatasets, DataStructures             # amod
+using Statistics, DSP, CairoMakie, Wavelets, ContinuousWavelets, Interpolations  # plotting
 
-
-include("./libs/load_args.jl")              # -- include libraries
+include("./libs/misc.jl")              # -- include libraries
 include("./libs/nc.jl")
 include("./libs/plot_lib.jl")
 
@@ -30,4 +29,7 @@ println("Done! Now use:")
 println("   --> run_amod(out_name, par_file, par2change) to execute the model")
 println("   --> plot_amod(experiment, variables) to plot variables of an experiment")
 println("#### -------- ####")
+
+
+
 

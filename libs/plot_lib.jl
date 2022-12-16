@@ -180,8 +180,47 @@ function plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hse
 end
 
 @doc """
-    plot_wavelet: Plots a map of spectrum power density as a function of time and frequency for a given experiment and variable
+    plot_wavelet: Plots a map of the wavelet scalogram
 """
-function plot_wavelet(experiment="test_default", var2plot="H")
+function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
+    ## Load output data 
+    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", [var2plot])
+    save("fig0.png", lines(data[:]))
+    ## Check if not dyadic size, else, interpolate to dyadic size 
+    if ~isdyadic(data[:])
+        data_dyadic = vector2dyadic(copy(data[:]))
+    else
+        data_dyadic = copy(data[:])
+    end
 
+    ## Compute Wavelets
+    A, freqs = calc_wavelet(data_dyadic, fs)
+
+    ## Plot
+    fig, fntsz = Figure(resolution=(800, 600)), 0.01 * sqrt(1500^2 + 500^2)
+    fontsize_theme = Theme(font="Dejavu Serif", fontsize=fntsz)
+    set_theme!(fontsize_theme)
+
+    ax = Axis(fig[1, 1], title=var2plot * " (" * data.attrib["units"] * ")",
+        xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
+    update_theme!()
+
+    cmap = :seismic
+    c = contourf!(ax, vector2dyadic(time), freqs, abs.(A), colormap=cmap)
+    Colorbar(fig[1, 2], c, height=Relative(2 / 3), width=30, label="Frequency power", ticklabelsize=0.8 * fntsz)
+
+    xlen = length(time)
+    if mod(xlen, 2) == 0
+        xstep = Int(xlen / 10)
+    else
+        xstep = Int((xlen - 1) / 10)
+    end
+    ax.xticks = time[1:xstep:end]
+    ax.xtickformat = k -> string.(k / 1000)
+
+    ax.yticks = [1 / 100e3, 1 / 41e3, 1 / 23e3]
+    ax.ytickformat = k -> string.(Int.(ceil.(1 ./ k) / 1000))
+    ylims!(ax, (1 / 500e3, 1 / 21e3))
+
+    save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
