@@ -135,48 +135,26 @@ function plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hse
     for v in 1:length(vars)
         new_data = copy(data[v])
 
-        # -- spectrum
-        if false
-            # ---- fft
-            F, N = fft(new_data), length(new_data)
-            Nmax = Int(ceil(N / 2))
-            kvec = 1:Nmax
-            G = abs.(F) * 2 / N
-            G = sqrt.(G[1:Nmax])
-            freq = kvec ./ (N * (time[2] - time[1]))
-            G, freq = G[freq.>=1/150.5e3], freq[freq.>=1/150e3] # we eliminate values above and below Milankovitch cycles
-            G, freq = G[freq.<=1/22e3], freq[freq.<=1/22e3]
-            G = G ./ sum(G)
-            if var(new_data) < 1e-1
-                G = zeros(length(G))
-            end
-        else
-            # ---- blackman tuckey
-            N = length(new_data)
-            Nmax = Int(ceil(N / 2))
-            P = periodogram(new_data, onesided=false, fs=1 / (time[2] - time[1]), window=blackman(N))
-            G, freq = P.power, P.freq
-            G, freq = G[1:Nmax] .* 2, freq[1:Nmax]
-            G = sqrt.(G) / (N / 2)
-            G, freq = G[freq.>=1/150.5e3], freq[freq.>=1/150e3] # we eliminate values above and below Milankovitch cycles
-            G, freq = G[freq.<=1/22e3], freq[freq.<=1/22e3]
-            G = G ./ sum(G)
-            if var(new_data) < 1e-1
-                G = zeros(length(G))
-            end
+        # -- spectrum blackman tuckey
+        N = length(new_data)
+        Nmax = Int(ceil(N / 2))
+        P = periodogram(new_data, onesided=false, fs=1 / (time[2] - time[1]), window=blackman(N))
+        G, freq = P.power, P.freq
+        G, freq = G[1:Nmax] .* 2, freq[1:Nmax]
+        G, freq = G[freq.>=1/150.5e3], freq[freq.>=1/150e3] # we eliminate values above and below Milankovitch cycles
+        G, freq = G[freq.<=1/22e3], freq[freq.<=1/22e3]
+        G = sqrt.(G) / (N / 2)
+        G = G ./ sum(G)
+        if var(new_data) < 1e-1
+            G = zeros(length(G))
         end
         push!(G_data, G)
         push!(freqs_data, freq)  # save frequencies
-
-        # -- time vs freq map WORK IN PROGRESS -- spm 2022.11.18
-        # calc_TimeFreqArr(new_data, window)
-
     end
 
     ## Plot
     colors = [clrmp_dict[i] for i in vars]
     plot_spectrum(time, data, freqs_data, G_data, vars, colors, amod_path * "/output/" * experiment * "/" * "amod_results.png")
-
 end
 
 @doc """
@@ -185,7 +163,7 @@ end
 function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
     ## Load output data 
     data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", [var2plot])
-    save("fig0.png", lines(data[:]))
+
     ## Check if not dyadic size, else, interpolate to dyadic size 
     if ~isdyadic(data[:])
         data_dyadic = vector2dyadic(copy(data[:]))
@@ -194,7 +172,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
     end
 
     ## Compute Wavelets
-    A, freqs = calc_wavelet(data_dyadic, fs)
+    Wnorm, freqs = calc_wavelet(data_dyadic, fs)
 
     ## Plot
     fig, fntsz = Figure(resolution=(800, 600)), 0.01 * sqrt(1500^2 + 500^2)
@@ -205,9 +183,11 @@ function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
         xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
     update_theme!()
 
-    cmap = :seismic
-    c = contourf!(ax, vector2dyadic(time), freqs, abs.(A), colormap=cmap)
-    Colorbar(fig[1, 2], c, height=Relative(2 / 3), width=30, label="Frequency power", ticklabelsize=0.8 * fntsz)
+    cmap = :vik
+    minW, maxW = minimum(Wnorm), maximum(Wnorm)
+    stepW = 0.1 * max(minW, maxW)
+    c = contourf!(ax, vector2dyadic(time), freqs, Wnorm, colormap=cmap, levels=minW:stepW:maxW)
+    Colorbar(fig[1, 2], c, height=Relative(2 / 3), width=30, label="Normalized power density", ticklabelsize=0.8 * fntsz)
 
     xlen = length(time)
     if mod(xlen, 2) == 0
@@ -217,6 +197,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
     end
     ax.xticks = time[1:xstep:end]
     ax.xtickformat = k -> string.(k / 1000)
+    xlims!(ax, (time[1], time[end]))
 
     ax.yticks = [1 / 100e3, 1 / 41e3, 1 / 23e3]
     ax.ytickformat = k -> string.(Int.(ceil.(1 ./ k) / 1000))
