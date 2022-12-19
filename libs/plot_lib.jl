@@ -187,7 +187,9 @@ function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
     minW, maxW = minimum(Wnorm), maximum(Wnorm)
     stepW = 0.1 * max(minW, maxW)
     c = contourf!(ax, vector2dyadic(time), freqs, Wnorm, colormap=cmap, levels=minW:stepW:maxW)
-    Colorbar(fig[1, 2], c, height=Relative(2 / 3), width=30, label="Normalized power density", ticklabelsize=0.8 * fntsz)
+    c.extendlow = :auto
+    c.extendhigh = :auto
+    Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized power density", ticklabelsize=fntsz)
 
     xlen = length(time)
     if mod(xlen, 2) == 0

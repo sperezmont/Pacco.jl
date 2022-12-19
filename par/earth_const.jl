@@ -24,6 +24,6 @@ global Lv = 2.5e6                   # [J kg⁻¹] Latent heat of vaporization ht
 global Rd = 287.0                   # [J K⁻¹kg⁻¹] Dry-air gas constant http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
 global Rv = 461.0                   # [J K⁻¹kg⁻¹] Water-vapor gas constant http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
 
-# -- units transform
+# -- changing units to IS
 global T_0 = t_0 + degK
 global T_ref = t_ref + degK

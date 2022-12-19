@@ -7,7 +7,10 @@
         taud = rhoi * g * H * Z / L 
 """
 function calc_taud(now_d, par_d)
-    return rhoi * g * now_d["H"] * now_d["Z"] / par_d["L"]
+    for hm in par_d["hemisphere"]
+        now_d["tau_d"*hm] = rhoi * g * now_d["H"*hm] * now_d["Z"*hm] / par_d["L"]
+    end
+    return now_d
 end
 
 @doc """
@@ -18,7 +21,10 @@ end
 
 """
 function calc_taub(now_d, par_d)
-    return rhoi * g * now_d["H"] * now_d["Z"] / par_d["L"]
+    for hm in par_d["hemisphere"]
+        now_d["tau_b"*hm] = rhoi * g * now_d["H"*hm] * now_d["Z"*hm] / par_d["L"]
+    end
+    return now_d
 end
 
 @doc """
@@ -28,11 +34,14 @@ end
 
 """
 function calc_Ud(now_d, par_d)
-    if (par_d["ud_case"] == "sia")
-        return (2.0 * now_d["A"] * now_d["H"] * now_d["tau_d"]^par_d["glen_n"]) / (par_d["glen_n"] + 2)
-    else
-        error("ERROR, velocity option not recognized")
+    for hm in par_d["hemisphere"]
+        if (par_d["ud_case"] == "sia")
+            now_d["U_d"*hm] = (2.0 * now_d["A"*hm] * now_d["H"*hm] * now_d["tau_d"*hm]^par_d["glen_n"]) / (par_d["glen_n"] + 2)
+        else
+            error("ERROR, velocity option not recognized")
+        end
     end
+    return now_d
 end
 
 @doc """
@@ -43,25 +52,44 @@ end
     sliding treatment --> I assume temperate base in streaming areas, so no dependence on temperature just on sediments -- jas
 """
 function calc_Ub(now_d, par_d)
-    if par_d["ub_case"] == "weertmanq"      # weertman quadratic 
-        beta = max(0.0, min(1.0, now_d["Hsed"]))       # sediments Csprime weight
-        Csprime = beta * par_d["C_s"]                  # sliding par calculation based on amount of sediments
-        return Csprime * now_d["tau_b"]^2.0            # Pollard and DeConto (2012) take m = 2 so tau_b^(m-1) * tau_b = tau_b^2  
-    else
-        error("ERROR, basal velocity option not recognized")
+    for hm in par_d["hemisphere"]
+        if par_d["ub_case"] == "weertmanq"      # weertman quadratic 
+            beta = max(0.0, min(1.0, now_d["Hsed"*hm]))       # sediments Csprime weight
+            Csprime = beta * par_d["C_s"]                  # sliding par calculation based on amount of sediments
+            now_d["U_b"*hm] = Csprime * now_d["tau_b"*hm]^2.0            # Pollard and DeConto (2012) take m = 2 so tau_b^(m-1) * tau_b = tau_b^2  
+        else
+            error("ERROR, basal velocity option not recognized")
+        end
     end
-end
-
-@doc """
-    calc_fstreamdot: calculates stream fraction change 
-"""
-function calc_fstreamdot(now_d, par_d, tau_kin)
-    # streaming inland propagation
-    now_d["alpha"] = max(0.0, min(1.0, (now_d["T"] + par_d["T_sb"]) / (par_d["T_sb"])))
-    now_d["fstream_ref"] = (par_d["fstream_max"] - par_d["fstream_min"]) * now_d["alpha"] + par_d["fstream_min"]  # the reference value of the streaming fraction is linear with alpha (thus temperature) -- jas
-
-    # change in the stream fraction 
-    now_d["fstreamdot"] = (now_d["fstream_ref"] - now_d["fstream"]) / tau_kin
     return now_d
 end
 
+@doc """
+    calc_fstream: calculates stream fraction 
+"""
+function calc_fstream(now_d, par_d, ctl_d)
+    tau_kin = par["L"] / par["v_kin"]   # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
+
+    for hm in par_d["hemisphere"]
+        # streaming inland propagation
+        now_d["alpha"*hm] = max(0.0, min(1.0, (now_d["T_ice"*hm] + par_d["T_sb"]) / (par_d["T_sb"])))
+        now_d["fstream_ref"*hm] = (par_d["fstream_max"*hm] - par_d["fstream_min"*hm]) * now_d["alpha"*hm] + par_d["fstream_min"*hm]  # the reference value of the streaming fraction is linear with alpha (thus temperature) -- jas
+
+        # change in the stream fraction 
+        now_d["fstreamdot"*hm] = (now_d["fstream_ref"*hm] - now_d["fstream"*hm]) / tau_kin
+        
+        # fstream
+        now_d["fstream"*hm] = max(now_d["fstream"*hm] + now_d["fstreamdot"*hm] * ctl_d["dt"], 0.0)
+    end
+    return now_d
+end
+
+@doc """
+    calc_U: calculates total velocity
+"""
+function calc_U(now_d, par_d)
+    for hm in par_d["hemisphere"]
+        now["U_d"*hm] + now["fstream"*hm] * now["U_b"*hm]
+    end
+    return now_d
+end

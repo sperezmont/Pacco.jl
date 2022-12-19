@@ -17,42 +17,53 @@ function load_defs(par_path)
 
     # -- initial conditions
     INCOND = OrderedDict(
-        "H_init" => H_init::Real,
+        "Hn_init" => Hn_init::Real,
+        "Hs_init" => Hs_init::Real,
         "Hsed_init" => Hsed_init::Real,
         "T_init" => (t_init + degK)::Real,
+        "Tn_init" => (tn_init + degK)::Real,
+        "Ts_init" => (ts_init + degK)::Real,
         "A_init" => A_init::Real,
         "B_init" => B_init::Real
     )
 
     # -- run parameters
     PAR = OrderedDict(
-        "active_outout" => active_outout::Bool,
+        "active_outout" => active_outout::Bool,     # Switches
+        "active_radco2" => active_radco2::Bool,
+        "active_iso" => active_iso::Bool,
+        "active_antarctica" => active_antarctica::Bool,
+        "active_sed" => active_sed::Bool,
+        "active_climate" => active_climate::Bool,
+        "active_dynamics" => active_dynamics::Bool,
         "ins_case" => ins_case::String,     # Radiative Parameters
         "ins_day" => ins_day::Real,
         "ins_lat" => ins_lat::Real,
         "ins_min" => ins_min::Real,
         "ins_max" => ins_max::Real,
         "ins_prei" => ins_prei::Real,
-        "active_radco2" => active_radco2::Bool,
         "co2_prei" => co2_prei::Real,
         "A_t" => A_t::Real,
         "time_ant" => time_ant::Real,
         "A_ant" => A_ant::Real,
         "tau_ant" => tau_ant::Real,
+        "albedo_land" => albedo_land::Real,
+        "albedo_newice" => albedo_newice::Real,
+        "albedo_slope" => albedo_slope,
+        "albedo_quad" => albedo_quad::Real,
+        "tau_albedo" => tau_albedo::Real,
         "P_obl" => P_obl::Real,              # Orbital Parameters
         "tau_obl" => tau_obl::Real,
         "P_pre" => P_pre::Real,
         "tau_pre" => tau_pre::Real,
         "P_exc" => P_exc::Real,
         "tau_exc" => tau_exc::Real,
-        "active_iso" => active_iso::Bool,      # Geophysical Parameters
-        "B_eq" => B_eq::Real,
+        "B_eq" => B_eq::Real,               # Geophysical Parameters
         "tau_bed" => tau_bed::Real,
         "T_mantle" => (t_mantle + degK)::Real,
         "H_mantle" => H_mantle::Real,
         "Q_geo" => Q_geo::Real,
         "v_kin" => v_kin::Real,           # Dynamics
-        "active_sed" => active_sed::Bool,
         "f_1" => f_1::Real,
         "f_2" => f_2::Real,
         "fstream_min" => fstream_min::Real,
@@ -76,15 +87,28 @@ function load_defs(par_path)
         "tau_w" => tau_w::Real,
         "T_snow" => (t_snow + degK)::Real,
         "T_rain" => (t_rain + degK)::Real,
-        "sm_case" => sm_case::String
+        "sm_case" => sm_case::String,
+        "km" => km::Real,
+        "ki" => ki::Real,
+        "ka" => ka::Real,
+        "cs" => cs::Real,
+        "Tn_ref" => Tn_ref::Real,
+        "Ts_ref" => Ts_ref::Real,
+        "tau_rfn" => tau_rfn::Real,
+        "tau_rfs" => tau_rfs::Real,
+        "An_ref" => An_ref::Real,
+        "As_ref" => As_ref::Real
     )
 
     # -- simulated variables
     OUT = OrderedDict(
         "time" => [],            # values of the entire simulation
-        "H" => [],
+        "Hn" => [],
+        "Hs" => [],
         "Hsed" => [],
         "T" => [],
+        "Tn" => [],
+        "Ts" => [],
         "A" => [],
         "T_sl" => [],
         "TMB" => [],
@@ -124,9 +148,12 @@ function load_defs(par_path)
     # Assign initial conditions
     amod_INCOND = OrderedDict(
         "time" => CTL["time_init"],
-        "H" => INCOND["H_init"],     # Add 1e-6 just to avoid NaN when calculating Q_dif
+        "Hn" => INCOND["Hn_init"],
+        "Hs" => INCOND["Hs_init"],
         "Hsed" => INCOND["Hsed_init"],
         "T" => INCOND["T_init"],
+        "Tn" => INCOND["Tn_init"],
+        "Ts" => INCOND["Ts_init"],
         "A" => INCOND["A_init"],
         "T_sl" => t_ref + degK,
         "TMB" => 0.0,

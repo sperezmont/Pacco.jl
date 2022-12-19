@@ -127,15 +127,13 @@ end
         Generate an array with the values of the wavelet applied to d
 """
 function calc_wavelet(d, fs) # I HAVE TO CALIBRATE PARAMETERS IN HERE
-    wvt = ContinuousWavelets.wavelet(Morlet(π), boundary=SymBoundary(), averagingType=NoAve(), β=1.5)       # -- define wavelet function to apply
+    wvt = ContinuousWavelets.wavelet(Morlet(π), averagingType=NoAve(), β=1)       # -- define wavelet function to apply
     Wt = ContinuousWavelets.cwt(d, wvt)                                           # -- perform the discrete wavelet transform
     ft = getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)   # -- get frequencies
-
+    
     # -- normalization through integral
     Wt2 = abs.(Wt) #.^ 2
     Wtf = Wt2 ./ sum(Wt2, dims=2)#Wt2 ./ var(Wt2, dims=(2, 1))
-
-
 
     return Wtf, ft
 end
