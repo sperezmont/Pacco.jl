@@ -2,7 +2,7 @@
 #     Program: amod.jl
 #     Aim: prepare Julia for simulations of AMOD
 # =============================
-println("#### Preparing Julia to run AMOD ... ####")
+println("Preparing Julia to run AMOD ...")
 using Pkg
 Pkg.activate("amod_env")                    # -- activate amod virtual environment
 global amod_path = pwd()                    # -- determine amod path. This line assumes we are working from the main AMOD directory
@@ -26,11 +26,20 @@ include("./src/amod_diag.jl")
 include("./src/amod_dynamics.jl")
 include("./src/amod_thermodynamics.jl")
 include("./src/amod_derivative.jl")
+println("Done!")
 
-println("Done! Now use:")
-println("   --> run_amod(out_name, par_file, par2change) to execute the model")
-println("   --> plot_amod(experiment, variables) to plot variables of an experiment")
-println("#### -------- ####")
+# AMOD header
+printstyled("================================================================== \n", color=:light_blue)
+printstyled("| AMOD v0.2                                                      | \n", color=:bold)
+printstyled("|----------------------------------------------------------------| \n")
+printstyled("|    To run model:                                               | \n")
+printstyled("|      --> run_amod(out_name, par_file, par2change)              | \n")
+printstyled("|      --> run_ensemble(par2per, out_name, par_file)             | \n")         
+printstyled("|                                                                | \n")
+printstyled("|    To plot results:                                            | \n")
+printstyled("|      --> plot_amod(experiment, variables)                      | \n")
+printstyled("|      --> plot_wavelet(experiment, variable)                    | \n")
+printstyled("================================================================== \n", color=:light_blue)
 
 
 

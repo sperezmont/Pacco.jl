@@ -5,27 +5,21 @@
 @doc """
     calc_E: calculates ice extension
 """
-function calc_E(now_p, par_p)
-    # Northern Hemisphere
-    now_p["En"] = par_p["En_ref"] * (now_p["Tn"] - now_p["Tn_ref"]) / par_p["An_te"]
-    # Southern Hemisphere
-    if par_p["active_antarctica"]
-        now_p["Es"] = par_p["Es_ref"] * (now_p["Ts"] - now_p["Ts_ref"]) / par_p["As_te"]
+function calc_E(now_di, par_di)
+    for hm in par_di["hemisphere"]
+        now_di["E"*hm] = par_di["E_ref"*hm] * (now_di["T"*hm] - par_di["T_ref"*hm]) / par_di["A_te"*hm]
     end
-    return now_p
+    return now_di
 end
 
 @doc """
     calc_V: calculates ice volume from predicted mean H and diagnosed E
 """
-function calc_V(now_p, par_p)
-    # Northern Hemisphere
-    now_p["Vn"] = now_p["En"] * now_p["Hn"] / par_p["L"]
-    # Southern Hemisphere
-    if par_p["active_antarctica"]
-        now_p["Vs"] = now_p["Es"] * now_p["Hs"] / par_p["L"]
+function calc_V(now_di, par_di)
+    for hm in par_di["hemisphere"]
+        now_di["V"*hm] = now_di["E"*hm] * now_di["H"*hm] / par_di["L"*hm]
     end
-    return now_p
+    return now_di
 end
 
 

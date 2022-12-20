@@ -185,15 +185,7 @@ function load_defs(par_path)
         "ins_norm" => 0.0,
         "co2" => PAR["co2_prei"],
         "P" => P_sl,
-        "exc" => 0.0,
-        "long_peri" => 0.0,
-        "obl" => 0.0
     )
-    if PAR["ins_case"] == "artificial" # initialize orbital parameters
-        amod_INCOND["long_peri"], amod_INCOND["obl"], amod_INCOND["exc"] = 0, 0, 0
-    else
-        amod_INCOND["long_peri"], amod_INCOND["obl"], amod_INCOND["exc"] = 0, 0, 0
-    end
 
     # Output file settings
     out_precc = Float64

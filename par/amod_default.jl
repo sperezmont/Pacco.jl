@@ -3,7 +3,7 @@ time_init = -2e6                # [yr] Starting time (model years)
 time_end = 2e6                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
-hemisphere = ["h"]              # list with hemispheres to use: ["n"], ["s"] or ["n", "s"]
+hemisphere = ["n"]              # list with hemispheres to use: ["n"] for northern, ["s"] for southern or ["n", "s"] for both hemispheres
 
 ### Initial Conditions (INCOND)
 Hn_init = 0.0                    # [m] Initial condition for ice thickness (northern hemisphere)
@@ -49,8 +49,9 @@ ins_max = 565.0                 # [W/m²] Insolation maximum value
 
 ins_refn = 480.0                 # [W/m²] Present reference value for insolation (Northern Hemisphere)
 ins_refs = 526.0                 # [W/m²] Present reference value for insolation (Southern Hemisphere)
-ins_prei = 480.0                # [W/m²] Default preindustrial 
-co2_prei = 280.0                # [ppm] Default preindustrial 
+ins_prei = 480.0                 # [W/m²] Default preindustrial 
+co2_prei = 280.0                 # [ppm] Default preindustrial 
+co2_ref = 280.0                  # [ppm] Reference value for co2dot
 
 A_t = 35.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
@@ -58,8 +59,8 @@ time_ant = 2000.0               # [yr] Year in which we take into account the an
 A_ant = 55.0                    # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
 tau_ant = 200e3                 # [yr] Relaxation time for anthropogenic forcing
 
-albedo_land = 0.2               # ground albedo
-albedo_newice = 0.9             # new ice albedo 
+albedo_land = 0.2               # [--] ground albedo
+albedo_newice = 0.9             # [--] new ice albedo 
 albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parameterization (1 per 100 kyrs)
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value

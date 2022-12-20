@@ -65,6 +65,12 @@ function amod(now, par, ctl, vart)
     # -- regional temperature
     now = calc_Tdot(now, par)
 
+    # -- albedo
+    now = calc_albedodot(now, par)
+
+    # -- co2
+    now = calc_co2dot(now, par)
+
     return now
 end
 

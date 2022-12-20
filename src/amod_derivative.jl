@@ -60,10 +60,38 @@ end
 """
 function calc_Tdot(now_dt, par_dt)
     for hm in par_d["hemisphere"]
-        now_dt["Tdot"*hm] = (par_dt["T_ref"*hn] - now_dt["T"*hn] + par_dt)
+        now_dt["Tdot"*hm] = (par_dt["T_ref"*hn] - now_dt["T"*hn] + par_dt["cs"]*now_dt["rf"*hm] - grad*now_dt["H"*hm]) / par_dt["tau_rf"*hm] # I have to test grad*now_dt["Z"*hm] -- spm 2022.12.20
+    end
     return now_dt
 end
 
+@doc """
+    calc_albedodot: calculates albedo derivative
+"""
+function calc_albedodot(now_dt, par_dt)
+    for hm in par_d["hemisphere"]
+        now_dt["albedodot"*hm] = (now_dt["albedo_ref"*hm] - now_dt["albedo"*hm]) / par_dt["tau_albedo"*hm]
+        
+        if now_dt["H"*hm] == 0.0
+            now_dt["albedo"*hm] = par_dt["albedo_land"]
+            now_dt["albedodot"*hm] = 0.0
+        elseif now_dt["ice_time"*hm] < 10.0 # First ice
+            now_dt["albedo"*hm] = par_dt["albedo_newice"*hm]
+            now_dt["albedodot"*hm] = 0.0                
+        end
+    end
+    return now_dt
+end
+
+@doc """
+    calc_co2dot: calculates regional temperature derivative
+"""
+function calc_co2dot(now_dt, par_dt)
+    for hm in par_d["hemisphere"]
+        now_dt["co2dot"*hm] = (par_dt["co2_ref"] - now_dt["co2"*hm] + 10.0 * (now_dt["T"*hm] - par_dt["T_ref"*hm])) / 10.0
+    end
+    return now_dt
+end
 
 
 

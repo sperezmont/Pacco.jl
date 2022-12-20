@@ -7,15 +7,17 @@
 """
 function calc_artificial_insolation(now_o, par_o)
     # Calculate reference and amplitude
-    ins_ref = (ins_max + ins_min) / 2
-    A_ins = (ins_max - ins_min) / 2
+    ins_ref = (par_o["ins_max"] + par_o["ins_min"]) / 2
+    A_ins = (par_o["ins_max"] - par_o["ins_min"]) / 2
 
     # Return artificial insolation -- I have to discuss this with jas
-    now_o["ins"] = ins_ref + A_ins * (
+    ins = ins_ref + A_ins * (
         par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
         par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
         par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))
-
+    for hm in hemisphere
+        now_o["ins"*hm] = ins
+    end
     return now_o
 end
 
@@ -54,38 +56,10 @@ function calc_solar_longitude(now_o, par_o)
 end
 
 @doc """
-    calc_laskar_insolation: Compute daily average insolation given latitude, time of year and orbital parameters
-    Function adapted to Julia from The Climate Laboratory (Python Notebooks) by Brian E. J. Rose, University at Albany
-                                https://brian-rose.github.io/ClimateLaboratoryBook/home.html
-    modifications by Marisa Montoya and Sergio Pérez-Montero 
+    calc_laskar_insolation: Compute daily average insolation given latitude and time of year
 """
 function calc_laskar_insolation(now_o, par_o)
-    # now_o["long_peri"], now_o["obliquity"], now_o["exc"] = orbital_params(now_r["time"]) # ϖ = long_peri, γ = obliquity, e = excentricity -- from Laskar 2004 
-    #     # Convert precession angle and latitude to radians
-    #     phi = deg2rad(lat)
-
-    #     # omega_long (solar longitude) is the angular distance along Earth's orbit measured from spring equinox (21 March)
-    #     omega_long = calc_solar_longitude(now_o, par_o)
-
-    #     # Compute declination angle of the sun
-    #     delta = arcsin(sin(deg2rad(now_o["obl"])) * sin(omega_long))
-
-    #     # Compute Ho, the hour angle at sunrise / sunset
-    #     # -- check for no sunrise or no sunset: Berger 1978 eqn (8),(9)
-    #     Ho = xr.where( abs(delta)-pi/2+abs(phi) < 0., # there is sunset/sunrise
-    #             arccos(-tan(phi)*tan(delta)),
-    #             # otherwise figure out if it's all night or all day
-    #             xr.where(phi*delta>0., pi, 0.) )
-    #     # this is not really the daily average cosine of the zenith angle...
-    #     #  it's the integral from sunrise to sunset of that quantity...
-    #     coszen = Ho*sin(phi)*sin(delta) + cos(phi)*cos(delta)*sin(Ho)
-    #     # Compute insolation: Berger 1978 eq (10)
-    #     Fsw = S0/pi*( (1+ecc*cos(omega_long -deg2rad(long_peri)))**2 / (1-ecc**2)**2 * coszen)
-    #     if not (lat_is_xarray or day_is_xarray):
-    #         # Dimensional ordering consistent with previous numpy code
-    #         return Fsw.transpose().values
-    #     else:
-    #         return Fsw
+    return now_o
 end
 
 @doc """
@@ -93,16 +67,13 @@ end
 """
 function calc_insol_day(now_o, par_o)
     if par_o["ins_case"] == "artificial"
-        now_o["long_peri"], now_o["obl"], now_o["exc"] = 0, 0, 0
         now_o = calc_artificial_insolation(now_o, par_o)
-        return now_o
     elseif par_o["ins_case"] == "laskar"
         error("ERROR, laskar option not implemented yet")
-        now_o = calc_laskar_insolation(now_o, par_o)
-        return now_o
+        now_o = calc_laskar_insolation(now_o, par_o)        
     else
         error("ERROR, insolation option not recognized")
     end
-
+    return now_o
 end
 
