@@ -7,15 +7,15 @@
 """
 function calc_Hdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        now_dt["Hdot"*hm] = 0.0
+        now_dt["Hdot_"*hm] = 0.0
         # -- climatic term
         if par_dt["active_climate"]
-            now_dt["Hdot"*hm] = copy(now_dt["TMB"])
+            now_dt["Hdot_"*hm] = copy(now_dt["TMB_"*hm])
         end
         # -- dynamical term
-        if par_dt["active_dynamics"]
-            now_dt["Hdot"*hm] = now_dt["Hdot"*hm] 
-                              - now_dt["U"*hm] * now_dt["H"*hm] / par_dt["L"]
+        if par_dt["active_ice"]
+            now_dt["Hdot_"*hm] = now_dt["Hdot_"*hm]
+            -now_dt["U_"*hm] * now_dt["H_"*hm] / par_dt["L"]
         end
     end
     return now_dt
@@ -24,9 +24,9 @@ end
 @doc """
     calc_Hseddot: calculates sediments thickness derivative
 """
-function calc_Hdot(now_dt, par_dt, ctl_dt)
+function calc_Hseddot(now_dt, par_dt, ctl_dt)
     for hm in par_dt["hemisphere"]
-        now_dt["Hseddot"*hm] = -par_dt["f_1"] * now_dt["U"*hm] + par_dt["f_2"] * now_dt["M"*hm] / ctl_dt["dt"]
+        now_dt["Hseddot_"*hm] = -par_dt["f_1"] * now_dt["U_"*hm] + par_dt["f_2"] * now_dt["M_"*hm] / ctl_dt["dt"]
     end
     return now_dt
 end
@@ -37,9 +37,9 @@ end
 function calc_Bdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
         if par_dt["active_iso"]
-            now_dt["Bdot"*hm] = -(now_dt["B"*hm] - par_dt["B_eq"*hm] + now_dt["H"*hm] * rhoi / rhom) / par["tau_bed"*hm] # needs further improvement -- spm 2022.11.17
+            now_dt["Bdot_"*hm] = -(now_dt["B_"*hm] - par_dt["B_eq_"*hm] + now_dt["H_"*hm] * rhoi / rhom) / par_dt["tau_bed_"*hm] # needs further improvement -- spm 2022.11.17
         else
-            now["Bdot"*hm] = 0.0
+            now_dt["Bdot_"*hm] = 0.0
         end
     end
     return now_dt
@@ -50,7 +50,7 @@ end
 """
 function calc_T_icedot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        now["T_icedot"*hm] = now["Q_dif"*hm] + now["Q_drag"*hm]
+        now_dt["T_icedot_"*hm] = now_dt["Q_dif_"*hm] + now_dt["Q_drag_"*hm]
     end
     return now_dt
 end
@@ -59,8 +59,8 @@ end
     calc_Tdot: calculates regional temperature derivative
 """
 function calc_Tdot(now_dt, par_dt)
-    for hm in par_d["hemisphere"]
-        now_dt["Tdot"*hm] = (par_dt["T_ref"*hn] - now_dt["T"*hn] + par_dt["cs"]*now_dt["rf"*hm] - grad*now_dt["H"*hm]) / par_dt["tau_rf"*hm] # I have to test grad*now_dt["Z"*hm] -- spm 2022.12.20
+    for hm in par_dt["hemisphere"]
+        now_dt["Tdot_"*hm] = (par_dt["T_ref_"*hm] - now_dt["T_"*hm] + par_dt["cs"] * now_dt["rf_"*hm] - grad * now_dt["H_"*hm]) / par_dt["tau_rf_"*hm] # I have to test grad*now_dt["Z"*hm] -- spm 2022.12.20
     end
     return now_dt
 end
@@ -69,26 +69,26 @@ end
     calc_albedodot: calculates albedo derivative
 """
 function calc_albedodot(now_dt, par_dt)
-    for hm in par_d["hemisphere"]
-        now_dt["albedodot"*hm] = (now_dt["albedo_ref"*hm] - now_dt["albedo"*hm]) / par_dt["tau_albedo"*hm]
-        
-        if now_dt["H"*hm] == 0.0
-            now_dt["albedo"*hm] = par_dt["albedo_land"]
-            now_dt["albedodot"*hm] = 0.0
-        elseif now_dt["ice_time"*hm] < 10.0 # First ice
-            now_dt["albedo"*hm] = par_dt["albedo_newice"*hm]
-            now_dt["albedodot"*hm] = 0.0                
+    for hm in par_dt["hemisphere"]
+        now_dt["albedodot_"*hm] = (now_dt["albedo_ref_"*hm] - now_dt["albedo_"*hm]) / par_dt["tau_albedo"]
+
+        if now_dt["H_"*hm] == 0.0
+            now_dt["albedo_"*hm] = par_dt["albedo_land"]
+            now_dt["albedodot_"*hm] = 0.0
+        elseif now_dt["ice_time_"*hm] < 10.0 # First ice
+            now_dt["albedo_"*hm] = par_dt["albedo_newice"]
+            now_dt["albedodot_"*hm] = 0.0
         end
     end
     return now_dt
 end
 
 @doc """
-    calc_co2dot: calculates regional temperature derivative
+    calc_co2dot: calculates co2 derivative
 """
 function calc_co2dot(now_dt, par_dt)
-    for hm in par_d["hemisphere"]
-        now_dt["co2dot"*hm] = (par_dt["co2_ref"] - now_dt["co2"*hm] + 10.0 * (now_dt["T"*hm] - par_dt["T_ref"*hm])) / 10.0
+    for hm in par_dt["hemisphere"]
+        now_dt["co2dot_"*hm] = (par_dt["co2_ref"] - now_dt["co2_"*hm] + 10.0 * (now_dt["T_"*hm] - par_dt["T_ref_"*hm])) / 10.0
     end
     return now_dt
 end

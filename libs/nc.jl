@@ -9,7 +9,7 @@ using NCDatasets
 using DataStructures
 
 function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict, precc, attr::OrderedDict)
-    ds = NCDataset(out*filename,"c")
+    ds = NCDataset(out * filename, "c")
 
     # define time dimension
     defDim(ds, "time", Inf)
@@ -20,8 +20,8 @@ function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict
     # end
 
     # define the variables
-    for (key, val) in attr
-        defVar(ds, key, precc, ("time",), attrib = val)
+    for (key, val) in d
+        defVar(ds, key, precc, ("time",), attrib=attr[key])
     end
 
     # assign values

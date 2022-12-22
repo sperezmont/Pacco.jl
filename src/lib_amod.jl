@@ -10,10 +10,13 @@
         ===========================================================
             Adapted to Julia by Sergio Pérez-Montero (2022)
 """
-function amod(now, par, ctl, vart)    
+function amod(now, par, ctl, vart)
     # Update variables
     now = update_forward(now, par, ctl, vart)
     now = update_Z(now, par)
+
+    now = calc_E(now, par)
+    now = calc_V(now, par)
 
     # -- calculate reference value for albedo
     now = calc_albedo_ref(now, par)
@@ -21,12 +24,12 @@ function amod(now, par, ctl, vart)
     # -- thermomechanical coupling (For now, the rate factor A is constant -- jas)
 
     ## Ice Dynamics
-    if par["active_dynamics"]
-        now = calc_taud(now, par)           # -- driving stress
-        now = calc_taub(now, par)           # -- basal shear stress
+    if par["active_ice"]
+        now = calc_tau_d(now, par)           # -- driving stress
+        now = calc_tau_b(now, par)           # -- basal shear stress
 
-        now = calc_Ud(now, par)             # -- mean driving velocity
-        now = calc_Ub(now, par)             # -- mean basal velocity
+        now = calc_U_d(now, par)             # -- mean driving velocity
+        now = calc_U_b(now, par)             # -- mean basal velocity
 
         now = calc_fstream(now, par, ctl)   # -- stream fraction
 
@@ -38,32 +41,34 @@ function amod(now, par, ctl, vart)
 
     # -- bedrock temperature (currently prescribed -- jas)
 
-    # -- total pressure
-    now = calc_P(now, par)
-
     # -- mass balance
     now = calc_SMB(now, par)
     now = calc_TMB(now, par)
 
     ## Ice thermodynamics
-    now = calc_Qdif(now, par)       # -- diffusion
-    now = calc_Qdrag(now, par)      # -- drag
+    if par["active_ice"]
+        now = calc_Qdif(now, par)       # -- diffusion
+        now = calc_Qdrag(now, par)      # -- drag
+    end
 
     # Calculate time evolution
     # -- ice thickness
     now = calc_Hdot(now, par)
 
     # -- sediment thickness
-    (par["active_sed"]) && (now = calc_Hseddot(now, par, ctl))
+    if par["active_ice"]
+        if par["active_sed"]
+            now = calc_Hseddot(now, par, ctl)
+        end
+        # -- ice temperature
+        now = calc_T_icedot(now, par)
+    end
 
     # -- bedrock elevation
     now = calc_Bdot(now, par)
 
-    # -- ice temperature
-    now = calc_Ticedot(now, par)
-
     # -- regional temperature
-    now = calc_Tdot(now, par)
+    (par["active_climate"]) && (now = calc_Tdot(now, par))
 
     # -- albedo
     now = calc_albedodot(now, par)
@@ -84,7 +89,11 @@ function amod_loop(now, out, par, ctl, vart, file)
         now["time"] = ctl["time_init"] + n * ctl["dt"]
 
         # update contour variables
-        now = calc_Tsl(now, par)
+        if par["active_climate"]
+            now = calc_rf(now, par)     # -- rf due to coupled climate    
+        else
+            now = calc_Tsl(now, par)    # -- T_sl from insolation
+        end
 
         # run AMOD
         now = amod(now, par, ctl, vart)
@@ -93,7 +102,7 @@ function amod_loop(now, out, par, ctl, vart, file)
         if mod(now["time"], ctl["dt_out"]) == 0
             out = update_amod_out(out, now)
             if par["active_outout"]
-                write(file, "time = " * string(now["time"]) * " --> " * "ins = " * string(now["ins"]) * " --> " * "T_sl = " * string(now["T_sl"]) * " --> " * "H = " * string(now["H"]) * "\n")
+                write(file, "time = " * string(now["time"]) * "\n")
             end
         end
     end
@@ -130,13 +139,15 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
     OUT = update_amod_out(OUT, NOW) # update output
 
     if PAR["active_outout"]
-        write(f, "time = " * string(NOW["time"]) * " --> " * "ins = " * string(NOW["ins"]) * " --> " * "T_sl = " * string(NOW["T_sl"]) * " --> " * "H = " * string(NOW["H"]) * "\n")
+        write(f, "time = " * string(NOW["time"]) * "\n")
     end
 
     ## Let's run!
     # -- define updatable (in time) variables
-    VARt = ["H", "Hsed", "B", "E", "V", "T", "T_ice", "co2", "albedo", "ice_time"]
-    
+    VARt = ["H", "B"]
+    (PAR["active_ice"]) && (vcat(VARt, ["Hsed", "E", "V", "T_ice"]))
+    (PAR["active_climate"]) && (vcat(VARt, ["T", "co2", "albedo", "ice_time"]))
+
     # -- run AMOD
     OUT = amod_loop(NOW, OUT, PAR, CTL, VARt, f)
 
@@ -155,7 +166,7 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
 end
 
 @doc """
-    run_amod_ens: 
+    run_amod_ensemble: 
         Takes an (ordered) dictionary of parameters to be exchanged
         in order to run an ensemble and runs AMOD for each combination
 """

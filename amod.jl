@@ -2,13 +2,14 @@
 #     Program: amod.jl
 #     Aim: prepare Julia for simulations of AMOD
 # =============================
-println("Preparing Julia to run AMOD ...")
+println("Getting Julia ready to run AMOD ...")
 using Pkg
 Pkg.activate("amod_env")                    # -- activate amod virtual environment
 global amod_path = pwd()                    # -- determine amod path. This line assumes we are working from the main AMOD directory
 
 # -- import dependencies
-using NCDatasets, DataStructures             # amod
+using NCDatasets, DataStructures, Insolation, Dates, CLIMAParameters    # amod
+import Insolation.Parameters as IP
 using Statistics, DSP, CairoMakie, Wavelets, ContinuousWavelets, Interpolations  # plotting
 
 include("./libs/misc.jl")              # -- include libraries
@@ -16,6 +17,8 @@ include("./libs/nc.jl")
 include("./libs/plot_lib.jl")
 
 include("./par/earth_const.jl")             # -- include earth constants
+
+include(joinpath(pkgdir(Insolation), "parameters", "create_parameters.jl")) # -- parameters for insolation
 
 include("./src/lib_amod.jl")                # -- include amod functions
 include("./src/amod_defs.jl")

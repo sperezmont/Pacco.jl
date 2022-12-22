@@ -15,12 +15,12 @@ end
 """
 function calc_albedo_ref(now_r, par_r)
     for hm in par_r["hemisphere"]
-        if now_r["H"*hm] == 0.0
-            now_r["ice_time"*hm] = 0.0 # -- no ice
-            now_r["albedo_ref"*hm] = par_r["albedo_land"]
-        else    
+        if now_r["H_"*hm] == 0.0
+            now_r["ice_time_"*hm] = 0.0 # -- no ice
+            now_r["albedo_ref_"*hm] = par_r["albedo_land"]
+        else
             n = 1 # exponent number in albedo-age parameterisation
-            now_r["albedo_ref"*hm] = max(par_r["albedo_newice"] - par_r["albedo_slope"] * now_r["ice_time"*hm]^n, par_r["albedo_land"])
+            now_r["albedo_ref_"*hm] = max(par_r["albedo_newice"] - par_r["albedo_slope"] * now_r["ice_time_"*hm]^n, par_r["albedo_land"])
         end
     end
     return now_r
@@ -31,9 +31,17 @@ end
 """
 function calc_rf(now_r, par_r)
     for hm in par_r["hemisphere"]
-        now_r["rad_co2"*hm] = calc_rad_co2(now_r["co2"*hm])
-        now_r["ins_anom"*hm] = now_r["ins"*hm] - par_r["ins_ref"*hm] 
-        now_r["rf"*hm] = now_r["ins_anom"*hm] + now_r["rad_co2"*hm]
+        # -- insolation
+        now_r = calc_ins(now_r, par_r)
+        now_r["ins_anom_"*hm] = now_r["ins_"*hm] - par_r["ins_ref_"*hm]
+        # -- radiative forcing from co2
+        radco2 = calc_rad_co2(now_r["co2_"*hm])
+        # -- total        
+        now_r["rf_"*hm] = now_r["ins_anom_"*hm] + radco2
+
+        if (now_r["time"] >= par_r["time_anth"]) # -- anthropogenic forcing
+            now_r["rf_"*hm] += par_r["Ac_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
+        end
     end
     return now_r
 end
@@ -42,25 +50,24 @@ end
     calc_Tsl: calculates sea level temperature
 """
 function calc_Tsl(now_r, par_r)
-    # First, calculate radiative contribution of current CO2 level
-    if par_r["active_radco2"]
-        now_r["co2"] = calc_rad_co2(now_r["co2"])     # it does nothing for the moment -- spm 2022.11.08
+    # First, calculate insolation
+    now_r = calc_ins(now_r, par_r)
+
+    for hm in par_r["hemisphere"]
+        # -- normalize insolation
+        insnorm = (now_r["ins_"*hm] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
+        now_r["ins_norm_"*hm] = 2.0 * insnorm - 1.0                                                          # between 1 and -1, norm = 2
+
+        # Second, compute anthropogenic forcing if time >= +2000 yrs
+        if (now_r["time"] >= par_r["time_anth"])
+            T_anth = par_r["At_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
+        else
+            T_anth = 0.0
+        end
+
+        # Finally, calculate sea-level temperature 
+        now_r["T_sl_"*hm] = par_r["T_ref_"*hm] + par_r["A_t"] * now_r["ins_norm_"*hm] + T_anth
     end
-
-    # Second, calculate insolation and normalize it
-    now_r = calc_insol_day(now_r, par_r)
-    insnorm = (now_r["ins"] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
-    now_r["ins_norm"] = 2.0 * insnorm - 1.0                                                          # between 1 and -1, norm = 2
-
-    # Third, compute anthropogenic forcing if time >= +2000 yrs
-    if (now_r["time"] >= par_r["time_ant"]) 
-        T_ant = par_r["A_ant"] / exp((now_r["time"] - par_r["time_ant"]) / par_r["tau_ant"])
-    else
-        T_ant = 0.0
-    end
-
-    # Finally, calculate sea-level temperature 
-    now_r["T_sl"] = T_ref + par_r["A_t"] * now_r["ins_norm"] + T_ant
     return now_r
 end
 
