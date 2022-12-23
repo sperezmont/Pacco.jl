@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -100e3                # [yr] Starting time (model years)
+time_init = -1e6                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -21,13 +21,13 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 ### Run parameters (PAR)
 # -- Switches
 active_outout = false          # Switch: generate out.out?
-active_iso = true               # Switch: include active isostatic rebound?
-active_sed = true               # Switch: include interactive sediments?
+active_iso = true              # Switch: include active isostatic rebound?
+active_sed = true              # Switch: include interactive sediments?
 active_climate = true          # Switch: include climate routines?
-active_ice = true               # Switch: include ice sheet dynamics?
+active_ice = false              # Switch: include ice sheet dynamics?
 
 # -- Cases
-ins_case = "laskar"         # Insolation case: "artificial", "laskar" 
+ins_case = "laskar"             # Insolation case: "artificial", "laskar" 
 ud_case = "sia"                 # Ice flow approximation: "sia"
 ub_case = "weertmanq"           # parameterization of basal velocity: "weertman"
 tsurf_case = "linear"           # Surface temperature method: "linear"
@@ -42,7 +42,7 @@ tau_pre = 23e3                  # [yr] Precession period
 P_exc = 0.1                     # Power of excentricity (normalised to At)
 tau_exc = 100e3                 # [yr] Excentricity period
 
-ins_month, ins_day = 6.0, 21.0  # [month, day] Day in which calculate insolation
+ins_day = 170.0                 # Day in which calculate insolation
 ins_lat_n = 65.0                # [ºN] Latitude in which calculate the insolation in the northern hemisphere 
 ins_lat_s = -60.0               # [ºN] Latitude in which calculate the insolation in the southern hemisphere
 

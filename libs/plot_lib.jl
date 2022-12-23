@@ -4,52 +4,11 @@
 #     Author: Sergio Pérez-Montero, 2022.11.11
 # =============================
 
-# First, we define clrmp_dict with the color/colormaps that correspond to each variable of AMOD
-clrmp_dict = Dict("time" => :grays1,
-    "H" => cgrad([:royalblue, :royalblue4]),#cgrad([:snow4, :royalblue, :royalblue4, :navy]),
-    "Hsed" => cgrad([:firebrick, :maroon]),#cgrad([:maroon, :black]),
-    "T" => :lajolla,
-    "A" => :lajolla,
-    "T_sl" => cgrad([:purple, :purple]),
-    "TMB" => cgrad(:seismic, [0.0, 0.45, 0.55, 1.0], rev=true),
-    "SMB" => cgrad(:seismic, [0.0, 0.45, 0.55, 1.0], rev=true),
-    "Z" => :dense,
-    "B" => :dense,
-    "M" => :amp,
-    "Acc" => cgrad(:ice, rev=true),
-    "U_d" => :corkO,
-    "U_b" => :corkO,
-    "U" => :corkO,
-    "T_surf" => :lajolla,
-    "tau_b" => :thermal,
-    "tau_d" => :thermal,
-    "Q_dif" => :lajolla,
-    "Q_difup" => :lajolla,
-    "Q_difdown" => :lajolla,
-    "Q_drag" => :lajolla,
-    "alpha" => :lajolla,
-    "Q_adv" => :lajolla,
-    "fstream" => :grays1,
-    "fstream_ref" => :grays1,
-    "Hdot" => :ice,
-    "Hseddot" => :copper,
-    "Bdot" => :dense,
-    "Tdot" => :lajolla,
-    "fstreamdot" => :grays1,
-    "ins" => cgrad([:black, :black]),#cgrad(:seismic, [0.0, 0.49, 0.51, 1.0]),
-    "ins_norm" => cgrad([:black, :black]),#cgrad(:seismic, [0.0, 0.49, 0.51, 1.0]),
-    "co2" => :thermal,
-    "P" => :dense,
-    "exc" => :thermal,
-    "long_peri" => :thermal,
-    "obl" => :thermal
-)
-
 # Functions
 @doc """
     plot_spectrum: plots time series and their spectrums 
 """
-function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, clrmp, plotpath::String; fntsz=nothing, fancy=false)
+function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fntsz=nothing)
     ## First determine plot parameters
     # -- number of rows and columns
     nrows, ncols = length(vrs), 2
@@ -68,11 +27,17 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, clrmp, plotpath::Str
     ## Plotting
     # -- Plot variables
     for i in 1:nrows
+        if length(vrs) == 1
+            di = d
+        else
+            di = d[i]
+        end
+
         if i == 1
-            ax = Axis(fig[i, 1], title="AMOD variables", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " ( " * d[i].attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax = Axis(fig[i, 1], title="AMOD variables", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " ( " * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
             ax_spect = Axis(fig[i, 2], title="Normalized Power density", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (" * x.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
         else
-            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " (" * d[i].attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " (" * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
             ax_spect = Axis(fig[i, 2], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (k" * x.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
         end
         if i < nrows
@@ -82,20 +47,16 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, clrmp, plotpath::Str
 
         update_theme!()
 
-        maxdi, mindi = maximum(d[i][:]), minimum(d[i][:])
-        maxi = max(abs(maxdi), abs(mindi))
-        if var(d[i]) < 1e-1
-            lines!(ax, x, d[i], linewidth=3, color=x, colormap=clrmp[i])
+        #maxdi, mindi = maximum(di[:]), minimum(di[:])
+        #maxi = max(abs(maxdi), abs(mindi))
+        if var(di) < 1e-1
+            lines!(ax, x, di, linewidth=3)
         else
-            lines!(ax, x, d[i], linewidth=3, color=d[i], colormap=clrmp[i], colorrange=(-maxi, maxi))
+            lines!(ax, x, di, linewidth=3)
         end
 
         lines!(ax_spect, f[i], G[i], color=:black, linewidth=3)
-        if fancy
-            band!(ax_spect, f[i], 0.0, G[i], linewidth=2, color=G[i], colormap=:berlin)
-        else
-            band!(ax_spect, f[i], 0.0, G[i], linewidth=2, color=:darkred)
-        end
+        band!(ax_spect, f[i], 0.0, G[i], linewidth=2)
 
         xlims!(ax, (x[1], x[end]))
         xlims!(ax_spect, (1 / 500e3, 1 / 21e3))
@@ -125,15 +86,18 @@ end
 @doc """
     plot_amod: calculates spectrum and plots results from AMOD (given or not the variables to plot)
 """
-function plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hsed"])
+function plot_amod(; experiment="test_default", vars2plot=["ins_n", "SMB_n", "H_n", "Hsed_n"])
     ## Load output data 
-    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", vars)
+    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", vars2plot)
 
     ## Calculate spectra
-    #window = 50
     G_data, freqs_data = [], []
-    for v in 1:length(vars)
-        new_data = copy(data[v])
+    for v in 1:length(vars2plot)
+        if length(vars2plot) == 1
+            new_data = copy(data)
+        else
+            new_data = copy(data[v])
+        end
 
         # -- spectrum blackman tuckey
         N = length(new_data)
@@ -153,14 +117,13 @@ function plot_amod(experiment="test_default", vars=["ins_norm", "SMB", "H", "Hse
     end
 
     ## Plot
-    colors = [clrmp_dict[i] for i in vars]
-    plot_spectrum(time, data, freqs_data, G_data, vars, colors, amod_path * "/output/" * experiment * "/" * "amod_results.png")
+    plot_spectrum(time, data, freqs_data, G_data, vars2plot, amod_path * "/output/" * experiment * "/" * "amod_results.png")
 end
 
 @doc """
     plot_wavelet: Plots a map of the wavelet scalogram
 """
-function plot_wavelet(; experiment="test_default", var2plot="H", fs=1 / 1000)
+function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000)
     ## Load output data 
     data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", [var2plot])
 

@@ -54,7 +54,7 @@ function load_defs(par_path)
         "tau_pre" => tau_pre,
         "P_exc" => P_exc,
         "tau_exc" => tau_exc,
-        "ins_month" => ins_month, "ins_day" => ins_day,
+        "ins_day" => ins_day,
         "ins_lat_n" => ins_lat_n, "ins_lat_s" => ins_lat_s,
         # -- Radiative forcing parameters 
         "ins_min" => ins_min,
