@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
-time_init = -2e6                # [yr] Starting time (model years)
-time_end = 2e6                  # [yr] Ending time (model years)  
+time_init = -5e5                # [yr] Starting time (model years)
+time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 hemisphere = ["n"]              # list with hemispheres to use: ["n"] for northern, ["s"] for southern or ["n", "s"] for both hemispheres
@@ -22,7 +22,7 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 # -- Switches
 active_outout = false          # Switch: generate out.out?
 active_iso = true              # Switch: include active isostatic rebound?
-active_sed = true              # Switch: include interactive sediments?
+active_sed = false              # Switch: include interactive sediments?
 active_climate = true          # Switch: include climate routines?
 active_ice = false              # Switch: include ice sheet dynamics?
 
@@ -111,6 +111,7 @@ c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
 ki = 0.009                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
 ka = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+
 cs = 0.12                       # [K/Wm²] climate sensitivity
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 

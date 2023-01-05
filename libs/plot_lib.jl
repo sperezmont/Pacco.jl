@@ -138,7 +138,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000)
     Wnorm, freqs = calc_wavelet(data_dyadic, fs)
 
     ## Plot
-    fig, fntsz = Figure(resolution=(800, 600)), 0.01 * sqrt(1500^2 + 500^2)
+    fig, fntsz = Figure(resolution=(800, 600)), 0.01 * sqrt(800^2 + 600^2)
     fontsize_theme = Theme(font="Dejavu Serif", fontsize=fntsz)
     set_theme!(fontsize_theme)
 

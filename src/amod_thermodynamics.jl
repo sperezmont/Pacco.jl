@@ -63,7 +63,6 @@ end
 function calc_surfmelt(now_t, par_t)
     for hm in par_t["hemisphere"]
         if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-            error("ERROR, surface melt option not adapted to gapa branch")
             if now_t["T_surf_"*hm] >= (par_t["melt_offset"])
                 now_t["M_"*hm] = par_t["lambda"] * (now_t["T_surf_"*hm] - par_t["melt_offset"])
             else

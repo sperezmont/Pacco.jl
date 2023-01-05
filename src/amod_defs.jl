@@ -105,6 +105,7 @@ function load_defs(par_path)
         "ki" => ki,
         "ka" => ka,
         "cs" => cs,
+        "csz" => csz,
         "T_ref_n" => t_ref_n + degK, "T_ref_s" => t_ref_s + degK,
         "tau_rf_n" => tau_rf_n, "tau_rf_s" => tau_rf_s,
         "Acc_ref_n" => Acc_ref_n, "Acc_ref_s" => Acc_ref_s,
@@ -162,6 +163,7 @@ function load_defs(par_path)
         "Bdot_n" => 0.0, "Bdot_s" => 0.0,
         "Tdot_n" => 0.0, "Tdot_s" => 0.0,
         "albedodot_n" => 0.0, "albedodot_s" => 0.0,
+        "ice_timedot_n" => 1.0, "ice_timedot_n" => 1.0, # this value is not updated, "dumb" variable (ice_time += dt) -- spm 2023.01.05
         "co2dot_n" => 0.0, "co2dot_s" => 0.0
     )
 
@@ -171,6 +173,7 @@ function load_defs(par_path)
         "time" => [],
         # -- forcing
         "ins_n" => [], "ins_s" => [],
+        "ins_anom_n" => [], "ins_anom_s" => [],
         "rf_n" => [], "rf_s" => [],
         "T_sl_n" => [], "T_sl_s" => [],
         # -- amod variables
@@ -183,6 +186,7 @@ function load_defs(par_path)
         "T_ice_n" => [], "T_ice_s" => [],
         "T_n" => [], "T_s" => [],
         "co2_n" => [], "co2_s" => [],
+        "albedo_ref_n" => [], "albedo_ref_s" => [],
         "albedo_n" => [], "albedo_s" => [],
         "ice_time_n" => [], "ice_time_s" => [],
         "Z_n" => [], "Z_s" => [],
@@ -192,9 +196,19 @@ function load_defs(par_path)
         "fstream_n" => [], "fstream_s" => [],
         # ---- thermodynamics
         "T_surf_n" => [], "T_surf_s" => [],
+        "Acc_n" => [], "Acc_s" => [],
+        "M_n" => [], "M_s" => [],
         "SMB_n" => [], "SMB_s" => [],
         "Q_dif_n" => [], "Q_dif_s" => [],
         "Q_drag_n" => [], "Q_drag_s" => [],
+        # ---- time derivatives
+        "Hdot_n" => [], "Hdot_s" => [],
+        "Hseddot_n" => [], "Hseddot_s" => [],
+        "T_icedot_n" => [], "T_icedot_s" => [],
+        "Bdot_n" => [], "Bdot_s" => [],
+        "Tdot_n" => [], "Tdot_s" => [],
+        "albedodot_n" => [], "albedodot_s" => [],
+        "co2dot_n" => [], "co2dot_s" => []
     )
 
     # Output file settings

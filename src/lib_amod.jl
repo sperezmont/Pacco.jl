@@ -4,7 +4,6 @@
 # =============================
 @doc """
         ===========================================================
-            Function: amod.jl
             Model: AMOD (adimensional ice-sheet-sediment model)
                  by Jorge Alvarez-Solas (Fortran, 2017)
         ===========================================================
@@ -112,7 +111,7 @@ end
 @doc """
     run_amod: main function of AMOD
 """
-function run_amod(out_name="test_default", par_file="amod_default.jl", par2change=[])
+function run_amod(; out_name="test_default", par_file="amod_default.jl", par2change=[])
     ## Now, load arguments
     output_path = load_out(amod_path, out_name)
     load_parf(amod_path, output_path, par_file)
@@ -145,8 +144,11 @@ function run_amod(out_name="test_default", par_file="amod_default.jl", par2chang
     ## Let's run!
     # -- define updatable (in time) variables
     VARt = ["H", "B"]
-    (PAR["active_ice"]) && (vcat(VARt, ["Hsed", "E", "V", "T_ice"]))
-    (PAR["active_climate"]) && (vcat(VARt, ["T", "co2", "albedo", "ice_time"]))
+    if PAR["active_ice"] == true
+        VARt = vcat(VARt, ["Hsed", "E", "V", "T_ice"])
+    elseif PAR["active_climate"] == true
+        VARt = vcat(VARt, ["T", "co2", "albedo", "ice_time"])
+    end
 
     # -- run AMOD
     OUT = amod_loop(NOW, OUT, PAR, CTL, VARt, f)
@@ -185,7 +187,7 @@ function run_amod_ensemble(par2per::OrderedDict; out_name="test_default_ens", pa
         else
             out_namei = "/s$i" * "_" * join(perm[i].keys .* string.(perm[i].vals), "-") * "/"
         end
-        run_amod(out_name * out_namei, par_file, perm[i])
+        run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=perm[i])
     end
 
     # Done!
