@@ -10,6 +10,7 @@ global sec_year = 31556926.0        # [s] Seconds in a year, EISMINT value
 global P_sl = 101325                # [Pa] Pressure at sea level
 global S_0 = 1365.2                 # [Wm⁻²] Solar constant
 global g = 9.81                     # [m/s²] Gravitational acceleration
+global A_oc = 3.618*10^8            # [km²] Oceanic surface
 
 global rhoi = 910.0                 # [kg/m³] Ice density 
 global rhow = 1000.0                # [kg/m³] Water density

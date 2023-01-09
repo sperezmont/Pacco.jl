@@ -7,7 +7,8 @@
 """
 function calc_E(now_di, par_di)
     for hm in par_di["hemisphere"]
-        now_di["E_"*hm] = par_di["E_ref_"*hm] * (now_di["T_"*hm] - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
+        now_di["E_"*hm] = - par_di["E_ref_"*hm] * (now_di["T_"*hm] - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
+        now_di["E_"*hm] = max(now_di["E_"*hm], 0.0)
     end
     return now_di
 end
@@ -17,7 +18,8 @@ end
 """
 function calc_V(now_di, par_di)
     for hm in par_di["hemisphere"]
-        now_di["V_"*hm] = now_di["E_"*hm] * now_di["H_"*hm] / par_di["L"]
+        now_di["V_"*hm] = now_di["E_"*hm] * now_di["H_"*hm] / 1e3   # km3
+        now_di["V_"*hm] = now_di["V_"*hm] * rhoi / rhow * 1e3 / A_oc    # m sle
     end
     return now_di
 end

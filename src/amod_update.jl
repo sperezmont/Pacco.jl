@@ -32,6 +32,8 @@ function update_forward(now_u, par_u, ctl_u, vars2update)
             (~par_u["active_iso"]) && (now_u[variab] = par_u["B_eq_"*hm]) # reupdate to equilibrium value
         elseif variab in ["T_ice_n", "T_ice_s"]
             now_u[variab] = min(now_u[variab], degK)
+        elseif variab in ["co2_n", "co2_s"]
+            now_u[variab] = max(now_u[variab], 0.0)
         end
     end
     return now_u

@@ -144,11 +144,8 @@ function run_amod(; out_name="test_default", par_file="amod_default.jl", par2cha
     ## Let's run!
     # -- define updatable (in time) variables
     VARt = ["H", "B"]
-    if PAR["active_ice"] == true
-        VARt = vcat(VARt, ["Hsed", "E", "V", "T_ice"])
-    elseif PAR["active_climate"] == true
-        VARt = vcat(VARt, ["T", "co2", "albedo", "ice_time"])
-    end
+    (PAR["active_ice"]) && (VARt = vcat(VARt, ["Hsed", "T_ice"]))
+    (PAR["active_climate"]) && (VARt = vcat(VARt, ["T", "co2", "albedo", "ice_time"]))
 
     # -- run AMOD
     OUT = amod_loop(NOW, OUT, PAR, CTL, VARt, f)

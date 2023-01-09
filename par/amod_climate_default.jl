@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -5e5                # [yr] Starting time (model years)
+time_init = -2e6                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -20,10 +20,10 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 
 ### Run parameters (PAR)
 # -- Switches
-active_outout = false          # Switch: generate out.out?
-active_iso = true              # Switch: include active isostatic rebound?
+active_outout = false           # Switch: generate out.out?
+active_iso = true               # Switch: include active isostatic rebound?
 active_sed = false              # Switch: include interactive sediments?
-active_climate = true          # Switch: include climate routines?
+active_climate = true           # Switch: include climate routines?
 active_ice = false              # Switch: include ice sheet dynamics?
 
 # -- Cases
@@ -69,6 +69,15 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
+cs = 0.12                       # [K/Wm²] climate sensitivity
+csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
+
+t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
+t_ref_s = -5.0                   # [ºC] Reference climatic temperature for southern hemisphere
+
+tau_rf_n = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
+tau_rf_s = 1000.0                # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for southern hemisphere
+
 # -- Geophysical parameters (northern hemisphere -> n) (southern hemisphere -> s)
 B_eq_n = 500.0                    # [m] equilibrium altitude of the bedrock
 B_eq_s = 500.0                    # [m] equilibrium altitude of the bedrock
@@ -104,22 +113,13 @@ pr_ref = 1                      # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
 t_snow = -11.6                  # [ºC] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
 t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
-lambda = 0.1                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
+lambda = 0.05                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
 melt_offset = -10.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
 ki = 0.009                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
 ka = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
-
-cs = 0.12                       # [K/Wm²] climate sensitivity
-csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
-
-t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
-t_ref_s = -5.0                   # [ºC] Reference climatic temperature for southern hemisphere
-
-tau_rf_n = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
-tau_rf_s = 1000.0                # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for southern hemisphere
 
 Acc_ref_n = 0.1                    # [m/yr] Reference Accumulation for northern hemisphere
 Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern hemisphere

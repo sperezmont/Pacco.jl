@@ -73,6 +73,10 @@ function load_defs(par_path)
         "albedo_slope" => albedo_slope,
         "albedo_quad" => albedo_quad,
         "tau_albedo" => tau_albedo,
+        "cs" => cs,
+        "csz" => csz,
+        "T_ref_n" => t_ref_n + degK, "T_ref_s" => t_ref_s + degK,
+        "tau_rf_n" => tau_rf_n, "tau_rf_s" => tau_rf_s,
         # -- Geophysical parameters
         "B_eq_n" => B_eq_n, "B_eq_s" => B_eq_s,
         "tau_bed_n" => tau_bed_n, "tau_bed_s" => tau_bed_s,
@@ -104,10 +108,6 @@ function load_defs(par_path)
         "km" => km,
         "ki" => ki,
         "ka" => ka,
-        "cs" => cs,
-        "csz" => csz,
-        "T_ref_n" => t_ref_n + degK, "T_ref_s" => t_ref_s + degK,
-        "tau_rf_n" => tau_rf_n, "tau_rf_s" => tau_rf_s,
         "Acc_ref_n" => Acc_ref_n, "Acc_ref_s" => Acc_ref_s,
         "A_te_n" => A_te_n, "A_te_s" => A_te_s
     )

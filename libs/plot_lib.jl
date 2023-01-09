@@ -26,6 +26,8 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fn
 
     ## Plotting
     # -- Plot variables
+    color_list = collect(cgrad(:darkrainbow, nrows, categorical=true, rev=true))
+    palettes=(color=color_list,)
     for i in 1:nrows
         if length(vrs) == 1
             di = d
@@ -50,13 +52,13 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fn
         #maxdi, mindi = maximum(di[:]), minimum(di[:])
         #maxi = max(abs(maxdi), abs(mindi))
         if var(di) < 1e-1
-            lines!(ax, x, di, linewidth=3)
+            lines!(ax, x, di, linewidth=3, color=palettes[1][i])
         else
-            lines!(ax, x, di, linewidth=3)
+            lines!(ax, x, di, linewidth=3, color=palettes[1][i])
         end
 
         lines!(ax_spect, f[i], G[i], color=:black, linewidth=3)
-        band!(ax_spect, f[i], 0.0, G[i], linewidth=2)
+        band!(ax_spect, f[i], 0.0, G[i], linewidth=2, color=palettes[1][i])
 
         xlims!(ax, (x[1], x[end]))
         xlims!(ax_spect, (1 / 500e3, 1 / 21e3))
@@ -138,12 +140,12 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000)
     Wnorm, freqs = calc_wavelet(data_dyadic, fs)
 
     ## Plot
-    fig, fntsz = Figure(resolution=(800, 600)), 0.01 * sqrt(800^2 + 600^2)
+    fig, fntsz = Figure(resolution=(1000, 600)), 20
     fontsize_theme = Theme(font="Dejavu Serif", fontsize=fntsz)
     set_theme!(fontsize_theme)
 
     ax = Axis(fig[1, 1], title=var2plot * " (" * data.attrib["units"] * ")",
-        xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
+        xlabelsize=fntsz, ylabelsize=fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
     update_theme!()
 
     cmap = :vik

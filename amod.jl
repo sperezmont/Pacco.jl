@@ -48,8 +48,8 @@ printstyled("|      --> run_amod(out_name, par_file, par2change)              | 
 printstyled("|      --> run_ensemble(par2per, out_name, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
-printstyled("|      --> plot_amod(experiment, variables)                      | \n")
-printstyled("|      --> plot_wavelet(experiment, variable)                    | \n")
+printstyled("|      --> plot_amod(experiment, vars2plot)                      | \n")
+printstyled("|      --> plot_wavelet(experiment, var2plot)                    | \n")
 printstyled("================================================================== \n", color=:light_blue)
 
 

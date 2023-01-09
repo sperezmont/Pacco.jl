@@ -12,10 +12,9 @@ function calc_Hdot(now_dt, par_dt)
         if par_dt["active_climate"]
             now_dt["Hdot_"*hm] = copy(now_dt["TMB_"*hm])
         end
-        # -- dynamical term
+        # -- dynamic term
         if par_dt["active_ice"]
-            now_dt["Hdot_"*hm] = now_dt["Hdot_"*hm]
-            -now_dt["U_"*hm] * now_dt["H_"*hm] / par_dt["L"]
+            now_dt["Hdot_"*hm] += -now_dt["U_"*hm] * now_dt["H_"*hm] / par_dt["L"]
         end
     end
     return now_dt
@@ -60,7 +59,10 @@ end
 """
 function calc_Tdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        now_dt["Tdot_"*hm] = (par_dt["T_ref_"*hm] - now_dt["T_"*hm] + par_dt["cs"] * now_dt["rf_"*hm] - par_dt["csz"] * now_dt["Z_"*hm]) / par_dt["tau_rf_"*hm] # I think is more correct to use Z instead of H -- spm 2023.01.03
+        # I think it is more correct to use Z instead of H -- spm 2023.01.03
+        now_dt["Tdot_"*hm] = (par_dt["T_ref_"*hm] - now_dt["T_"*hm]
+                             + par_dt["cs"] * now_dt["rf_"*hm] 
+                             - par_dt["csz"] * now_dt["Z_"*hm]) / par_dt["tau_rf_"*hm] 
     end
     return now_dt
 end

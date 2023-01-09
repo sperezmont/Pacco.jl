@@ -33,9 +33,9 @@ function calc_T_surf(now_t, par_t)
 end
 
 @doc """
-    calc_accumulation: calculates accumulation rate
+    calc_Acc: calculates accumulation rate
 """
-function calc_accumulation(now_t, par_t)
+function calc_Acc(now_t, par_t)
     for hm in par_t["hemisphere"]
         if par_t["ac_case"] == "ins"
             pr = par_t["pr_ref"] + par_t["A_pr"] * now_t["ins_norm_"*hm]
@@ -58,9 +58,9 @@ function calc_accumulation(now_t, par_t)
 end
 
 @doc """
-    calc_surfmelt: calculates surface melting rate
+    calc_M: calculates surface melting rate
 """
-function calc_surfmelt(now_t, par_t)
+function calc_M(now_t, par_t)
     for hm in par_t["hemisphere"]
         if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
             if now_t["T_surf_"*hm] >= (par_t["melt_offset"])
@@ -70,13 +70,15 @@ function calc_surfmelt(now_t, par_t)
             end
         elseif par_t["sm_case"] == "ITM"
             if now_t["SMB_"*hm] <= 0
-                now_t["M_"*hm] = par_t["km"]
-                +par_t["ki"] * max((1 - now_t["albedo_"*hm]) * now_t["ins_anom_"*hm], 0.0)   # I have to test this without >0 condition -- spm 2022.12.19
-                +par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], degK)
+                # I have to test this without >0 condition -- spm 2022.12.19
+                now_t["M_"*hm] = (par_t["km"]
+                                 + par_t["ki"] * max((1 - now_t["albedo_"*hm]) * now_t["ins_anom_"*hm], 0.0)
+                                 + par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], 0.0))
             else
-                now_t["M_"*hm] = par_t["km"]
-                +par_t["ki"] * max((1 - par_t["albedo_newice"]) * now_t["ins_anom_"*hm], 0.0)   # I have to test this without >0 condition -- spm 2022.12.19
-                +par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], degK)
+                # I have to test this without >0 condition -- spm 2022.12.19
+                now_t["M_"*hm] = (par_t["km"]
+                                 + par_t["ki"] * max((1 - par_t["albedo_newice"]) * now_t["ins_anom_"*hm], 0.0)
+                                 + par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], 0.0))
             end
         else
             error("ERROR, surface melt option not recognized")
@@ -90,10 +92,10 @@ end
 """
 function calc_SMB(now_t, par_t)
     # First, calculates Accumulation
-    now_t = calc_accumulation(now_t, par_t)
+    now_t = calc_Acc(now_t, par_t)
 
     # Second, calculate Melting
-    now_t = calc_surfmelt(now_t, par_t)
+    now_t = calc_M(now_t, par_t)
 
     # Third, return SMB
     for hm in par_t["hemisphere"]
