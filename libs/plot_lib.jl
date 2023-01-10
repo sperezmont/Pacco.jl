@@ -6,18 +6,39 @@
 
 # Functions
 @doc """
-    plot_spectrum: plots time series and their spectrums 
+    plot_amod: calculates spectrum and plots results from AMOD (given or not the variables to plot)
 """
-function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fntsz=nothing)
+function plot_amod(; experiment="test_default", vars2plot=["ins_n", "SMB_n", "H_n", "Hsed_n"])
+    ## Load output data 
+    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", vars2plot)
+    if ("V_n" in vars2plot)
+        data_waelbroeck2002, time_waelbroeck2002 = load_nc(amod_path * "/data/Waelbroeck-etal_2002/waelbroeck-etal_2002.nc", ["RSL-", "RSL", "RSL+"]; time_name="Age")
+    end
+
+    ## Calculate spectra
+    G_data, freqs_data = [], []
+    for v in 1:length(vars2plot)
+        if length(vars2plot) == 1
+            new_data = copy(data)
+        else
+            new_data = copy(data[v])
+        end
+
+        G, freq = calc_spectrum(new_data, 1/(time[2]-time[1]))
+        push!(G_data, G)
+        push!(freqs_data, freq)  # save frequencies
+    end
+
+    ## Plot
     ## First determine plot parameters
     # -- number of rows and columns
-    nrows, ncols = length(vrs), 2
+    nrows, ncols = length(vars2plot), 2
 
     # -- figure size
     fgsz = (1500 * ncols, 500 * nrows)
 
     # -- check fontsize
-    isnothing(fntsz) && (fntsz = 0.01 * sqrt(fgsz[1]^2 + fgsz[2]^2))
+    fntsz = 0.01 * sqrt(fgsz[1]^2 + fgsz[2]^2)
     fontsize_theme = Theme(font="Dejavu Serif", fontsize=fntsz)
     set_theme!(fontsize_theme)
 
@@ -29,18 +50,18 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fn
     color_list = collect(cgrad(:darkrainbow, nrows, categorical=true, rev=true))
     palettes=(color=color_list,)
     for i in 1:nrows
-        if length(vrs) == 1
-            di = d
+        if length(vars2plot) == 1
+            di = data
         else
-            di = d[i]
+            di = data[i]
         end
 
         if i == 1
-            ax = Axis(fig[i, 1], title="AMOD variables", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " ( " * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
-            ax_spect = Axis(fig[i, 2], title="Normalized Power density", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (" * x.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax = Axis(fig[i, 1], title="AMOD variables", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[i] * " ( " * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax_spect = Axis(fig[i, 2], title="Normalized Power density", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (" * time.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
         else
-            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vrs[i] * " (" * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
-            ax_spect = Axis(fig[i, 2], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (k" * x.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[i] * " (" * di.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
+            ax_spect = Axis(fig[i, 2], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (k" * time.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey)
         end
         if i < nrows
             hidexdecorations!(ax, grid=false)
@@ -49,27 +70,28 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fn
 
         update_theme!()
 
-        #maxdi, mindi = maximum(di[:]), minimum(di[:])
-        #maxi = max(abs(maxdi), abs(mindi))
-        if var(di) < 1e-1
-            lines!(ax, x, di, linewidth=3, color=palettes[1][i])
+        if vars2plot[i] == "V_n"
+            band!(ax, time_waelbroeck2002 .* 1000, data_waelbroeck2002[1], data_waelbroeck2002[3], linewidth=2, color=:lightgrey)
+            lines!(ax, time_waelbroeck2002 .* 1000, data_waelbroeck2002[2], color=:black, label="Waelbroeck et al. (2002)")
+            lines!(ax, time, di, linewidth=3, color=palettes[1][i], label="AMOD")
+            axislegend(ax, position=:lb)
         else
-            lines!(ax, x, di, linewidth=3, color=palettes[1][i])
-        end
+            lines!(ax, time, di, linewidth=3, color=palettes[1][i])
+        end        
 
-        lines!(ax_spect, f[i], G[i], color=:black, linewidth=3)
-        band!(ax_spect, f[i], 0.0, G[i], linewidth=2, color=palettes[1][i])
+        lines!(ax_spect, freqs_data[i], G_data[i], color=:black, linewidth=3)
+        band!(ax_spect, freqs_data[i], 0.0, G_data[i], linewidth=2, color=palettes[1][i])
 
-        xlims!(ax, (x[1], x[end]))
+        xlims!(ax, (time[1], time[end]))
         xlims!(ax_spect, (1 / 500e3, 1 / 21e3))
 
-        xlen = length(x)
+        xlen = length(time)
         if mod(xlen, 2) == 0
             xstep = Int(xlen / 10)
         else
             xstep = Int((xlen - 1) / 10)
         end
-        ax.xticks = x[1:xstep:end]
+        ax.xticks = time[1:xstep:end]
         ax.xtickformat = k -> string.(k / 1000)
 
         ax_spect.xticks = [1 / 100e3, 1 / 41e3, 1 / 23e3]
@@ -81,45 +103,7 @@ function plot_spectrum(x, d::Any, f::Any, G::Any, vrs::Any, plotpath::String; fn
     resize_to_layout!(fig)
 
     # Saving
-    save(plotpath, fig)
-end
-
-
-@doc """
-    plot_amod: calculates spectrum and plots results from AMOD (given or not the variables to plot)
-"""
-function plot_amod(; experiment="test_default", vars2plot=["ins_n", "SMB_n", "H_n", "Hsed_n"])
-    ## Load output data 
-    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", vars2plot)
-
-    ## Calculate spectra
-    G_data, freqs_data = [], []
-    for v in 1:length(vars2plot)
-        if length(vars2plot) == 1
-            new_data = copy(data)
-        else
-            new_data = copy(data[v])
-        end
-
-        # -- spectrum blackman tuckey
-        N = length(new_data)
-        Nmax = Int(ceil(N / 2))
-        P = periodogram(new_data, onesided=false, fs=1 / (time[2] - time[1]), window=blackman(N))
-        G, freq = P.power, P.freq
-        G, freq = G[1:Nmax] .* 2, freq[1:Nmax]
-        G, freq = G[freq.>=1/150.5e3], freq[freq.>=1/150e3] # we eliminate values above and below Milankovitch cycles
-        G, freq = G[freq.<=1/22e3], freq[freq.<=1/22e3]
-        G = sqrt.(G) / (N / 2)
-        G = G ./ sum(G)
-        if var(new_data) < 1e-1
-            G = zeros(length(G))
-        end
-        push!(G_data, G)
-        push!(freqs_data, freq)  # save frequencies
-    end
-
-    ## Plot
-    plot_spectrum(time, data, freqs_data, G_data, vars2plot, amod_path * "/output/" * experiment * "/" * "amod_results.png")
+    save(amod_path * "/output/" * experiment * "/" * "amod_results.png", fig)
 end
 
 @doc """

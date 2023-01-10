@@ -123,6 +123,27 @@ function vector2dyadic(d)
 end
 
 @doc """
+
+
+"""
+function calc_spectrum(d, fs)
+    # -- spectrum blackman tuckey
+    N = length(d)
+    Nmax = Int(ceil(N / 2))
+    P = periodogram(d, onesided=false, fs=fs, window=blackman(N))
+    G, freq = P.power, P.freq
+    G, freq = G[1:Nmax] .* 2, freq[1:Nmax]
+    G, freq = G[freq.>=1/200.5e3], freq[freq.>=1/200e3] # we eliminate values above and below Milankovitch cycles
+    G, freq = G[freq.<=1/15e3], freq[freq.<=1/15e3]
+    #G = sqrt.(G) / (N / 2)
+    G = G ./ sum(G)
+    if var(d) < 1e-1
+        G = zeros(length(G))
+    end
+    return G, freq
+end
+
+@doc """
     calc_wavelet:
         Generate an array with the values of the wavelet applied to d
 """

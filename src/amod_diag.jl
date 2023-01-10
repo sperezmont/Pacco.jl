@@ -7,8 +7,7 @@
 """
 function calc_E(now_di, par_di)
     for hm in par_di["hemisphere"]
-        now_di["E_"*hm] = - par_di["E_ref_"*hm] * (now_di["T_"*hm] - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
-        now_di["E_"*hm] = max(now_di["E_"*hm], 0.0)
+        now_di["E_"*hm] = par_di["E_ref_"*hm] * (now_di["T_"*hm] - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
     end
     return now_di
 end

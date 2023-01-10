@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -2e6                # [yr] Starting time (model years)
+time_init = -5e5                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -114,7 +114,7 @@ A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass b
 t_snow = -11.6                  # [ºC] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
 t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
 lambda = 0.05                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
-melt_offset = -10.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
+melt_offset = -5.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
