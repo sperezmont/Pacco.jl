@@ -92,35 +92,35 @@ function calc_permutations(d::OrderedDict)
     return perm
 end
 
-@doc """
-    calc_ndn:
-        calculates the nearest 2^n number to nmbr by Jan Swierczek-Jereczek
-"""
-function calc_ndn(nmbr::Int)
-    dyadic_list = 2.0 .^ (1:50)
-    n = argmin((Float64(nmbr) .- dyadic_list) .^ 2.0)
-    return 2^n
-end
+# @doc """
+#     calc_ndn:
+#         calculates the nearest 2^n number to nmbr by Jan Swierczek-Jereczek
+# """
+# function calc_ndn(nmbr::Int)
+#     dyadic_list = 2.0 .^ (1:50)
+#     n = argmin((Float64(nmbr) .- dyadic_list) .^ 2.0)
+#     return 2^n
+# end
 
-@doc """
-    vector2dyadic:
-        Takes a vector and transforms it to dyadic size
-"""
-function vector2dyadic(d)
-    # define ld
-    ld = length(d)
+# @doc """
+#     vector2dyadic:
+#         Takes a vector and transforms it to dyadic size
+# """
+# function vector2dyadic(d)
+#     # define ld
+#     ld = length(d)
 
-    # create grid and interpolant
-    grid = 1:ld
-    d_interp = linear_interpolation(grid, d)
+#     # create grid and interpolant
+#     grid = 1:ld
+#     d_interp = linear_interpolation(grid, d)
 
-    # calculate nearest dyadic size
-    nds = calc_ndn(ld)
-    grid_dyadic = range(1, stop=ld, length=nds)
+#     # calculate nearest dyadic size
+#     nds = calc_ndn(ld)
+#     grid_dyadic = range(1, stop=ld, length=nds)
 
-    # return new time series
-    return d_interp.(grid_dyadic)
-end
+#     # return new time series
+#     return d_interp.(grid_dyadic)
+# end
 
 @doc """
 
@@ -130,16 +130,8 @@ function calc_spectrum(d, fs)
     # -- spectrum blackman tuckey
     N = length(d)
     Nmax = Int(ceil(N / 2))
-    P = periodogram(d, onesided=false, fs=fs, window=blackman(N))
+    P = periodogram(d, fs=fs, window=blackman(N))
     G, freq = P.power, P.freq
-    G, freq = G[1:Nmax] .* 2, freq[1:Nmax]
-    G, freq = G[freq.>=1/200.5e3], freq[freq.>=1/200e3] # we eliminate values above and below Milankovitch cycles
-    G, freq = G[freq.<=1/15e3], freq[freq.<=1/15e3]
-    #G = sqrt.(G) / (N / 2)
-    G = G ./ sum(G)
-    if var(d) < 1e-1
-        G = zeros(length(G))
-    end
     return G, freq
 end
 
@@ -147,14 +139,11 @@ end
     calc_wavelet:
         Generate an array with the values of the wavelet applied to d
 """
-function calc_wavelet(d, fs) # I HAVE TO CALIBRATE PARAMETERS IN HERE
-    wvt = ContinuousWavelets.wavelet(Morlet(π), averagingType=NoAve(), β=1)       # -- define wavelet function to apply
-    Wt = ContinuousWavelets.cwt(d, wvt)                                           # -- perform the discrete wavelet transform
-    ft = getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)   # -- get frequencies
-    
-    # -- normalization through integral
-    Wt2 = abs.(Wt) #.^ 2
-    Wtf = Wt2 ./ sum(Wt2, dims=2)#Wt2 ./ var(Wt2, dims=(2, 1))
-
-    return Wtf, ft
+function calc_wavelet(d, fs; sigma=π)
+    wvt = ContinuousWavelets.wavelet(Morlet(sigma), averagingType=NoAve(), β=1)
+    S = ContinuousWavelets.cwt(d, wvt)                                           
+    freq= getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)  
+    S = abs.(S) .^ 2 
+    S = S ./ sum(S, dims=2)
+    return S, freq
 end

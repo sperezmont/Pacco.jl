@@ -7,7 +7,12 @@
 """
 function calc_E(now_di, par_di)
     for hm in par_di["hemisphere"]
-        now_di["E_"*hm] = par_di["E_ref_"*hm] * (now_di["T_"*hm] - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
+        if par_di["active_climate"]
+            Temp = now_di["T_"*hm]
+        else    
+            Temp = now_di["T_sl_"*hm]
+        end
+        now_di["E_"*hm] = par_di["E_ref_"*hm] * (Temp - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
     end
     return now_di
 end
