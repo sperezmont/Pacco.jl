@@ -125,3 +125,15 @@ Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern 
 
 A_te_n = 20.0                    # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
 A_te_s = 20.0                    # [K] Thermal amplitude due to ice extent (Southern Hemisphere)
+
+## Proxy files
+# -- variable names must be "T", "T_lo", "T_up"
+T_proxy = ["Barker-etal_2011/barker-etal_2011.nc",
+           "Snyder_2016/snyder_2016.nc"]
+
+# -- variable names must be "co2", "co2_lo", "co2_up"
+co2_proxy = ["Luthi-etal_2008/luthi-etal_2008.nc"]
+
+# -- variable names must be "V", "V_lo", "V_up"
+V_proxy = ["Waelbroeck-etal_2002/waelbroeck-etal_2002.nc",
+           "Spratt-Lisiecki_2016/spratt-lisiecki_2016.nc"]
