@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -5e5                # [yr] Starting time (model years)
+time_init = -8e5                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -69,7 +69,7 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-cs = 0.12                       # [K/Wm²] climate sensitivity
+cs = 0.15#0.12                       # [K/Wm²] climate sensitivity
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 
 t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
@@ -111,8 +111,6 @@ t_sb = 5.0                      # [ºC] Represents the thermal state of the boun
 kt = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
 pr_ref = 1                      # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
-t_snow = -11.6                  # [ºC] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
-t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
 lambda = 0.05                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
 melt_offset = -5.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 

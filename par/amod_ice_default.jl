@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -5e5                # [yr] Starting time (model years)
+time_init = -1.5e6                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -22,17 +22,17 @@ A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the f
 # -- Switches
 active_outout = false           # Switch: generate out.out?
 active_iso = true               # Switch: include active isostatic rebound?
-active_sed = false              # Switch: include interactive sediments?
-active_climate = true           # Switch: include climate routines?
-active_ice = false              # Switch: include ice sheet dynamics?
+active_sed = true              # Switch: include interactive sediments?
+active_climate = false           # Switch: include climate routines?
+active_ice = true              # Switch: include ice sheet dynamics?
 
 # -- Cases
 ins_case = "laskar"             # Insolation case: "artificial", "laskar" 
 ud_case = "sia"                 # Ice flow approximation: "sia"
 ub_case = "weertmanq"           # parameterization of basal velocity: "weertman"
 tsurf_case = "linear"           # Surface temperature method: "linear"
-ac_case = "linear"                 # Clausius-Clapeyron approximation: "ins", "linear"
-sm_case = "ITM"                 # Surface melting case: "PDD", "ITM"
+ac_case = "linear"              # Clausius-Clapeyron approximation: "ins", "linear"
+sm_case = "PDD"                 # Surface melting case: "PDD", "ITM"
 
 # -- Orbital forcing parameters 
 P_obl = 0.9                     # Power of obliquity (normalised to At)
@@ -56,7 +56,7 @@ ins_prei = 480.0                 # [W/m²] Default preindustrial
 co2_prei = 280.0                 # [ppm] Default preindustrial 
 co2_ref = 280.0                  # [ppm] Reference value for co2dot
 
-A_t = 35.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+A_t = 30.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 time_anth = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
 At_anth = 55.0                  # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
@@ -69,7 +69,7 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-cs = 0.12                       # [K/Wm²] climate sensitivity
+cs = 0.15                       # [K/Wm²] climate sensitivity
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 
 t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
@@ -97,7 +97,7 @@ E_ref_s = 14e6                   # [km²] Maximum ice surface ~ [1-2]e7 km² (So
 
 # -- Dynamics
 v_kin = 1000.0                  # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (Payne 2004)
-f_1 = 0.7e-8                    # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr ==> f1 ~ 1e-6)
+f_1 = 1e-6                   # [--] fraction of the sediments that is removed because of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr ==> f1 ~ 1e-6)
 f_2 = 1e-5                      # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 fstream_min_n = 0.4               # [--] Mininimal Fraction of the ice sheet considered streaming
 fstream_min_s = 0.4               # [--] Mininimal Fraction of the ice sheet considered streaming
@@ -111,19 +111,19 @@ t_sb = 5.0                      # [ºC] Represents the thermal state of the boun
 kt = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
 pr_ref = 1                      # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
-lambda = 0.05                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
-melt_offset = -5.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
+lambda = 0.05                   # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
+melt_offset = -5.0              # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
-ki = 0.009                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
-ka = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+ki = 0.006                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
+ka = 0.004                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
-Acc_ref_n = 0.1                    # [m/yr] Reference Accumulation for northern hemisphere
-Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern hemisphere
+Acc_ref_n = 0.1                 # [m/yr] Reference Accumulation for northern hemisphere
+Acc_ref_s = 0.1                 # [m/yr] Reference Accumulation for southern hemisphere
 
-A_te_n = 20.0                    # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
-A_te_s = 20.0                    # [K] Thermal amplitude due to ice extent (Southern Hemisphere)
+A_te_n = 20.0                   # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
+A_te_s = 20.0                   # [K] Thermal amplitude due to ice extent (Southern Hemisphere)
 
 ## Proxy files
 # -- variable names must be "T", "T_lo", "T_up"

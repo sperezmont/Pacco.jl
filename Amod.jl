@@ -41,14 +41,14 @@ println("Done!")
 
 # AMOD header
 printstyled("================================================================== \n", color=:light_blue)
-printstyled("| AMOD v0.2                                                      | \n", color=:bold)
+printstyled("| Amod v0.2                                                      | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
 printstyled("|      --> run_amod(out_name, par_file, par2change)              | \n")
 printstyled("|      --> run_ensemble(par2per, out_name, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
-printstyled("|      --> plot_amod(experiment, vars2plot)                      | \n")
+printstyled("|      --> plot_amod(experiment, vars2plot, MPT)                 | \n")
 printstyled("|      --> plot_wavelet(experiment, var2plot)                    | \n")
 printstyled("================================================================== \n", color=:light_blue)
 

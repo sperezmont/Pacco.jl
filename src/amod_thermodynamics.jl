@@ -48,9 +48,14 @@ function calc_Acc(now_t, par_t)
                 f_snow = (now_t["T_surf_"*hm] - par_t["T_rain"]) / (par_t["T_snow"] - par_t["T_rain"])  # assume linear transition
                 snf = f_snow * pr
             end
-            now_t["Acc_"*hm] = snf
+            now_t["Acc_"*hm] = max(snf, 0.0)
         elseif par_t["ac_case"] == "linear"
-            now_t["Acc_"*hm] = par_t["Acc_ref_"*hm] + par_t["ka"] * (now_t["T_"*hm] - par_t["T_ref_"*hm])
+            if par_t["active_climate"]
+                temp = now_t["T_"*hm]   # Is it correct? Perhaps T_surf is better? -- spm 2023.01.17
+            else
+                temp = now_t["T_sl_"*hm]
+            end
+            now_t["Acc_"*hm] = par_t["Acc_ref_"*hm] + par_t["ka"] * (temp - par_t["T_ref_"*hm])
             now_t["Acc_"*hm] = max(now_t["Acc_"*hm], 0.0)
         end
     end

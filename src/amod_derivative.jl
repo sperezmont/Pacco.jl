@@ -7,11 +7,8 @@
 """
 function calc_Hdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        now_dt["Hdot_"*hm] = 0.0
         # -- climatic term
-        if par_dt["active_climate"]
-            now_dt["Hdot_"*hm] = copy(now_dt["TMB_"*hm])
-        end
+        now_dt["Hdot_"*hm] = copy(now_dt["TMB_"*hm])
         # -- dynamic term
         if par_dt["active_ice"]
             now_dt["Hdot_"*hm] += -now_dt["U_"*hm] * now_dt["H_"*hm] / par_dt["L"]

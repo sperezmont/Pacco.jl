@@ -103,7 +103,7 @@ function load_defs(par_path)
         "T_snow" => t_snow + degK,
         "T_rain" => t_rain + degK,
         "lambda" => lambda,
-        "melt_offset" => melt_offset,
+        "melt_offset" => melt_offset + degK,
         "c" => c,
         "km" => km,
         "ki" => ki,
@@ -147,7 +147,7 @@ function load_defs(par_path)
         "fstream_n" => 0.0, "fstream_s" => 0.0,
         # ---- thermodynamics
         "A" => INCOND["A_init"],
-        "T_surf_n" => 0.0, "T_surf_s" => 0.0,
+        "T_surf_n" => degK, "T_surf_s" => degK,
         "Acc_n" => 0.0, "Acc_s" => 0.0,
         "M_n" => 0.0, "M_s" => 0.0,
         "SMB_n" => 0.0, "SMB_s" => 0.0,
