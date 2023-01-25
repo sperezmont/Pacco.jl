@@ -140,10 +140,41 @@ end
         Generate an array with the values of the wavelet applied to d
 """
 function calc_wavelet(d, fs; sigma=π)
-    wvt = ContinuousWavelets.wavelet(Morlet(sigma), averagingType=NoAve(), β=1)
+    wvt = ContinuousWavelets.wavelet(Morlet(sigma), s=8, boundary=ZPBoundary(), averagingType=NoAve(), β=1)
     S = ContinuousWavelets.cwt(d, wvt)                                           
     freq= getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)  
     S = abs.(S) .^ 2 
     S = S ./ sum(S, dims=2)
+
+    # # -- cone of influence
+    # s = 8
+    # taus = sqrt(2) * s
+    # coi = 1 ./ exp(t ./ taus)
     return S, freq
+end
+
+@doc """
+    gen_lhs:
+        Generate a Latin Hypercube Sampling for AMOD ensembles using LatinHypercubeSampling.jl
+        par2per --> Dictionary with parameters to permute, key => (min, max)
+        nsim    --> number of simulations (number of sample points)
+        ngns -> number of generations
+
+        Based on example from:
+            https://mrurq.github.io/LatinHypercubeSampling.jl/stable/man/lhcoptim/
+"""
+function gen_lhs(par2per::Dict, nsim::Int; ngens=10)
+    # Plan the LHS
+    nds = length(par2per)
+    plan, _ = LHCoptim(nsim, nds, ngens)
+
+    # Generate a vector with [min, max] values
+    minmax = [par2per[i] for i in keys(par2per)]
+
+    # Scale plan
+    scaled_plan = scaleLHC(plan, minmax)
+    scaled_plan_list = [scaled_plan[i, :] for i in 1:size(scaled_plan)[1]]       # -- convert to list of lists
+    scaled_plan_dict = [Dict(keys(par2per) .=> scaled_plan_list[i]) for i in 1:length(scaled_plan_list)] # -- convert to dictionary
+
+    return scaled_plan, scaled_plan_dict
 end

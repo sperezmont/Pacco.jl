@@ -20,6 +20,7 @@ using Wavelets              # wavelet analysis
 using ContinuousWavelets    # ""
 using Statistics            # to make some minor calculations
 using Interpolations        # ""
+using LatinHypercubeSampling    # ""
 
 # -- import model libraries and functions
 include("./libs/misc.jl")              # -- include libraries
@@ -45,6 +46,7 @@ printstyled("| Amod v0.2                                                      | 
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
 printstyled("|      --> run_amod(out_name, par_file, par2change)              | \n")
+printstyled("|      --> run_lhs(par2per, nsim, out_name, par_file)            | \n")
 printstyled("|      --> run_ensemble(par2per, out_name, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")

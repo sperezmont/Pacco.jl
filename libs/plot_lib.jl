@@ -76,7 +76,8 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
 
         update_theme!()
 
-        proxy_colors = [:limegreen, :indigo, :aquamarine4, :orangered, :hotpink4]
+        proxy_colors = [:aquamarine4, :limegreen, :orangered, :indigo, :hotpink4]
+        (MPT) && (vspan!(ax, -1.25e6, -0.7e6, color=(:red, 0.2)))    # plot MPT
         if vars2plot[i] in ["V_n", "co2_n", "T_n"]
             proxy_i = proxies_data[vars2plot[i][1:end-2]*"_proxy"]
             for j in eachindex(proxy_i)
@@ -85,7 +86,7 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
                 if haskey(df, vars2plot[i][1:end-2]*"_lo")
                     proxy_err_lo = df[vars2plot[i][1:end-2]*"_lo"]
                     proxy_err_up = df[vars2plot[i][1:end-2]*"_up"]
-                    band!(ax, proxy_time, proxy_err_lo, proxy_err_up, linewidth=2, color=(proxy_colors[k], 0.6/j))
+                    band!(ax, proxy_time, proxy_err_lo, proxy_err_up, linewidth=2, color=(proxy_colors[k], 0.4/j))
                 end
                 idx = 7
                 for n in eachindex(proxy_i[j])
@@ -107,8 +108,6 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
             lines!(ax, time, di, linewidth=5, color=palettes[1][i])
         end        
 
-        
-        (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=3, color=:red, linestyle=:dash))    # plot MPT
         vlines!(ax_spect, [21e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash)
         barplot!(ax_spect, periods_data[i], G_data[i], width=fgsz[1], color=palettes[1][i])
         lines!(ax_spect, periods_data[i], G_data[i], linestyle=:dash, linewidth=5, color=palettes[1][i])
@@ -118,13 +117,13 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
 
         ylims!(ax_spect, (0.0, 0.55))
 
-        xlen = length(time)
-        if mod(xlen, 2) == 0
-            xstep = Int(xlen / 10)
+        if time[1] < -1.5e6
+            ax.xticks = -5e6:500e3:5e6
+        elseif time[1] < -1e6
+            ax.xticks = -5e6:200e3:5e6
         else
-            xstep = Int((xlen - 1) / 10)
+            ax.xticks = -5e6:100e3:5e6
         end
-        ax.xticks = time[1:xstep:end]
         ax.xtickformat = k -> string.(k / 1000)
 
         ax_spect.xtickformat = k -> string.(Int.(ceil.(k / 1000)))
@@ -141,7 +140,7 @@ end
 @doc """
     plot_wavelet: Plots a map of the wavelet scalogram
 """
-function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, sigma=π)
+function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, sigma=π, MPT=false)
     ## Load output data 
     data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", [var2plot])
 
@@ -150,7 +149,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     periods = 1 ./ freqs
 
     ## Plot
-    fig, fntsz = Figure(resolution=(1000, 600)), 20
+    fig, fntsz = Figure(resolution=(800, 400)), 20
     fontsize_theme = Theme(font="Dejavu Serif", fontsize=fntsz)
     set_theme!(fontsize_theme)
 
@@ -162,18 +161,22 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     minW, maxW = minimum(Wnorm), maximum(Wnorm)
     stepW = 0.1 * max(minW, maxW)
     c = contourf!(ax, time, periods, Wnorm, colormap=cmap, levels=minW:stepW:maxW)
-    hlines!(ax, [21e3, 41e3, 100e3], color=:red, linestyle=:dash)
+    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=3, color=:red, linestyle=:dash))    # plot MPT
+    hlines!(ax, [21e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash)
     c.extendlow = :auto
     c.extendhigh = :auto
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized PSD", ticklabelsize=fntsz)
 
-    xlen = length(time)
-    if mod(xlen, 2) == 0
-        xstep = Int(xlen / 10)
+    text!(ax, -1.24e6, 5e3, text="MPT starts", fontsize=0.9*fntsz, color=:red)
+    text!(ax, -0.69e6, 5e3, text="MPT ends", fontsize=0.9fntsz, color=:red)
+
+    if time[1] < -1.5e6
+        ax.xticks = -5e6:500e3:5e6
+    elseif time[1] < -1e6
+        ax.xticks = -5e6:200e3:5e6
     else
-        xstep = Int((xlen - 1) / 10)
+        ax.xticks = -5e6:100e3:5e6
     end
-    ax.xticks = time[1:xstep:end]
     ax.xtickformat = k -> string.(k / 1000)
     xlims!(ax, (time[1], time[end]))
 
@@ -181,4 +184,21 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ylims!(ax, (0, 120e3))
 
     save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
+end
+
+# Shortcuts
+@doc """
+    plot_all: plots H wavelet and amod main results
+"""
+function plot_all(;experiment="test_default", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
+    plot_amod(experiment=experiment, vars2plot=vars2plot, MPT=MPT)
+    plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT)
+    plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT) # cutre, arreglar -- spm
+end
+
+@doc """
+"""
+function runplot_amod(; out_name="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1/1000, sigma=π)
+    run_amod(out_name=out_name, par_file=par_file)
+    plot_all(experiment=out_name, vars2plot=vars2plot, MPT=MPT, fs=fs, sigma=sigma)
 end

@@ -18,7 +18,7 @@ function amod(now, par, ctl, vart)
     now = calc_V(now, par)
 
     # -- calculate reference value for albedo
-    now = calc_albedo_ref(now, par)
+    (par["active_climate"]) && (now = calc_albedo_ref(now, par))
 
     # -- thermomechanical coupling (For now, the rate factor A is constant -- jas)
 
@@ -180,9 +180,9 @@ function run_amod_ensemble(par2per::OrderedDict; out_name="test_default_ens", pa
     isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
     for i in 1:nperm
         if i < 10   # create subdirectory name
-            out_namei = "/s0$i" * "_" * join(perm[i].keys .* string.(perm[i].vals), "-") * "/"
+            out_namei = "/s0$i" * "/"
         else
-            out_namei = "/s$i" * "_" * join(perm[i].keys .* string.(perm[i].vals), "-") * "/"
+            out_namei = "/s$i" * "/"
         end
         run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=perm[i])
     end
@@ -190,6 +190,42 @@ function run_amod_ensemble(par2per::OrderedDict; out_name="test_default_ens", pa
     # Done!
 end
 
+@doc """
+    run_amod_lhs: 
+        Takes a dictionary of parameters and create LHS, key => (min, max)
+        to run an ensemble and runs AMOD for each combination (not valid for bool parameters)
+"""
+function run_amod_lhs(par2per::Dict, nsim::Int; out_name="test_default_ens", par_file="amod_default.jl")
+    parnames = collect(keys(par2per))
+    # First, calculate LHS
+    permutations, permutations_dict = gen_lhs(par2per, nsim)
 
+    # Now, create ensemble directory
+    isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
 
+    # Plot (if possible) the LHS
+    if length(par2per) == 2
+        fig = Figure()
+        ax = Axis(fig[1, 1], xlabel=parnames[1], ylabel=parnames[2])
+        scatter!(ax, permutations)
+        save(amod_path * "/output/" * out_name * "/lhs.png", fig)
+    elseif length(par2per) == 3
+        fig = Figure()
+        ax = Axis3(fig[1, 1], xlabel=parnames[1], ylabel=parnames[2], zlabel=parnames[3])
+        scatter!(ax, permutations)
+        save(amod_path * "/output/" * out_name * "/lhs.png", fig)
+    end
+
+    # Run each permutation
+    for i in 1:nperm
+        if i < 10   # create subdirectory name
+            out_namei = "/s0$i" * "/"
+        else
+            out_namei = "/s$i" * "/"
+        end
+        run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=permutations_dict[i])
+    end
+
+    # Done!
+end
 

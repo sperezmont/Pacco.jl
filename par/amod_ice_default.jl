@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -1.5e6                # [yr] Starting time (model years)
+time_init = -2e6                # [yr] Starting time (model years)
 time_end = 0                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -27,11 +27,11 @@ active_climate = false           # Switch: include climate routines?
 active_ice = true              # Switch: include ice sheet dynamics?
 
 # -- Cases
-ins_case = "laskar"             # Insolation case: "artificial", "laskar" 
+ins_case = "laskar"         # Insolation case: "artificial", "laskar" 
 ud_case = "sia"                 # Ice flow approximation: "sia"
 ub_case = "weertmanq"           # parameterization of basal velocity: "weertman"
 tsurf_case = "linear"           # Surface temperature method: "linear"
-ac_case = "linear"              # Clausius-Clapeyron approximation: "ins", "linear"
+ac_case = "linear"                 # Clausius-Clapeyron approximation: "ins", "linear"
 sm_case = "PDD"                 # Surface melting case: "PDD", "ITM"
 
 # -- Orbital forcing parameters 
@@ -55,12 +55,15 @@ ins_ref_s = 526.0                 # [W/m²] Present reference value for insolati
 ins_prei = 480.0                 # [W/m²] Default preindustrial 
 co2_prei = 280.0                 # [ppm] Default preindustrial 
 co2_ref = 280.0                  # [ppm] Reference value for co2dot
+tau_co2 = 10.0                  # [yr] Characteristic time for co2 evolution
+ktco2 = 10.0                    # [ppm/K] Proportionality between temperature and co2 forcing
 
-A_t = 30.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+A_t = 20.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 time_anth = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
+co2_anth = 100.0                # [ppm] Nthropogenic amoun of co2 produced
 At_anth = 55.0                  # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
-Ac_anth = 20.0                   # [ppm] Amplitude of anthropogenic radiative forcing
+Ac_anth = 20.0                  # [ppm] Amplitude of anthropogenic radiative forcing
 tau_anth = 200e3                # [yr] Relaxation time for anthropogenic forcing
 
 albedo_land = 0.2               # [--] ground albedo
@@ -97,7 +100,7 @@ E_ref_s = 14e6                   # [km²] Maximum ice surface ~ [1-2]e7 km² (So
 
 # -- Dynamics
 v_kin = 1000.0                  # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (Payne 2004)
-f_1 = 1e-6                   # [--] fraction of the sediments that is removed because of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr ==> f1 ~ 1e-6)
+f_1 = 1e-7                    # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr ==> f1 ~ 1e-6)
 f_2 = 1e-5                      # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 fstream_min_n = 0.4               # [--] Mininimal Fraction of the ice sheet considered streaming
 fstream_min_s = 0.4               # [--] Mininimal Fraction of the ice sheet considered streaming
@@ -109,15 +112,17 @@ glen_n = 3.0                    # [--] Glen's flow law exponent
 # -- Thermodynamics
 t_sb = 5.0                      # [ºC] Represents the thermal state of the boundary between deformational and streaming part -- jas 
 kt = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
-pr_ref = 1                      # [m/yr] Reference value for precipitation
+pr_ref = 0.7                    # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
-lambda = 0.05                   # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
+t_snow = -11.6                  # [ºC] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
+t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
+lambda = 0.1                   # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
 melt_offset = -5.0              # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
-ki = 0.006                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
-ka = 0.004                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+ki = 0.009                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
+ka = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
 Acc_ref_n = 0.1                 # [m/yr] Reference Accumulation for northern hemisphere
 Acc_ref_s = 0.1                 # [m/yr] Reference Accumulation for southern hemisphere
@@ -127,12 +132,12 @@ A_te_s = 20.0                   # [K] Thermal amplitude due to ice extent (South
 
 ## Proxy files
 # -- variable names must be "T", "T_lo", "T_up"
-T_proxy = ["Barker-etal_2011/barker-etal_2011.nc",
-           "Snyder_2016/snyder_2016.nc"]
+T_proxy = ["Barker-etal_2011/barker-etal_2011.nc"]
+           #"Snyder_2016/snyder_2016.nc"]
 
 # -- variable names must be "co2", "co2_lo", "co2_up"
 co2_proxy = ["Luthi-etal_2008/luthi-etal_2008.nc"]
 
 # -- variable names must be "V", "V_lo", "V_up"
-V_proxy = ["Waelbroeck-etal_2002/waelbroeck-etal_2002.nc",
+V_proxy = [#"Waelbroeck-etal_2002/waelbroeck-etal_2002.nc",
            "Spratt-Lisiecki_2016/spratt-lisiecki_2016.nc"]

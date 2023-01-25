@@ -87,7 +87,23 @@ end
 """
 function calc_co2dot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        now_dt["co2dot_"*hm] = (par_dt["co2_ref"] - now_dt["co2_"*hm] + 10.0 * (now_dt["T_"*hm] - par_dt["T_ref_"*hm])) / 10.0
+
+        # -- anthropogenic forcing?
+        if (now_dt["time"] >= par_dt["time_anth"]) 
+            anth_co2 = par_dt["co2_anth"] / exp((now_dt["time"] - par_dt["time_anth"]) / par_dt["tau_anth"])
+        else
+            anth_co2 = 0
+        end
+
+        # -- AMOD mode
+        # if par_dt["active_climate"]
+        #     Temp = now_dt["T_"*hm]
+        # else
+        #     Temp = now_dt["T_sl_"*hm]
+        # end
+        Temp = now_dt["T_"*hm]
+
+        now_dt["co2dot_"*hm] = (par_dt["co2_ref"] - now_dt["co2_"*hm] + anth_co2 + par_dt["ktco2"] * (Temp - par_dt["T_ref_"*hm])) / par_dt["tau_co2"]
     end
     return now_dt
 end

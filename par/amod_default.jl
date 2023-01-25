@@ -50,15 +50,18 @@ ins_lat_s = -60.0               # [ºN] Latitude in which calculate the insolati
 ins_min = 425.0                 # [W/m²] Insolation minimum value 
 ins_max = 565.0                 # [W/m²] Insolation maximum value
 
-ins_ref_n = 480.0                 # [W/m²] Present reference value for insolation (Northern Hemisphere)
-ins_ref_s = 526.0                 # [W/m²] Present reference value for insolation (Southern Hemisphere)
-ins_prei = 480.0                 # [W/m²] Default preindustrial 
-co2_prei = 280.0                 # [ppm] Default preindustrial 
-co2_ref = 280.0                  # [ppm] Reference value for co2dot
+ins_ref_n = 480.0               # [W/m²] Present reference value for insolation (Northern Hemisphere)
+ins_ref_s = 526.0               # [W/m²] Present reference value for insolation (Southern Hemisphere)
+ins_prei = 480.0                # [W/m²] Default preindustrial 
+co2_prei = 280.0                # [ppm] Default preindustrial 
+co2_ref = 280.0                 # [ppm] Reference value for co2dot
+tau_co2 = 10.0                  # [yr] Characteristic time for co2 evolution
+ktco2 = 10.0                    # [ppm/K] Proportionality between temperature and co2 forcing
 
 A_t = 35.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 time_anth = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
+co2_anth = 100.0                # [ppm] Anthropogenic amoun of co2 produced
 At_anth = 55.0                  # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
 Ac_anth = 20.0                   # [ppm] Amplitude of anthropogenic radiative forcing
 tau_anth = 200e3                # [yr] Relaxation time for anthropogenic forcing
@@ -111,6 +114,8 @@ t_sb = 5.0                      # [ºC] Represents the thermal state of the boun
 kt = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
 pr_ref = 1                      # [m/yr] Reference value for precipitation
 A_pr = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
+t_snow = -11.6                  # [ºC] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
+t_rain = 7.4                    # [ºC] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
 lambda = 0.05                    # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt 
 melt_offset = -5.0             # [ºC or K] Temperature threshold that allows melting (default = -5.0ºC)
 c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 

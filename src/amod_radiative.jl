@@ -39,9 +39,9 @@ function calc_rf(now_r, par_r)
         # -- total        
         now_r["rf_"*hm] = now_r["ins_anom_"*hm] + radco2
 
-        if (now_r["time"] >= par_r["time_anth"]) # -- anthropogenic forcing
-            now_r["rf_"*hm] += par_r["Ac_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
-        end
+        #if (now_r["time"] >= par_r["time_anth"]) # -- anthropogenic forcing
+        #    now_r["rf_"*hm] += par_r["Ac_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
+        #end
     end
     return now_r
 end
