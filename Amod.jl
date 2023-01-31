@@ -26,6 +26,7 @@ using LatinHypercubeSampling    # ""
 include("./libs/misc.jl")              # -- include libraries
 include("./libs/nc.jl")
 include("./libs/plot_lib.jl")
+include("./libs/analysis.jl")
 
 include("./par/earth_const.jl")             # -- include earth constants
 
@@ -45,13 +46,13 @@ printstyled("================================================================== 
 printstyled("| Amod v0.2                                                      | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
-printstyled("|      --> run_amod(out_name, par_file, par2change)              | \n")
-printstyled("|      --> run_lhs(par2per, nsim, out_name, par_file)            | \n")
-printstyled("|      --> run_ensemble(par2per, out_name, par_file)             | \n")
+printstyled("|      --> run_amod(;out_name, par_file, par2change)             | \n")
+printstyled("|      --> run_lhs(par2per, nsim; out_name, par_file)            | \n")
+printstyled("|      --> run_ensemble(par2per; out_name, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
-printstyled("|      --> plot_amod(experiment, vars2plot, MPT)                 | \n")
-printstyled("|      --> plot_wavelet(experiment, var2plot)                    | \n")
+printstyled("|      --> plot_amod(;experiment, vars2plot, MPT)                | \n")
+printstyled("|      --> plot_wavelet(;experiment, var2plot)                   | \n")
 printstyled("================================================================== \n", color=:light_blue)
 
 

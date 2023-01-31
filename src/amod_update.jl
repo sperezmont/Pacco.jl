@@ -34,6 +34,10 @@ function update_forward(now_u, par_u, ctl_u, vars2update)
             now_u[variab] = min(now_u[variab], degK)
         elseif variab in ["co2_n", "co2_s"]
             now_u[variab] = max(now_u[variab], 0.0)
+        # elseif variab in ["T_n", "T_s"]
+        #     if (now_u["time"] >= par_u["time_anth"])
+        #         now_u[variab] += 0.12 / exp((now_u["time"] - par_u["time_anth"]) / par_u["tau_anth"])           # CHAPUZA TEMPORAL
+        #     end
         end
     end
     return now_u

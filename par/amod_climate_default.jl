@@ -72,7 +72,7 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-cs = 0.15#0.12                       # [K/Wm²] climate sensitivity
+cs = 0.15                       # [K/Wm²] climate sensitivity
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 
 t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
@@ -132,12 +132,12 @@ A_te_s = 20.0                    # [K] Thermal amplitude due to ice extent (Sout
 
 ## Proxy files
 # -- variable names must be "T", "T_lo", "T_up"
-T_proxy = ["Barker-etal_2011/barker-etal_2011.nc"]
-           #"Snyder_2016/snyder_2016.nc"]
+T_proxy = ["T_barker-etal_2011.nc"]
+           #"T_snyder_2016.nc"]
 
 # -- variable names must be "co2", "co2_lo", "co2_up"
-co2_proxy = ["Luthi-etal_2008/luthi-etal_2008.nc"]
+co2_proxy = ["co2_luthi-etal_2008.nc"]
 
 # -- variable names must be "V", "V_lo", "V_up"
-V_proxy = [#"Waelbroeck-etal_2002/waelbroeck-etal_2002.nc",
-           "Spratt-Lisiecki_2016/spratt-lisiecki_2016.nc"]
+V_proxy = [#"V_waelbroeck-etal_2002.nc",
+           "V_spratt-lisiecki_2016.nc"]

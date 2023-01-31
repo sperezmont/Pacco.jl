@@ -13,8 +13,8 @@ function change_namelist(outpath, file, params)
     (tmppath, tmpio) = mktemp(outpath)  # create temporary files
     open(outpath * "/" * file) do io
         for line in eachline(io, keep=true) # keep so the new line isn't chomped
-            for param in params.keys
-                if occursin(param, line)
+            for param in keys(params)
+                if occursin(param*" ", line)    # this space is needed!
                     splitted_line = split(line) # -- split in elements
                     splitted_line[3] = string(params[param]) # -- modify third element (value)
                     line = join(splitted_line, " ") * "\n" # -- rewrite line 
@@ -154,27 +154,66 @@ function calc_wavelet(d, fs; sigma=π)
 end
 
 @doc """
+    unpack_lhs:
+        takes a matrix row and generate a dictionary with keys(d)=orig_keys and typeof(d[key]) = types
+"""
+function unpack_lhs(m, row, types, orig_keys)
+    mpos = m[row, :]
+    d = []
+    for j in eachindex(mpos)
+        push!(d, types[j](mpos[j]))
+    end
+    d = Dict(orig_keys .=> d)
+    return d
+end
+
+@doc """
     gen_lhs:
         Generate a Latin Hypercube Sampling for AMOD ensembles using LatinHypercubeSampling.jl
-        par2per --> Dictionary with parameters to permute, key => (min, max)
-        nsim    --> number of simulations (number of sample points)
-        ngns -> number of generations
+        par2per     --> Dictionary with parameters to permute, key => (min, max)
+        nsim        --> number of simulations (number of sample points)
+        ngns        --> number of generations
+        pars_type   --> mode of operation: 1 = all continuous, 2 = mix, 3 = read pars_type_list
+        pars_type_list --> List of parameters type: Continuous() or Categorical(ncatvals, catWeight)
 
         Based on example from:
             https://mrurq.github.io/LatinHypercubeSampling.jl/stable/man/lhcoptim/
 """
-function gen_lhs(par2per::Dict, nsim::Int; ngens=10)
-    # Plan the LHS
-    nds = length(par2per)
-    plan, _ = LHCoptim(nsim, nds, ngens)
-
+function gen_lhs(par2per::Dict, nsim::Int; ngens=10, pars_type=1, pars_type_list=[], ncatvals=2, catWeigth=0.0025)
     # Generate a vector with [min, max] values
     minmax = [par2per[i] for i in keys(par2per)]
 
+    # Get types of parameters
+    types = [typeof.(par2per[key][1]) for (key, value) in par2per]
+
+    if pars_type == 1  # assume all parameters are Continuous()        
+        # Plan the LHS
+        nds = length(par2per)
+        plan, _ = LHCoptim(nsim, nds, ngens)
+        types = [Float64 for (key, value) in par2per]
+    else    # assume continuous and boolean categorical parameters
+        if pars_type == 2
+            dims::Vector{LHCDimension} = []
+            for (ky, vl) in par2per
+                if (vl[1] in [true, false]) && (vl[2] in [true, false])
+                    ncatvals = 2
+                    push!(dims, Categorical(ncatvals, catWeigth))
+                else
+                    push!(dims, Continuous())
+                end
+            end 
+        else
+            dims = pars_type_list
+        end
+        # Plan the LHS
+        nds = length(par2per)
+        initialSample = randomLHC(nsim, dims)
+        plan = LHCoptim!(initialSample, ngens; dims=dims)[1]     
+    end
+
     # Scale plan
     scaled_plan = scaleLHC(plan, minmax)
-    scaled_plan_list = [scaled_plan[i, :] for i in 1:size(scaled_plan)[1]]       # -- convert to list of lists
-    scaled_plan_dict = [Dict(keys(par2per) .=> scaled_plan_list[i]) for i in 1:length(scaled_plan_list)] # -- convert to dictionary
-
+    scaled_plan_dict = [unpack_lhs(scaled_plan, i, types, keys(par2per)) for i in 1:size(scaled_plan)[1]]
+    
     return scaled_plan, scaled_plan_dict
 end

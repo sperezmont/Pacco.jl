@@ -132,12 +132,12 @@ A_te_s = 20.0                    # [K] Thermal amplitude due to ice extent (Sout
 
 ## Proxy files
 # -- variable names must be "T", "T_lo", "T_up"
-T_proxy = ["Barker-etal_2011/barker-etal_2011.nc",
-           "Snyder_2016/snyder_2016.nc"]
+T_proxy = ["T_barker-etal_2011.nc"]
+           #"T_snyder_2016.nc"]
 
 # -- variable names must be "co2", "co2_lo", "co2_up"
-co2_proxy = ["Luthi-etal_2008/luthi-etal_2008.nc"]
+co2_proxy = ["co2_luthi-etal_2008.nc"]
 
 # -- variable names must be "V", "V_lo", "V_up"
-V_proxy = ["Waelbroeck-etal_2002/waelbroeck-etal_2002.nc",
-           "Spratt-Lisiecki_2016/spratt-lisiecki_2016.nc"]
+V_proxy = [#"V_waelbroeck-etal_2002.nc",
+           "V_spratt-lisiecki_2016.nc"]

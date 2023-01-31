@@ -198,7 +198,7 @@ end
 function run_amod_lhs(par2per::Dict, nsim::Int; out_name="test_default_ens", par_file="amod_default.jl")
     parnames = collect(keys(par2per))
     # First, calculate LHS
-    permutations, permutations_dict = gen_lhs(par2per, nsim)
+    permutations, permutations_dict = gen_lhs(par2per, nsim; pars_type=2)
 
     # Now, create ensemble directory
     isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
@@ -217,12 +217,10 @@ function run_amod_lhs(par2per::Dict, nsim::Int; out_name="test_default_ens", par
     end
 
     # Run each permutation
-    for i in 1:nperm
-        if i < 10   # create subdirectory name
-            out_namei = "/s0$i" * "/"
-        else
-            out_namei = "/s$i" * "/"
-        end
+    nperms = length(permutations_dict)
+    ndigits = Int(round(log10(nperms)) + 1)
+    for i in 1:nperms
+        out_namei = "/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
         run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=permutations_dict[i])
     end
 
