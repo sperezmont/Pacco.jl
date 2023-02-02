@@ -123,37 +123,6 @@ end
 # end
 
 @doc """
-
-
-"""
-function calc_spectrum(d, fs)
-    # -- spectrum blackman tuckey
-    N = length(d)
-    Nmax = Int(ceil(N / 2))
-    P = periodogram(d, fs=fs, window=blackman(N))
-    G, freq = P.power, P.freq
-    return G, freq
-end
-
-@doc """
-    calc_wavelet:
-        Generate an array with the values of the wavelet applied to d
-"""
-function calc_wavelet(d, fs; sigma=π)
-    wvt = ContinuousWavelets.wavelet(Morlet(sigma), s=8, boundary=ZPBoundary(), averagingType=NoAve(), β=1)
-    S = ContinuousWavelets.cwt(d, wvt)                                           
-    freq= getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)  
-    S = abs.(S) .^ 2 
-    S = S ./ sum(S, dims=2)
-
-    # # -- cone of influence
-    # s = 8
-    # taus = sqrt(2) * s
-    # coi = 1 ./ exp(t ./ taus)
-    return S, freq
-end
-
-@doc """
     unpack_lhs:
         takes a matrix row and generate a dictionary with keys(d)=orig_keys and typeof(d[key]) = types
 """

@@ -3,7 +3,8 @@
 #     Aim: This program contains functions for calculating derivatives
 # =============================
 @doc """
-    calc_Hdot: calculates ice thickness derivative
+    calc_Hdot:
+        calculates ice thickness derivative
 """
 function calc_Hdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
@@ -18,7 +19,8 @@ function calc_Hdot(now_dt, par_dt)
 end
 
 @doc """
-    calc_Hseddot: calculates sediments thickness derivative
+    calc_Hseddot:
+        calculates sediments thickness derivative
 """
 function calc_Hseddot(now_dt, par_dt, ctl_dt)
     for hm in par_dt["hemisphere"]
@@ -28,7 +30,8 @@ function calc_Hseddot(now_dt, par_dt, ctl_dt)
 end
 
 @doc """
-    calc_Bdot: calculates bedrock elevation derivative
+    calc_Bdot:
+        calculates bedrock elevation derivative
 """
 function calc_Bdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
@@ -42,7 +45,8 @@ function calc_Bdot(now_dt, par_dt)
 end
 
 @doc """
-    calc_T_icedot: calculates ice temperature derivative
+    calc_T_icedot:
+        calculates ice temperature derivative
 """
 function calc_T_icedot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
@@ -52,7 +56,8 @@ function calc_T_icedot(now_dt, par_dt)
 end
 
 @doc """
-    calc_Tdot: calculates regional temperature derivative
+    calc_Tdot:
+        calculates regional temperature derivative
 """
 function calc_Tdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
@@ -65,7 +70,8 @@ function calc_Tdot(now_dt, par_dt)
 end
 
 @doc """
-    calc_albedodot: calculates albedo derivative
+    calc_albedodot:
+        calculates albedo derivative
 """
 function calc_albedodot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
@@ -83,7 +89,8 @@ function calc_albedodot(now_dt, par_dt)
 end
 
 @doc """
-    calc_co2dot: calculates co2 derivative
+    calc_co2dot:
+        calculates co2 derivative
 """
 function calc_co2dot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]

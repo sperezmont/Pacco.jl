@@ -3,7 +3,8 @@
 #     Aim: This program contains functions to calculate dynamics
 # =============================
 @doc """
-    calc_tau_d: calculates total driving stress through
+    calc_tau_d:
+        calculates total driving stress through
         taud = rhoi * g * H * Z / L 
 """
 function calc_tau_d(now_d, par_d)
@@ -14,7 +15,8 @@ function calc_tau_d(now_d, par_d)
 end
 
 @doc """
-    calc_tau_b: calculates total basal stress through
+    calc_tau_b:
+        calculates total basal stress through
         taub = rhoi * g * H * Z / L 
         It is assumed that tau_d = tau_b as in the SIA.     -- jas
         SIA --> The basal shear stress balances out completely the driving stress
@@ -28,9 +30,10 @@ function calc_tau_b(now_d, par_d)
 end
 
 @doc """
-    calc_U_d: calculates the driving velocity through different options
-        --> glen case 
-                U_d = 2.0 * A * H * tau_d^glen_n / 5.0
+    calc_U_d:
+        calculates the driving velocity through different options
+            --> glen case 
+                    U_d = 2.0 * A * H * tau_d^glen_n / 5.0
 
 """
 function calc_U_d(now_d, par_d)
@@ -45,11 +48,12 @@ function calc_U_d(now_d, par_d)
 end
 
 @doc """
-    calc_U_b: calculates the basal velocity taking 
-        --> case weertman
-                Weertman sliding law
-        
-    sliding treatment --> I assume temperate base in streaming areas, so no dependence on temperature just on sediments -- jas
+    calc_U_b: 
+        calculates the basal velocity taking 
+            --> case weertman
+                    Weertman sliding law
+            
+        sliding treatment --> I assume temperate base in streaming areas, so no dependence on temperature just on sediments -- jas
 """
 function calc_U_b(now_d, par_d)
     for hm in par_d["hemisphere"]
@@ -65,7 +69,8 @@ function calc_U_b(now_d, par_d)
 end
 
 @doc """
-    calc_fstream: calculates stream fraction 
+    calc_fstream:
+        calculates stream fraction 
 """
 function calc_fstream(now_d, par_d, ctl_d)
     tau_kin = par_d["L"] / par_d["v_kin"]   # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
@@ -85,7 +90,8 @@ function calc_fstream(now_d, par_d, ctl_d)
 end
 
 @doc """
-    calc_U: calculates total velocity
+    calc_U:
+        calculates total velocity
 """
 function calc_U(now_d, par_d)
     for hm in par_d["hemisphere"]

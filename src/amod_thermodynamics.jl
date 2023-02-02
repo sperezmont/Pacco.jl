@@ -3,9 +3,10 @@
 #     Aim: This program contains functions to calculate thermodynamics
 # =============================
 @doc """
-    calc_P: calculates surface pressure
+    calc_P:
+        calculates surface pressure
 """
-function calc_P(now_t, par_t)
+function calc_P(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         now_t["P_"*hm] = P_sl * exp((-now_t["Z_"*hm] * g) / (Rd * now_t["T_surf_"*hm]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
     end
@@ -13,9 +14,10 @@ function calc_P(now_t, par_t)
 end
 
 @doc """
-    calc_T_surf: calculates surface temperature
+    calc_T_surf:
+        calculates surface temperature
 """
-function calc_T_surf(now_t, par_t)
+function calc_T_surf(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         if par_t["active_climate"]
             refT = copy(now_t["T_"*hm])
@@ -33,9 +35,10 @@ function calc_T_surf(now_t, par_t)
 end
 
 @doc """
-    calc_Acc: calculates accumulation rate
+    calc_Acc:
+        calculates accumulation rate
 """
-function calc_Acc(now_t, par_t)
+function calc_Acc(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         if par_t["ac_case"] == "ins"
             pr = par_t["pr_ref"] + par_t["A_pr"] * now_t["ins_norm_"*hm]
@@ -63,9 +66,10 @@ function calc_Acc(now_t, par_t)
 end
 
 @doc """
-    calc_M: calculates surface melting rate
+    calc_M:
+        calculates surface melting rate
 """
-function calc_M(now_t, par_t)
+function calc_M(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
             if now_t["T_surf_"*hm] >= (par_t["melt_offset"])
@@ -93,9 +97,10 @@ function calc_M(now_t, par_t)
 end
 
 @doc """
-    calc_SMB: calculates surface mass balance
+    calc_SMB:
+        calculates surface mass balance
 """
-function calc_SMB(now_t, par_t)
+function calc_SMB(now_t::OrderedDict, par_t::OrderedDict)
     # First, calculates Accumulation
     now_t = calc_Acc(now_t, par_t)
 
@@ -110,9 +115,10 @@ function calc_SMB(now_t, par_t)
 end
 
 @doc """
-    calc_TMB: calculates total mass balance
+    calc_TMB:
+        calculates total mass balance
 """
-function calc_TMB(now_t, par_t)
+function calc_TMB(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         now_t["TMB_"*hm] = now_t["SMB_"*hm] + 0.0   # for now, TMB = SMB -- 2022.11.17 spm
     end
@@ -122,7 +128,7 @@ end
 @doc """
     calc_Qdif: calculates diffusive heat
 """
-function calc_Qdif(now_t, par_t)
+function calc_Qdif(now_t::OrderedDict, par_t::OrderedDict)
     kt_ann = par_t["kt"] * sec_year
     #qgeo_ann = par["Q_geo"] * sec_year * 1e-3
 
@@ -148,7 +154,7 @@ end
 @doc """
     calc_Qdrag: calculates drag heat
 """
-function calc_Qdrag(now_t, par_t)
+function calc_Qdrag(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         if now_t["H_"*hm] < 10.0  # -- check if there is no ice
             now_t["Q_drag_"*hm] = 0.0

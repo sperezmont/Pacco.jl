@@ -19,6 +19,7 @@ using DSP                   # spectral analysis
 using Wavelets              # wavelet analysis
 using ContinuousWavelets    # ""
 using Statistics            # to make some minor calculations
+using StatsBase             # ""
 using Interpolations        # ""
 using LatinHypercubeSampling    # ""
 
@@ -47,7 +48,7 @@ printstyled("| Amod v0.2                                                      | 
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
 printstyled("|      --> run_amod(;out_name, par_file, par2change)             | \n")
-printstyled("|      --> run_lhs(par2per, nsim; out_name, par_file)            | \n")
+printstyled("|      --> run_amod_lhs(par2per, nsim; out_name, par_file)       | \n")
 printstyled("|      --> run_ensemble(par2per; out_name, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")

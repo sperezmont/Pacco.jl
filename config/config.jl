@@ -20,7 +20,7 @@ Pkg.activate("amod_env")
 # Adding dependencies ... 
 display("** Adding dependencies ... **")
 packages = ["NCDatasets", "DataStructures", "Insolation",
-            "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics", "Interpolations", "LatinHypercubeSampling"]
+            "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics", "StatsBase", "Interpolations", "LatinHypercubeSampling"]
 for i in packages
     Pkg.add(i)
 end

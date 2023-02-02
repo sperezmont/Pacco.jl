@@ -3,7 +3,8 @@
 #     Aim: This program contains functions to calculate orbital parameters
 # =============================
 @doc """
-    calc_artificial_insolation: Compute daily average insolation through different parameterizations
+    calc_artificial_insolation:
+        Compute daily average insolation through different parameterizations
 """
 function calc_artificial_insolation(now_o, par_o)
     # Calculate reference and amplitude
@@ -22,19 +23,8 @@ function calc_artificial_insolation(now_o, par_o)
 end
 
 @doc """
-    calc_laskar_insolation: Compute daily average insolation given latitude and time of year
-"""
-function calc_laskar_insolation2(now_o, par_o)
-    date::DateTime = DateTime(now_o["time"], par_o["ins_month"], par_o["ins_day"])
-    for hm in hemisphere
-        zen_ang, es_dist = daily_zenith_angle(date, par_o["ins_lat_"*hm], param_set)
-        now_o["ins_"*hm] = insolation(zen_ang, es_dist, param_set)
-    end
-    return now_o
-end
-
-@doc """
-    calc_solar_longitude: Compute solar longitude given day of the year and orbital parameters
+    calc_solar_longitude:
+        Compute solar longitude given day of the year and orbital parameters
         Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
 """
 function calc_solar_longitude(day, long_peri, ecc; days_per_year=365.2422)
@@ -53,7 +43,8 @@ function calc_solar_longitude(day, long_peri, ecc; days_per_year=365.2422)
 end
 
 @doc """
-    calc_laskar_insolation: Compute daily average insolation given latitude and day of the year
+    calc_laskar_insolation: 
+        Compute daily average insolation given latitude and day of the year
         Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
 """
 function calc_laskar_insolation(t; lat=65.0, day=170.0, S0=1365.2, day_type=1, days_per_year=365.2422)
@@ -92,7 +83,8 @@ function calc_laskar_insolation(t; lat=65.0, day=170.0, S0=1365.2, day_type=1, d
 end
 
 @doc """
-    calc_insol_day: Compute daily average insolation
+    calc_insol_day:
+        Compute daily average insolation
 """
 function calc_ins(now_o, par_o)
     if par_o["ins_case"] == "artificial"

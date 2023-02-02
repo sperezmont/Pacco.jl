@@ -295,6 +295,47 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
 
+@doc """
+    plot_ensemble:
+        plots ensemble experiment and variables in vars2plot
+"""
+function plot_ensemble(;experiment="test_default_ens", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], sims2highlight=[])
+    locdir = pwd() * "/output/" * experiment * "/"
+    runs = []
+    for element in readdir(locdir)
+        if element[end-3:end] != ".png"
+            push!(runs, element)
+        end
+    end
+
+    fig = Figure()
+    for v in eachindex(vars2plot)
+        if v == length(vars2plot)
+            ax = Axis(fig[v, 1], ylabel=vars2plot[v], xlabel="Time (kyr)")
+        else
+            ax = Axis(fig[v, 1], ylabel=vars2plot[v])
+        end
+        for r in eachindex(runs)
+            run = NCDataset(locdir * "/" * runs[r] * "/amod.nc")
+            t, d = run["time"], run[vars2plot[v]]
+            if runs[r] in sims2highlight
+                lines!(ax, t, d, label=runs[r], linewidth=2, overdraw=true)
+            else
+                lines!(ax, t, d, color="grey")
+            end
+            close(run)
+        end
+        if (sims2highlight != []) && (v == length(vars2plot))
+            axislegend(ax, framevisible=false)
+        end
+
+        if v != length(vars2plot)
+            ax.xticklabelsvisible = false
+        end
+    end
+    save(locdir * "amod_results.png", fig)
+end
+
 # Shortcuts
 @doc """
     plot_all: plots H wavelet and amod main results

@@ -9,7 +9,7 @@
         ===========================================================
             Adapted to Julia by Sergio Pérez-Montero (2022)
 """
-function amod(now, par, ctl, vart)
+function amod(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector)
     # Update variables
     now = update_forward(now, par, ctl, vart)
     now = update_Z(now, par)
@@ -81,7 +81,7 @@ end
 @doc """
     amod_loop: contains the time loop of the model
 """
-function amod_loop(now, out, par, ctl, vart, file)
+function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector, file)
     time_length = ceil((ctl["time_end"] - ctl["time_init"]) / ctl["dt"])
     for n in 1:time_length
         # update simulation time
@@ -111,7 +111,7 @@ end
 @doc """
     run_amod: main function of AMOD
 """
-function run_amod(; out_name="test_default", par_file="amod_default.jl", par2change=[])
+function run_amod(; out_name::String="test_default", par_file::String="amod_default.jl", par2change::Vector=[])
     ## Now, load arguments
     output_path = load_out(amod_path, out_name)
     load_parf(amod_path, output_path, par_file)
@@ -169,7 +169,7 @@ end
         Takes an (ordered) dictionary of parameters to be exchanged
         in order to run an ensemble and runs AMOD for each combination
 """
-function run_amod_ensemble(par2per::OrderedDict; out_name="test_default_ens", par_file="amod_default.jl")
+function run_amod_ensemble(par2per::OrderedDict; out_name::String="test_default_ens", par_file::String="amod_default.jl")
     # First, obtain simulations
     perm = calc_permutations(par2per)
 
@@ -195,13 +195,16 @@ end
         Takes a dictionary of parameters and create LHS, key => (min, max)
         to run an ensemble and runs AMOD for each combination (not valid for bool parameters)
 """
-function run_amod_lhs(par2per::Dict, nsim::Int; out_name="test_default_ens", par_file="amod_default.jl")
+function run_amod_lhs(par2per::Dict, nsim::Int; out_name::String="test_default_ens", par_file::String="amod_default.jl")
     parnames = collect(keys(par2per))
     # First, calculate LHS
     permutations, permutations_dict = gen_lhs(par2per, nsim; pars_type=2)
 
     # Now, create ensemble directory
-    isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
+    if isdir(amod_path * "/output/" * out_name)
+        rm(amod_path * "/output/" * out_name, recursive=true)
+    end
+    mkdir(amod_path * "/output/" * out_name)
 
     # Plot (if possible) the LHS
     if length(par2per) == 2

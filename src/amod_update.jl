@@ -3,7 +3,8 @@
 #     Aim: functions to update amod variables
 # =============================
 @doc """
-    update_amod_out: updates output variable (OUT)
+    update_amod_out:
+        updates output variable (OUT)
 """
 function update_amod_out(outf::OrderedDict, vals::OrderedDict)
     for (key, value) in outf
@@ -13,11 +14,12 @@ function update_amod_out(outf::OrderedDict, vals::OrderedDict)
 end
 
 @doc """
-    update_forward: takes vars2update and calculates their time evolution
-                    vars2update is a vector with the names of the variables to update
-                    vars2update is computed in run_amod() function 
+    update_forward: 
+        takes vars2update and calculates their time evolution
+        vars2update is a vector with the names of the variables to update
+        vars2update is computed in run_amod() function 
 """
-function update_forward(now_u, par_u, ctl_u, vars2update)
+function update_forward(now_u::OrderedDict, par_u::OrderedDict, ctl_u::OrderedDict, vars2update::Vector)
     for hm in par_u["hemisphere"], v in vars2update
         # -- calculate time evolution
         variab, vardot = v * "_" * hm, v * "dot_" * hm
@@ -44,9 +46,10 @@ function update_forward(now_u, par_u, ctl_u, vars2update)
 end
 
 @doc """
-    update_Z: updates ice surface elevation
+    update_Z:
+        updates ice surface elevation
 """
-function update_Z(now_u, par_u)
+function update_Z(now_u::OrderedDict, par_u::OrderedDict)
     for hm in par_u["hemisphere"]
         if par_u["active_iso"]
             now_u["Z_"*hm] = max(now_u["H_"*hm] + now_u["B_"*hm],

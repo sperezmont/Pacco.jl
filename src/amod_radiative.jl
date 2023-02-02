@@ -3,17 +3,20 @@
 #     Aim: This program contains functions to calculate radiative parameters
 # =============================
 @doc """
+    calc_rad_co2:
+        calculates the radiative forcing due to co2 (in W/m²)
 """
-function calc_rad_co2(CO2)
+function calc_rad_co2(CO2::Real)
     CO2_0 = 280.0
     RCO2_fac = 5.35
     return RCO2_fac * log(CO2 / CO2_0)
 end
 
 @doc """
-    calc_albedo_ref: calculates reference value for albedo
+    calc_albedo_ref:
+        calculates reference value for albedo
 """
-function calc_albedo_ref(now_r, par_r)
+function calc_albedo_ref(now_r::OrderedDict, par_r::OrderedDict)
     for hm in par_r["hemisphere"]
         if now_r["H_"*hm] == 0.0
             now_r["ice_time_"*hm] = 0.0 # -- no ice
@@ -27,9 +30,10 @@ function calc_albedo_ref(now_r, par_r)
 end
 
 @doc """
-    calc_rf: calculates radiative forcing for each hemisphere
+    calc_rf:
+        calculates radiative forcing for each hemisphere
 """
-function calc_rf(now_r, par_r)
+function calc_rf(now_r::OrderedDict, par_r::OrderedDict)
     for hm in par_r["hemisphere"]
         # -- insolation
         now_r = calc_ins(now_r, par_r)
@@ -47,9 +51,10 @@ function calc_rf(now_r, par_r)
 end
 
 @doc """
-    calc_Tsl: calculates sea level temperature
+    calc_Tsl:
+        calculates sea level temperature
 """
-function calc_Tsl(now_r, par_r)
+function calc_Tsl(now_r::OrderedDict, par_r::OrderedDict)
     # First, calculate insolation
     now_r = calc_ins(now_r, par_r)
 

@@ -3,7 +3,8 @@
 #     Aim: This program contains functions to calculate diagnostic variables
 # =============================
 @doc """
-    calc_E: calculates ice extension
+    calc_E: 
+        calculates ice-sheet extension
 """
 function calc_E(now_di, par_di)
     for hm in par_di["hemisphere"]
@@ -18,7 +19,8 @@ function calc_E(now_di, par_di)
 end
 
 @doc """
-    calc_V: calculates ice volume from predicted mean H and diagnosed E
+    calc_V: 
+        calculates ice-sheet volume from prognostic mean H and diagnosed E
 """
 function calc_V(now_di, par_di)
     for hm in par_di["hemisphere"]
