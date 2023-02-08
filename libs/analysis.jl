@@ -4,6 +4,41 @@
 #     Author: Sergio Pérez-Montero, 2023.01.26
 # =============================
 
+function cut_time_series(d1::Dict, d2::Dict)
+    elements_d1, elements_d2 = collect(keys(d1)), collect(keys(d2))
+
+    first_ts = [abs(d1[k]["time"][1]) for k in elements_d1] 
+    proxy_min_t, amod_min_t = findmin(first_ts), abs(d2[elements_d2[1]]["time"][1])
+    min_t = min(proxy_min_t[1], amod_min_t)
+    if min_t == proxy_min_t[1]
+        min_name = collect(elements_d1)[proxy_min_t[2]]
+        new_t1, new_tend = d1[min_name]["time"][1], d1[min_name]["time"][end]
+    else
+        min_name = elements[1]
+        new_t1, new_tend = d2[elements[1]]["time"][1], d2[elements[1]]["time"][end]  
+    end
+    
+    for k in elements_d1
+        if k != min_name
+            idx = findmin(abs.(d1[k]["time"] .- new_t1))[2]
+            for k2 in keys(d1[k])
+                d1[k][k2] = d1[k][k2][idx:end]
+            end 
+        end
+    end
+
+    for k in elements_d2
+        if k != min_name
+            idx = findmin(abs.(d2[k]["time"] .- new_t1))[2]
+            for k2 in keys(d2[k])
+                d2[k][k2] = d2[k][k2][idx:end]
+            end 
+        end
+    end
+    return d1, d2, new_t1, new_tend
+end
+
+
 @doc """
 
 
@@ -101,6 +136,27 @@ function compute_stats(d::Vector)
 end
 
 @doc """
+    gen_stats_dict:
+        generates the dictionary of stats
+        dimensions of d --> d[element][variable][time]
+"""
+function gen_stats_dict(d::Dict)
+    stats_dict = Dict(v => Dict() for v in keys(d))
+    for i in keys(d)
+        stats_i = Dict(v => Dict() for v in keys(d[i]))
+        for j in keys(d[i])
+            if j != "time"
+                stats_ij = compute_stats(d[i][j])
+                stats_i[j] = stats_ij
+            end
+        end
+        delete!(stats_i, "time")
+        stats_dict[i] = stats_i
+    end
+    return stats_dict
+end
+
+@doc """
     readdir_store_sims:
 """
 function readdir_store_sims(path_to_experiment)
@@ -149,8 +205,10 @@ end
         Analyzes a simulation or ensemble against available proxies
         experiment      --> experiment name to analyze
         isens           --> is it an ensemble?
+        TisTsl          --> are we using regional or sea level temperature?
+        tref            --> temperature to use when computing anomalies
 """
-function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true)
+function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true, TisTsl=false, tref::Real=273.15)
     # Define some local variables
     locdir = pwd() * "/output/" * experiment * "/"
 
@@ -194,70 +252,20 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true)
     for i in eachindex(elements)
         df = NCDataset(locdir * elements[i] * "/amod.nc")
         amod_data[elements[i]] = Dict(vars2compare_aux[v] => df[vars2load[v]][:] for v in eachindex(vars2load))
+        if TisTsl
+            amod_data[elements[i]]["T"] = df["T_sl_n"][:]
+        end
+        if "T" in vars2compare
+            amod_data[elements[i]]["T"] = amod_data[elements[i]]["T"] .- tref # anomaly (tref)
+        end
     end
 
     # Cut time series, assume all amod runs have the same time length
-    first_ts = [abs(proxy_data[k]["time"][1]) for k in keys(proxy_data)] 
-    proxy_min_t, amod_min_t = findmin(first_ts), abs(amod_data[elements[1]]["time"][1])
-    min_t = min(proxy_min_t[1], amod_min_t)
-    if min_t == proxy_min_t[1]
-        min_name = collect(keys(proxy_data))[proxy_min_t[2]]
-        new_t1, new_tend = proxy_data[min_name]["time"][1], proxy_data[min_name]["time"][end]
-    else
-        min_name = elements[1]
-        new_t1, new_tend = amod_data[elements[1]]["time"][1], amod_data[elements[1]]["time"][end]  
-    end
-    
-    for k in keys(proxy_data)
-        if k != min_name
-            idx = findmin(abs.(proxy_data[k]["time"] .- new_t1))[2]
-            for k2 in keys(proxy_data[k])
-                proxy_data[k][k2] = proxy_data[k][k2][idx:end]
-            end 
-        end
-    end
-
-    for k in keys(amod_data)
-        if k != min_name
-            idx = findmin(abs.(amod_data[k]["time"] .- new_t1))[2]
-            for k2 in keys(amod_data[k])
-                amod_data[k][k2] = amod_data[k][k2][idx:end]
-            end 
-        end
-    end
+    proxy_data, amod_data, new_t1, new_tend = cut_time_series(proxy_data, amod_data)
 
     # Compute Statistics
-    # -- proxy
-    proxy_stats = Dict(v => Dict() for v in keys(proxy_data))
-    for i in keys(proxy_data)
-        stats_i = Dict(v => Dict() for v in keys(proxy_data[i]))
-        for j in keys(proxy_data[i])
-            if j != "time"
-                stats_ij = compute_stats(proxy_data[i][j])
-                stats_i[j] = stats_ij
-            end
-        end
-        delete!(stats_i, "time")
-        proxy_stats[i] = stats_i
-    end
-
-    # -- amod ensemble
-    # ---- ensemble stats
-    amod_stats = Dict(v => Dict() for v in keys(amod_data))
-    for i in keys(amod_data)
-        stats_i = Dict(v => Dict() for v in keys(amod_data[i]))
-        for j in keys(amod_data[i])
-            if j != "time"
-                if j == "T"
-                    amod_data[i][j] = amod_data[i][j] .- 273.15 # t_ref
-                end
-                stats_ij = compute_stats(amod_data[i][j])
-                stats_i[j] = stats_ij
-            end
-        end
-        delete!(stats_i, "time")
-        amod_stats[i] = stats_i
-    end
+    proxy_stats = gen_stats_dict(proxy_data)
+    amod_stats = gen_stats_dict(amod_data)
 
     # ---- ensemble vs proxy
     comp_data = Dict()
@@ -271,6 +279,11 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true)
                     fs = 1 / (proxy_data[kp]["time"][2] - proxy_data[kp]["time"][1])
                     new_d2 = interp_2series(d1, d2)
                     stats_kpv[ka] = compute_comp_stats(d1, new_d2, fs)
+
+                    if isnan(stats_kpv[ka]["corr"]) # vari is 0
+                        stats_kpv[ka]["corr"] = 0.0    
+                    end
+
                 end
                 stats_kp[v] = stats_kpv
             end
@@ -278,7 +291,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true)
         comp_data[kp] = stats_kp
     end
 
-    # Plot results, 1 file for each variable
+    # Plot results
     stat_vars = ["min", "mean", "max", "vari"]
     # -- convert to array stats data
     d = Array{Real}(undef, length(elements), length(vars2compare), length(stat_vars))
@@ -423,6 +436,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true)
         else
             ax_cor = Axis(fig[i, 3])
         end
+        
         lines!(ax, range(new_t1, new_tend, length=length(best_cor)) ./ 1000, best_cor, color="green", label=elements[max_cor[2]])
         boxplot!(ax_cor, ones(length(elements)), cor_ar, color="grey")
         scatter!(ax_cor, 1.0, max_cor[1], color="green", markersize=5)

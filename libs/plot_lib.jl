@@ -64,8 +64,8 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
             if spect
                 ax_spect = Axis(fig[i, 2], title="Normalized PSD", xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (" * time.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
             end
-        elseif vars2plot[i] == "T_n"
-            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel="ΔT_n (K)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
+        elseif vars2plot[i] in ["T_n", "T_sl_n"]
+            ax = Axis(fig[i, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel="Δ" * vars2plot[i] * " (K)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
             if spect
                 ax_spect = Axis(fig[i, 2], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period" * " (k" * time.attrib["units"] * ")", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
             end
@@ -104,6 +104,7 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
                 scatter!(ax, proxy_time, proxy_data, color=proxy_colors[k], width=5, label=label_ij)
                 k += 1
             end
+
             if vars2plot[i] in ["T_n"]
                 lines!(ax, time, di .- (t_ref_n + 273.15), linewidth=5, color=palettes[1][i], label="AMOD")
             else
@@ -111,7 +112,11 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
             end
             axislegend(ax, position=:lb, labelsize=0.5*fntsz)
         else
-            lines!(ax, time, di, linewidth=5, color=palettes[1][i])
+            if vars2plot[i] in ["T_sl_n"]
+                lines!(ax, time, di .- (t_ref_n + 273.15), linewidth=5, color=palettes[1][i])
+            else
+                lines!(ax, time, di, linewidth=5, color=palettes[1][i])
+            end
         end        
 
         if spect
@@ -125,7 +130,7 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
         xlims!(ax, (time[1], time[end]))
         
         if time[1] < -1.5e6
-            ax.xticks = -5e6:500e3:5e6
+            ax.xticks = -5e6:300e3:5e6
         elseif time[1] < -1e6
             ax.xticks = -5e6:200e3:5e6
         else
@@ -147,9 +152,9 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
 end
 
 @doc """
-    plot_amod: plots results from AMOD (given or not the variables to plot)
+    plot_amod_runs: plots results from different AMOD runs (given or not the variables to plot)
 """
-function plot_amod(; experiment::Vector=["test_default"], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false)
+function plot_amod_runs(; experiment::Vector=["test_default"], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false)
     data, time, proxies_data, trefs = [], [], [], []
     for exp in eachindex(experiment)
         ## Load output data 
@@ -232,7 +237,7 @@ function plot_amod(; experiment::Vector=["test_default"], vars2plot=["ins_n", "H
         xlims!(ax, (time[1][1], time[1][end]))
         
         if time[1][1] < -1.5e6
-            ax.xticks = -5e6:500e3:5e6
+            ax.xticks = -5e6:300e3:5e6
         elseif time[1][1] < -1e6
             ax.xticks = -5e6:200e3:5e6
         else
@@ -280,7 +285,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     text!(ax, -0.69e6, 5e3, text="MPT ends", fontsize=0.9fntsz, color=:red)
 
     if time[1] < -1.5e6
-        ax.xticks = -5e6:500e3:5e6
+        ax.xticks = -5e6:300e3:5e6
     elseif time[1] < -1e6
         ax.xticks = -5e6:200e3:5e6
     else
@@ -348,7 +353,7 @@ end
 
 @doc """
 """
-function runplot_amod(; out_name="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1/1000, sigma=π)
-    run_amod(out_name=out_name, par_file=par_file)
-    plot_all(experiment=out_name, vars2plot=vars2plot, MPT=MPT, fs=fs, sigma=sigma)
+function runplot_amod(; experiment="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1/1000, sigma=π)
+    run_amod(experiment=experiment, par_file=par_file)
+    plot_all(experiment=experiment, vars2plot=vars2plot, MPT=MPT, fs=fs, sigma=sigma)
 end

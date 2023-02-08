@@ -111,14 +111,14 @@ end
 @doc """
     run_amod: main function of AMOD
 """
-function run_amod(; out_name::String="test_default", par_file::String="amod_default.jl", par2change::Vector=[])
+function run_amod(; experiment::String="test_default", par_file::String="amod_default.jl", par2change=[])
     ## Now, load arguments
-    output_path = load_out(amod_path, out_name)
+    output_path = load_out(amod_path, experiment)
     load_parf(amod_path, output_path, par_file)
 
     # -- check if some parameters need to be changed
     if par2change != []
-        change_namelist(amod_path * "/output/" * out_name, "namelist.jl", par2change)
+        change_namelist(amod_path * "/output/" * experiment, "namelist.jl", par2change)
     end
 
     # Assign parameters
@@ -130,7 +130,7 @@ function run_amod(; out_name::String="test_default", par_file::String="amod_defa
     isfile(output_path * "/out.out") && rm(output_path * "/out.out")
     f = open(output_path * "/out.out", "w")
     if PAR["active_outout"]
-        write(f, "**** Starting AMOD " * out_name * " ... ****\n")
+        write(f, "**** Starting AMOD " * experiment * " ... ****\n")
     end
 
     ## Initialize
@@ -156,7 +156,7 @@ function run_amod(; out_name::String="test_default", par_file::String="amod_defa
     genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr)
 
     if PAR["active_outout"]
-        write(f, "**** AMOD " * out_name * " done! ****" * "\n")
+        write(f, "**** AMOD " * experiment * " done! ****" * "\n")
     end
     close(f)
     (PAR["active_outout"] == false) && rm(output_path * "/out.out")
@@ -169,7 +169,7 @@ end
         Takes an (ordered) dictionary of parameters to be exchanged
         in order to run an ensemble and runs AMOD for each combination
 """
-function run_amod_ensemble(par2per::OrderedDict; out_name::String="test_default_ens", par_file::String="amod_default.jl")
+function run_amod_ensemble(par2per::OrderedDict; experiment::String="test_default_ens", par_file::String="amod_default.jl")
     # First, obtain simulations
     perm = calc_permutations(par2per)
 
@@ -177,14 +177,14 @@ function run_amod_ensemble(par2per::OrderedDict; out_name::String="test_default_
     nperm = length(perm)
 
     # Third, create ensemble directory and run each permutation in it
-    isdir(amod_path * "/output/" * out_name) || mkdir(amod_path * "/output/" * out_name)
+    isdir(amod_path * "/output/" * experiment) || mkdir(amod_path * "/output/" * experiment)
     for i in 1:nperm
         if i < 10   # create subdirectory name
-            out_namei = "/s0$i" * "/"
+            experimenti = "/s0$i" * "/"
         else
-            out_namei = "/s$i" * "/"
+            experimenti = "/s$i" * "/"
         end
-        run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=perm[i])
+        run_amod(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
     end
 
     # Done!
@@ -195,36 +195,36 @@ end
         Takes a dictionary of parameters and create LHS, key => (min, max)
         to run an ensemble and runs AMOD for each combination (not valid for bool parameters)
 """
-function run_amod_lhs(par2per::Dict, nsim::Int; out_name::String="test_default_ens", par_file::String="amod_default.jl")
+function run_amod_lhs(par2per::Dict, nsim::Int; experiment::String="test_default_ens", par_file::String="amod_default.jl")
     parnames = collect(keys(par2per))
     # First, calculate LHS
     permutations, permutations_dict = gen_lhs(par2per, nsim; pars_type=2)
 
     # Now, create ensemble directory
-    if isdir(amod_path * "/output/" * out_name)
-        rm(amod_path * "/output/" * out_name, recursive=true)
+    if isdir(amod_path * "/output/" * experiment)
+        rm(amod_path * "/output/" * experiment, recursive=true)
     end
-    mkdir(amod_path * "/output/" * out_name)
+    mkdir(amod_path * "/output/" * experiment)
 
     # Plot (if possible) the LHS
     if length(par2per) == 2
         fig = Figure()
         ax = Axis(fig[1, 1], xlabel=parnames[1], ylabel=parnames[2])
         scatter!(ax, permutations)
-        save(amod_path * "/output/" * out_name * "/lhs.png", fig)
+        save(amod_path * "/output/" * experiment * "/lhs.png", fig)
     elseif length(par2per) == 3
         fig = Figure()
         ax = Axis3(fig[1, 1], xlabel=parnames[1], ylabel=parnames[2], zlabel=parnames[3])
         scatter!(ax, permutations)
-        save(amod_path * "/output/" * out_name * "/lhs.png", fig)
+        save(amod_path * "/output/" * experiment * "/lhs.png", fig)
     end
 
     # Run each permutation
     nperms = length(permutations_dict)
     ndigits = Int(round(log10(nperms)) + 1)
-    for i in 1:nperms
-        out_namei = "/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
-        run_amod(out_name=out_name * out_namei, par_file=par_file, par2change=permutations_dict[i])
+    for i in ProgressBar(1:nperms)
+        experimenti = "/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+        run_amod(experiment=experiment * experimenti, par_file=par_file, par2change=permutations_dict[i])
     end
 
     # Done!

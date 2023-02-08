@@ -196,6 +196,8 @@ function load_defs(par_path)
         "Z_n" => [], "Z_s" => [],
         # ---- ice dynamics
         "tau_d_n" => [], "tau_d_s" => [],
+        "U_d_n" => [], "U_d_s" => [],
+        "U_b_n" => [], "U_b_s" => [],
         "U_n" => [], "U_s" => [],
         "fstream_n" => [], "fstream_s" => [],
         # ---- thermodynamics

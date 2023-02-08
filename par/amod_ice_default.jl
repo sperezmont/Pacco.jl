@@ -58,7 +58,7 @@ co2_ref = 280.0                  # [ppm] Reference value for co2dot
 tau_co2 = 10.0                  # [yr] Characteristic time for co2 evolution
 ktco2 = 10.0                    # [ppm/K] Proportionality between temperature and co2 forcing
 
-A_t = 20.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+A_t = 25.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 time_anth = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
 co2_anth = 100.0                # [ppm] Nthropogenic amoun of co2 produced
@@ -122,7 +122,7 @@ c = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, 
 
 km = 0.0                        # [m/yr] offset melting in ITM-like calculation
 ki = 0.009                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
-ka = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+ka = 0.003                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
 Acc_ref_n = 0.1                 # [m/yr] Reference Accumulation for northern hemisphere
 Acc_ref_s = 0.1                 # [m/yr] Reference Accumulation for southern hemisphere

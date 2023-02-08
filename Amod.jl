@@ -12,6 +12,7 @@ global amod_path = pwd()                    # -- determine amod path. This line 
 using NCDatasets        # to make outputs and manage inputs (?)
 using DataStructures    # to create OrderedDict's 
 using Insolation        # to load orbital parameters
+using ProgressBars
 
 # ---- plotting
 using CairoMakie            # plotting interface
@@ -47,9 +48,9 @@ printstyled("================================================================== 
 printstyled("| Amod v0.2                                                      | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
-printstyled("|      --> run_amod(;out_name, par_file, par2change)             | \n")
-printstyled("|      --> run_amod_lhs(par2per, nsim; out_name, par_file)       | \n")
-printstyled("|      --> run_ensemble(par2per; out_name, par_file)             | \n")
+printstyled("|      --> run_amod(;experiment, par_file, par2change)             | \n")
+printstyled("|      --> run_amod_lhs(par2per, nsim; experiment, par_file)       | \n")
+printstyled("|      --> run_ensemble(par2per; experiment, par_file)             | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
 printstyled("|      --> plot_amod(;experiment, vars2plot, MPT)                | \n")
