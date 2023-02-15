@@ -32,6 +32,8 @@ function load_defs(par_path)
 
     # -- run parameters
     PAR = OrderedDict(
+        # -- dev par (this should be removed for official release)
+        "height_temp" => height_temp,
         # -- ctl
         "hemisphere" => hemisphere,
         # -- Switches
@@ -64,6 +66,7 @@ function load_defs(par_path)
         "co2_prei" => co2_prei,
         "co2_ref" => co2_ref,
         "tau_co2" => tau_co2,
+        "cco2" => cco2,
         "ktco2" => ktco2,
         "A_t" => A_t,
         "time_anth" => time_anth,
@@ -76,6 +79,7 @@ function load_defs(par_path)
         "albedo_slope" => albedo_slope,
         "albedo_quad" => albedo_quad,
         "tau_albedo" => tau_albedo,
+        "csi" => csi,
         "cs" => cs,
         "csz" => csz,
         "T_ref_n" => t_ref_n + degK, "T_ref_s" => t_ref_s + degK,
@@ -123,7 +127,7 @@ function load_defs(par_path)
         "ins_n" => PAR["ins_prei"], "ins_s" => PAR["ins_prei"],
         "ins_norm_n" => 0.0, "ins_norm_s" => 0.0,
         "ins_anom_n" => 0.0, "ins_anom_s" => 0.0,
-        "rf_n" => 0.0, "rf_s" => 0.0,
+        "T_rf_n" => 0.0, "T_rf_s" => 0.0,
         "T_sl_n" => PAR["T_ref_n"], "T_sl_s" => PAR["T_ref_s"],      # -- amod variables
         # ---- time-updatable
         "H_n" => INCOND["H_init_n"], "H_s" => INCOND["H_init_s"],
@@ -178,7 +182,7 @@ function load_defs(par_path)
         "ins_n" => [], "ins_s" => [],
         "ins_norm_n" => [], "ins_norm_s" => [],
         "ins_anom_n" => [], "ins_anom_s" => [],
-        "rf_n" => [], "rf_s" => [],
+        "T_rf_n" => [], "T_rf_s" => [],
         "T_sl_n" => [], "T_sl_s" => [],
         # -- amod variables
         # ---- time-updatable
@@ -229,8 +233,8 @@ function load_defs(par_path)
         "ins_norm_s" => Dict("units" => "W/m²", "long_name" => "Normalized Insolation", "group" => "Forcing"),
         "ins_anom_n" => Dict("units" => "W/m²", "long_name" => "Insolation Anomaly", "group" => "Forcing"),
         "ins_anom_s" => Dict("units" => "W/m²", "long_name" => "Insolation Anomaly", "group" => "Forcing"),
-        "rf_n" => Dict("units" => "W/m²", "long_name" => "Radiative Forcing", "group" => "Forcing"),
-        "rf_s" => Dict("units" => "W/m²", "long_name" => "Radiative Forcing", "group" => "Forcing"),
+        "T_rf_n" => Dict("units" => "K/yr", "long_name" => "Radiative Forcing Temp.", "group" => "Forcing"),
+        "T_rf_s" => Dict("units" => "K/yr", "long_name" => "Radiative Forcing Temp.", "group" => "Forcing"),
         "T_sl_n" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
         "T_sl_s" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
         # -- amod variables

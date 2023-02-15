@@ -16,7 +16,11 @@ function change_namelist(outpath, file, params)
             for param in keys(params)
                 if occursin(param*" ", line)    # this space is needed!
                     splitted_line = split(line) # -- split in elements
-                    splitted_line[3] = string(params[param]) # -- modify third element (value)
+                    if typeof(params[param]) == String
+                        splitted_line[3] = "\""*string(params[param])*"\""
+                    else
+                        splitted_line[3] = string(params[param]) # -- modify third element (value)
+                    end
                     line = join(splitted_line, " ") * "\n" # -- rewrite line 
                 end
             end

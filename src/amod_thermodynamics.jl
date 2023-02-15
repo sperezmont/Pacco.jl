@@ -54,10 +54,18 @@ function calc_Acc(now_t::OrderedDict, par_t::OrderedDict)
             now_t["Acc_"*hm] = max(snf, 0.0)
         elseif par_t["ac_case"] == "linear"
             if par_t["active_climate"]
-                temp = now_t["T_"*hm]   # Is it correct? Perhaps T_surf is better? -- spm 2023.01.17
+                if par_t["height_temp"] == "useH"
+                    temp = now_t["T_surf_"*hm]
+                elseif par_t["height_temp"] == "useZ"
+                    temp = now_t["T_"*hm]
+                else
+                    printstyled("dev par must be removed!", color=:red)
+                end 
             else
-                temp = now_t["T_sl_"*hm]
+                temp = now_t["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
             end
+
+            temp = now_t["T_surf_"*hm]  # test this in order to see if isostasy is taken into account now
             now_t["Acc_"*hm] = par_t["Acc_ref_"*hm] + par_t["ka"] * (temp - par_t["T_ref_"*hm])
             now_t["Acc_"*hm] = max(now_t["Acc_"*hm], 0.0)
         end
@@ -72,22 +80,39 @@ end
 function calc_M(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
         if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
+            if par_t["active_climate"]
+
+                if par_t["height_temp"] == "useH"
+                    temp = now_t["T_surf_"*hm]
+                elseif par_t["height_temp"] == "useZ"
+                    temp = now_t["T_"*hm]
+                else
+                    printstyled("dev par must be removed!", color=:red)
+                end 
+                
+            else
+                temp = now_t["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
+            end
+
             if now_t["T_surf_"*hm] >= (par_t["melt_offset"])
-                now_t["M_"*hm] = par_t["lambda"] * (now_t["T_surf_"*hm] - par_t["melt_offset"])
+                now_t["M_"*hm] = par_t["lambda"] * (temp - par_t["melt_offset"])
             else
                 now_t["M_"*hm] = 0.0
             end
+
         elseif par_t["sm_case"] == "ITM"
+            temp = now_t["T_"*hm]#
+            temp = now_t["T_surf_"*hm]  # test this in order to see if isostasy is taken into account now
             if now_t["SMB_"*hm] <= 0
                 # I have to test this without >0 condition -- spm 2022.12.19
                 now_t["M_"*hm] = (par_t["km"]
-                                 + par_t["ki"] * max((1 - now_t["albedo_"*hm]) * now_t["ins_anom_"*hm], 0.0)
-                                 + par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], 0.0))
+                                  + par_t["ki"] * max((1 - now_t["albedo_"*hm]) * now_t["ins_anom_"*hm], 0.0)
+                                  + par_t["lambda"] * max(temp - par_t["T_ref_"*hm], 0.0))
             else
                 # I have to test this without >0 condition -- spm 2022.12.19
                 now_t["M_"*hm] = (par_t["km"]
-                                 + par_t["ki"] * max((1 - par_t["albedo_newice"]) * now_t["ins_anom_"*hm], 0.0)
-                                 + par_t["lambda"] * max(now_t["T_"*hm] - par_t["T_ref_"*hm], 0.0))
+                                  + par_t["ki"] * max((1 - par_t["albedo_newice"]) * now_t["ins_anom_"*hm], 0.0)
+                                  + par_t["lambda"] * max(temp - par_t["T_ref_"*hm], 0.0))
             end
         else
             error("ERROR, surface melt option not recognized")

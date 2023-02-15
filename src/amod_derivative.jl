@@ -61,10 +61,27 @@ end
 """
 function calc_Tdot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
-        # I think it is more correct to use Z instead of H -- spm 2023.01.03
-        now_dt["Tdot_"*hm] = (par_dt["T_ref_"*hm] - now_dt["T_"*hm]
-                             + par_dt["cs"] * now_dt["rf_"*hm] 
-                             - par_dt["csz"] * now_dt["Z_"*hm]) / par_dt["tau_rf_"*hm] 
+
+        # Anthropogenic forcing?
+        if now_dt["time"] < par_dt["time_anth"] # unperturbed climate
+            Temp_ref = par_dt["T_ref_"*hm]
+        else    # perturbed climate
+            Temp_ref = par_dt["T_ref_"*hm] + par_dt["cco2"] * now_dt["co2_"*hm] / par_dt["co2_ref"]
+        end
+
+        if par_dt["height_temp"] == "useH"
+            HTF = now_dt["H_"*hm]
+        elseif par_dt["height_temp"] == "useZ"
+            HTF = now_dt["Z_"*hm]
+        else
+            printstyled("dev par must be removed!", color=:red)
+        end
+
+        now_dt["Tdot_"*hm] = (Temp_ref - now_dt["T_"*hm]
+                              +
+                              now_dt["T_rf_"*hm]
+                              -
+                              par_dt["csz"] * HTF) / par_dt["tau_rf_"*hm]
     end
     return now_dt
 end
@@ -96,21 +113,19 @@ function calc_co2dot(now_dt, par_dt)
     for hm in par_dt["hemisphere"]
 
         # -- anthropogenic forcing?
-        if (now_dt["time"] >= par_dt["time_anth"]) 
-            anth_co2 = par_dt["co2_anth"] / exp((now_dt["time"] - par_dt["time_anth"]) / par_dt["tau_anth"])
-        else
-            anth_co2 = 0
+        if now_dt["time"] < par_dt["time_anth"] # unperturbed climate
+            co2ref = par_dt["co2_ref"]
+        else    # perturbed climate
+            actual_diftime = now_dt["time"] - par_dt["time_anth"]
+            co2ref = par_dt["co2_ref"] + par_dt["co2_anth"] * (
+                0.75 / exp(actual_diftime / 365.0)
+                + 0.135 / exp(actual_diftime / 5500.0)
+                + 0.035 / exp(actual_diftime / 8200.0)
+                + 0.08 / exp(actual_diftime / 200000.0)
+            )   # Archer 1998
         end
 
-        # -- AMOD mode
-        # if par_dt["active_climate"]
-        #     Temp = now_dt["T_"*hm]
-        # else
-        #     Temp = now_dt["T_sl_"*hm]
-        # end
-        Temp = now_dt["T_"*hm]
-
-        now_dt["co2dot_"*hm] = (par_dt["co2_ref"] - now_dt["co2_"*hm] + anth_co2 + par_dt["ktco2"] * (Temp - par_dt["T_ref_"*hm])) / par_dt["tau_co2"]
+        now_dt["co2dot_"*hm] = (co2ref - now_dt["co2_"*hm] + par_dt["ktco2"] * (now_dt["T_"*hm] - par_dt["T_ref_"*hm])) / par_dt["tau_co2"]
     end
     return now_dt
 end

@@ -30,10 +30,10 @@ function calc_albedo_ref(now_r::OrderedDict, par_r::OrderedDict)
 end
 
 @doc """
-    calc_rf:
+    calc_T_rf:
         calculates radiative forcing for each hemisphere
 """
-function calc_rf(now_r::OrderedDict, par_r::OrderedDict)
+function calc_T_rf(now_r::OrderedDict, par_r::OrderedDict)
     for hm in par_r["hemisphere"]
         # -- insolation
         now_r = calc_ins(now_r, par_r)
@@ -41,7 +41,7 @@ function calc_rf(now_r::OrderedDict, par_r::OrderedDict)
         # -- radiative forcing from co2
         radco2 = calc_rad_co2(now_r["co2_"*hm])
         # -- total        
-        now_r["rf_"*hm] = now_r["ins_anom_"*hm] + radco2
+        now_r["T_rf_"*hm] = par_r["csi"] * now_r["ins_anom_"*hm] + par_r["cs"] * radco2
 
         # if (now_r["time"] >= par_r["time_anth"]) # -- anthropogenic forcing
         #     now_r["rf_"*hm] += par_r["Ac_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
@@ -51,10 +51,10 @@ function calc_rf(now_r::OrderedDict, par_r::OrderedDict)
 end
 
 @doc """
-    calc_Tsl:
+    calc_T_sl:
         calculates sea level temperature
 """
-function calc_Tsl(now_r::OrderedDict, par_r::OrderedDict)
+function calc_T_sl(now_r::OrderedDict, par_r::OrderedDict)
     # First, calculate insolation
     now_r = calc_ins(now_r, par_r)
 
@@ -63,7 +63,7 @@ function calc_Tsl(now_r::OrderedDict, par_r::OrderedDict)
         insnorm = (now_r["ins_"*hm] - par_r["ins_min"]) / (par_r["ins_max"] - par_r["ins_min"])     # between 0 and 1, norm = 1
         now_r["ins_norm_"*hm] = 2.0 * insnorm - 1.0                                                          # between 1 and -1, norm = 2
 
-        # Second, compute anthropogenic forcing if time >= +2000 yrs
+        # Second, compute anthropogenic forcing if time >= time_anth
         if (now_r["time"] >= par_r["time_anth"])
             T_anth = par_r["At_anth"] / exp((now_r["time"] - par_r["time_anth"]) / par_r["tau_anth"])
         else
