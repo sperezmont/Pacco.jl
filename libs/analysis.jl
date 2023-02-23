@@ -7,7 +7,7 @@
 function cut_time_series(d1::Dict, d2::Dict)
     elements_d1, elements_d2 = collect(keys(d1)), collect(keys(d2))
 
-    first_ts = [abs(d1[k]["time"][1]) for k in elements_d1] 
+    first_ts = [abs(d1[k]["time"][1]) for k in elements_d1]
     proxy_min_t, amod_min_t = findmin(first_ts), abs(d2[elements_d2[1]]["time"][1])
     min_t = min(proxy_min_t[1], amod_min_t)
     if min_t == proxy_min_t[1]
@@ -15,15 +15,15 @@ function cut_time_series(d1::Dict, d2::Dict)
         new_t1, new_tend = d1[min_name]["time"][1], d1[min_name]["time"][end]
     else
         min_name = elements[1]
-        new_t1, new_tend = d2[elements[1]]["time"][1], d2[elements[1]]["time"][end]  
+        new_t1, new_tend = d2[elements[1]]["time"][1], d2[elements[1]]["time"][end]
     end
-    
+
     for k in elements_d1
         if k != min_name
             idx = findmin(abs.(d1[k]["time"] .- new_t1))[2]
             for k2 in keys(d1[k])
                 d1[k][k2] = d1[k][k2][idx:end]
-            end 
+            end
         end
     end
 
@@ -32,7 +32,7 @@ function cut_time_series(d1::Dict, d2::Dict)
             idx = findmin(abs.(d2[k]["time"] .- new_t1))[2]
             for k2 in keys(d2[k])
                 d2[k][k2] = d2[k][k2][idx:end]
-            end 
+            end
         end
     end
     return d1, d2, new_t1, new_tend
@@ -58,16 +58,33 @@ end
 """
 function calc_wavelet(d, fs; sigma=π)
     wvt = ContinuousWavelets.wavelet(Morlet(sigma), s=8, boundary=ZPBoundary(), averagingType=NoAve(), β=1)
-    S = ContinuousWavelets.cwt(d, wvt)                                           
-    freq= getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)  
-    S = abs.(S) .^ 2 
+    S = ContinuousWavelets.cwt(d, wvt)
+    freq = getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)
+    S = abs.(S) .^ 2
     S = S ./ sum(S, dims=2)
 
-    # # -- cone of influence
-    # s = 8
-    # taus = sqrt(2) * s
-    # coi = 1 ./ exp(t ./ taus)
     return S, freq
+end
+
+@doc """
+    calc_coi:
+        calculates cone of influence from a wavelet analysis
+        adapted from 
+        https://github.com/dioph/periodicity/blob/master/src/periodicity/timefrequency.py
+"""
+function calc_coi(time, periods; coi_samples=1000)
+    corr = exp2(0.5)
+    t_min, t_max = minimum(time), maximum(time)
+    dif_t_2 = (t_max - t_min) / 2
+    p_min, p_max = minimum(periods), maximum(periods)
+    p_samples = exp.(range(log(p_min), stop=log(p_max), length=coi_samples))
+    p_samples = p_samples[(corr.*p_samples).<dif_t_2]
+    t1 = t_min .+ corr .* p_samples
+    t2 = t_max .- corr .* p_samples
+    t_samples = vcat(t1, t2)
+    p_samples = vcat(p_samples, p_samples)
+
+    return t_samples, p_samples
 end
 
 @doc """
@@ -100,8 +117,8 @@ function calc_spect_dif(d1::Vector, d2::Vector, fs::Real)
 
     # filt very low frequencies
     ftocut = 2e5
-    G1, G2 = G1[freq .> 1 / ftocut], G2[freq .> 1 / ftocut]
-    freq = freq[freq .> 1 / ftocut]
+    G1, G2 = G1[freq.>1/ftocut], G2[freq.>1/ftocut]
+    freq = freq[freq.>1/ftocut]
 
     # Normalize
     G1_norm, G2_norm = G1 ./ sum(G1), G2 ./ sum(G2)
@@ -121,7 +138,7 @@ end
 function compute_comp_stats(d1::Vector, d2::Vector, fs::Real)
     return Dict("dif" => d2 .- d1,
         "corr" => cor(d1, d2),
-        "spect_dif"=> calc_spect_dif(collect(skipmissing(d1)), d2, fs))
+        "spect_dif" => calc_spect_dif(collect(skipmissing(d1)), d2, fs))
 end
 
 @doc """
@@ -233,7 +250,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
             varidx = 2
             for letter in eachindex(element_name[1:end-3])
                 if element_name[1:end-3][letter] == '_'
-                    varidx = letter - 1 
+                    varidx = letter - 1
                     break
                 end
             end
@@ -281,7 +298,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
                     stats_kpv[ka] = compute_comp_stats(d1, new_d2, fs)
 
                     if isnan(stats_kpv[ka]["corr"]) # vari is 0
-                        stats_kpv[ka]["corr"] = 0.0    
+                        stats_kpv[ka]["corr"] = 0.0
                     end
 
                 end
@@ -325,7 +342,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
                 k += 1
             end
         end
-        xlims!(ax, amod_data[elements[1]]["time"][1]/1000, amod_data[elements[1]]["time"][end]/1000)
+        xlims!(ax, amod_data[elements[1]]["time"][1] / 1000, amod_data[elements[1]]["time"][end] / 1000)
 
         # ---- ensemble stats
         ax_stats = Axis(fig[i, 2])
@@ -355,7 +372,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         for p in 1:length(keys(proxy_stats))
             prxnm = collect(keys(proxy_stats))[p]
             if vars2compare[i] in keys(proxy_stats[prxnm])
-                scatter!(ax_vari, 1, proxy_stats[prxnm][vars2compare[i]]["vari"], color=prx_clr[k], label=prxnm[length(vars2compare[i]*"_")+1:end])
+                scatter!(ax_vari, 1, proxy_stats[prxnm][vars2compare[i]]["vari"], color=prx_clr[k], label=prxnm[length(vars2compare[i] * "_")+1:end])
                 k += 1
             end
         end
@@ -371,9 +388,9 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         end
     end
 
-    colsize!(fig.layout, 2, Relative(2/10))
-    colsize!(fig.layout, 3, Relative(2/10))
-    colsize!(fig.layout, 4, Relative(2/10))
+    colsize!(fig.layout, 2, Relative(2 / 10))
+    colsize!(fig.layout, 3, Relative(2 / 10))
+    colsize!(fig.layout, 4, Relative(2 / 10))
     save(locdir * "time-series_ens_stats.png", fig)
 
     # -- Figure 2, comparative stats
@@ -392,7 +409,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         var2plot = proxy_label[1:idx-1]
 
         cor_ar = [comp_data[proxy_label][var2plot][e]["corr"] for e in elements]
-        max_cor = findmax(cor_ar)   
+        max_cor = findmax(cor_ar)
         best_cor = comp_data[proxy_label][var2plot][elements[max_cor[2]]]["dif"]
 
         # ---- time series
@@ -427,7 +444,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         end
         for j in eachindex(elements)
             dij = comp_data[proxy_label][var2plot][elements[j]]["dif"]
-            lines!(ax, range(new_t1, new_tend, length=length(dij)) ./1000, dij, color="grey")
+            lines!(ax, range(new_t1, new_tend, length=length(dij)) ./ 1000, dij, color="grey")
         end
 
         # ---- ensemble correlation boxplot
@@ -436,7 +453,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         else
             ax_cor = Axis(fig[i, 3])
         end
-        
+
         lines!(ax, range(new_t1, new_tend, length=length(best_cor)) ./ 1000, best_cor, color="green", label=elements[max_cor[2]])
         boxplot!(ax_cor, ones(length(elements)), cor_ar, color="grey")
         scatter!(ax_cor, 1.0, max_cor[1], color="green", markersize=5)
@@ -457,7 +474,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         else
             ax_vs = Axis(fig[i, 4], aspect=AxisAspect(1.0))
         end
-        
+
         d1 = proxy_data[proxy_label][var2plot]
         p1 = [percentile(d1, p) for p in 1:100]
         list_of_mins, list_of_maxs = [], []
@@ -487,7 +504,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         else
             ax_spect = Axis(fig[i, 5])
         end
-        
+
         vlines!(ax_spect, [21, 41, 100], color="red", linestyle=:dash)
         for j in eachindex(elements)
             dij = comp_data[proxy_label][var2plot][elements[j]]["spect_dif"][1]
@@ -497,12 +514,12 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         best_cor_spect = comp_data[proxy_label][var2plot][elements[max_cor[2]]]["spect_dif"]
         lines!(ax_spect, best_cor_spect[2] ./ 1000, best_cor_spect[1], color="green")
     end
-    colsize!(fig.layout, 1, Relative(4/16))
-    colsize!(fig.layout, 2, Relative(4/16))
-    colsize!(fig.layout, 3, Relative(1/16))
-    colsize!(fig.layout, 4, Relative(2/16))
-    colsize!(fig.layout, 5, Relative(4/16))
-    colsize!(fig.layout, 6, Relative(1/16))
+    colsize!(fig.layout, 1, Relative(4 / 16))
+    colsize!(fig.layout, 2, Relative(4 / 16))
+    colsize!(fig.layout, 3, Relative(1 / 16))
+    colsize!(fig.layout, 4, Relative(2 / 16))
+    colsize!(fig.layout, 5, Relative(4 / 16))
+    colsize!(fig.layout, 6, Relative(1 / 16))
     save(locdir * "comp-stats_ens.png", fig)
 
     # -- Figure 3
@@ -533,8 +550,8 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         scatter!(ax_heatmap, point[1], point[2], color="red")
     end
     ax_heatmap.yticks = (1:size(cor_arr)[2], lbls)
-    ax_heatmap.xticks = (1:Int(size(cor_arr)[1]/10):size(cor_arr)[1], elements[1:Int(size(cor_arr)[1]/10):end])
+    ax_heatmap.xticks = (1:Int(size(cor_arr)[1] / 10):size(cor_arr)[1], elements[1:Int(size(cor_arr)[1] / 10):end])
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20)
-    save(locdir * "corr_heatmap.png", fig)  
+    save(locdir * "corr_heatmap.png", fig)
 end
 

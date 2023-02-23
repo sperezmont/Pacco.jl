@@ -1,6 +1,6 @@
 # =============================
 #     Program: amod_update.jl
-#     Aim: functions to update amod variables
+#     Aim: functions to update amod output variables and check runs
 # =============================
 @doc """
     update_amod_out:
@@ -14,49 +14,24 @@ function update_amod_out(outf::OrderedDict, vals::OrderedDict)
 end
 
 @doc """
-    update_forward: 
-        takes vars2update and calculates their time evolution
-        vars2update is a vector with the names of the variables to update
-        vars2update is computed in run_amod() function 
+    check_run:
+        checks if run is doing well
 """
-function update_forward(now_u::OrderedDict, par_u::OrderedDict, ctl_u::OrderedDict, vars2update::Vector)
-    for hm in par_u["hemisphere"], v in vars2update
-        # -- calculate time evolution
-        variab, vardot = v * "_" * hm, v * "dot_" * hm
-        now_u[variab] += now_u[vardot] * ctl_u["dt"]    # now = now + dnow/dt * dt
-
-        # -- modify if desired
-        if variab in ["H_n", "H_s"]
-            now_u[variab] = max(now_u[variab], 0.0)
-        elseif variab in ["Hsed_n", "Hsed_s"]
-            now_u[variab] = min(max(now_u[variab], 0.0), 1.0) # sediments go from 0 to 1
-        elseif variab in ["B_n", "B_s"]
-            (~par_u["active_iso"]) && (now_u[variab] = par_u["B_eq_"*hm]) # reupdate to equilibrium value
-        elseif variab in ["T_ice_n", "T_ice_s"]
-            now_u[variab] = min(now_u[variab], degK)
-        elseif variab in ["co2_n", "co2_s"]
-            now_u[variab] = max(now_u[variab], 0.0)
-        # elseif variab in ["T_n", "T_s"]
-        #     if (now_u["time"] >= par_u["time_anth"])
-        #         now_u[variab] += 0.12 / exp((now_u["time"] - par_u["time_anth"]) / par_u["tau_anth"])           # CHAPUZA TEMPORAL
-        #     end
+function check_run(run_to_check::OrderedDict)
+    counter, break_iteration = 0, false
+    for (key, value) in run_to_check
+        if isnan(run_to_check[key])
+            printstyled("NaN value found in $(key) \n", color=:red)
+            counter += 1
         end
     end
-    return now_u
+    if counter > 0
+        printstyled("Run stopped at $(run_to_check["time"]) yr \n", color=:red)
+        break_iteration = true
+    end
+    return break_iteration
 end
 
-@doc """
-    update_Z:
-        updates ice surface elevation
-"""
-function update_Z(now_u::OrderedDict, par_u::OrderedDict)
-    for hm in par_u["hemisphere"]
-        if par_u["active_iso"]
-            now_u["Z_"*hm] = max(now_u["H_"*hm] + now_u["B_"*hm],
-                0.0 + (1 - (rhoi / rhow) * now_u["H_"*hm]))     # Pattyn 2017, Robinson 2020
-        else
-            now_u["Z_"*hm] = now_u["H_"*hm] + par_u["B_eq_"*hm]
-        end
-    end
-    return now_u
-end
+
+
+

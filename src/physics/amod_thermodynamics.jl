@@ -14,6 +14,42 @@ function calc_P(now_t::OrderedDict, par_t::OrderedDict)
 end
 
 @doc """
+
+"""
+function calc_temp_and_tempref(now_t::OrderedDict, par_t::OrderedDict, hm)
+    if par_t["active_climate"]
+        if par_t["height_temp"] == "useH"
+            temp = now_t["T_surf_"*hm]
+        elseif par_t["height_temp"] == "useZ"
+            temp = now_t["T_"*hm]
+        else
+            printstyled("dev par must be removed!", color=:red)
+        end
+
+    else
+        temp = now_t["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
+    end
+
+    # Anthropogenic forcing?
+    if now_t["time"] < par_t["time_anth"] # unperturbed climate
+        if par_t["height_temp"] == "useH"
+            temp_ref = par_t["T_ref_"*hm] - grad * now_t["Z_"*hm]
+        elseif par_t["height_temp"] == "useZ"
+            temp_ref = par_t["T_ref_"*hm]
+        end
+    else    # perturbed climate
+        if par_t["height_temp"] == "useH"
+            temp_ref = par_t["T_ref_"*hm] - grad * now_t["Z_"*hm]
+            temp_ref += par_t["cco2"] * now_t["co2_"*hm] / par_t["co2_ref"]
+        elseif par_t["height_temp"] == "useZ"
+            temp_ref = par_t["T_ref_"*hm] + par_t["cco2"] * now_t["co2_"*hm] / par_t["co2_ref"]
+        end
+    end
+
+    return temp, temp_ref
+end
+
+@doc """
     calc_T_surf:
         calculates surface temperature
 """
@@ -53,20 +89,8 @@ function calc_Acc(now_t::OrderedDict, par_t::OrderedDict)
             end
             now_t["Acc_"*hm] = max(snf, 0.0)
         elseif par_t["ac_case"] == "linear"
-            if par_t["active_climate"]
-                if par_t["height_temp"] == "useH"
-                    temp = now_t["T_surf_"*hm]
-                elseif par_t["height_temp"] == "useZ"
-                    temp = now_t["T_"*hm]
-                else
-                    printstyled("dev par must be removed!", color=:red)
-                end 
-            else
-                temp = now_t["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
-            end
-
-            temp = now_t["T_surf_"*hm]  # test this in order to see if isostasy is taken into account now
-            now_t["Acc_"*hm] = par_t["Acc_ref_"*hm] + par_t["ka"] * (temp - par_t["T_ref_"*hm])
+            temp, temp_ref = calc_temp_and_tempref(now_t, par_t, hm)
+            now_t["Acc_"*hm] = par_t["Acc_ref_"*hm] + par_t["ka"] * (temp - temp_ref)
             now_t["Acc_"*hm] = max(now_t["Acc_"*hm], 0.0)
         end
     end
@@ -79,20 +103,8 @@ end
 """
 function calc_M(now_t::OrderedDict, par_t::OrderedDict)
     for hm in par_t["hemisphere"]
+        temp, temp_ref = calc_temp_and_tempref(now_t, par_t, hm)
         if par_t["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-            if par_t["active_climate"]
-
-                if par_t["height_temp"] == "useH"
-                    temp = now_t["T_surf_"*hm]
-                elseif par_t["height_temp"] == "useZ"
-                    temp = now_t["T_"*hm]
-                else
-                    printstyled("dev par must be removed!", color=:red)
-                end 
-                
-            else
-                temp = now_t["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
-            end
 
             if now_t["T_surf_"*hm] >= (par_t["melt_offset"])
                 now_t["M_"*hm] = par_t["lambda"] * (temp - par_t["melt_offset"])
@@ -101,19 +113,23 @@ function calc_M(now_t::OrderedDict, par_t::OrderedDict)
             end
 
         elseif par_t["sm_case"] == "ITM"
-            temp = now_t["T_"*hm]#
-            temp = now_t["T_surf_"*hm]  # test this in order to see if isostasy is taken into account now
+
             if now_t["SMB_"*hm] <= 0
                 # I have to test this without >0 condition -- spm 2022.12.19
-                now_t["M_"*hm] = (par_t["km"]
-                                  + par_t["ki"] * max((1 - now_t["albedo_"*hm]) * now_t["ins_anom_"*hm], 0.0)
-                                  + par_t["lambda"] * max(temp - par_t["T_ref_"*hm], 0.0))
+                albedo_to_use = now_t["albedo_"*hm]
             else
                 # I have to test this without >0 condition -- spm 2022.12.19
-                now_t["M_"*hm] = (par_t["km"]
-                                  + par_t["ki"] * max((1 - par_t["albedo_newice"]) * now_t["ins_anom_"*hm], 0.0)
-                                  + par_t["lambda"] * max(temp - par_t["T_ref_"*hm], 0.0))
+                albedo_to_use = par_t["albedo_newice"]
             end
+
+            if true
+                temp_ref = par_t["melt_offset"]#temp_ref - (par_t["melt_offset"] - degK)
+            end
+
+            now_t["M_"*hm] = (par_t["km"]
+                              + par_t["ki"] * max((1 - albedo_to_use) * now_t["ins_anom_"*hm], 0.0)
+                              + par_t["lambda"] * max(temp - temp_ref, 0.0))
+
         else
             error("ERROR, surface melt option not recognized")
         end
@@ -188,4 +204,18 @@ function calc_Qdrag(now_t::OrderedDict, par_t::OrderedDict)
         end
     end
     return now_t
+end
+
+#############################
+# Time derivatives
+#############################
+@doc """
+    calc_T_icedot:
+        calculates ice temperature derivative
+"""
+function calc_T_icedot(now_dt, par_dt)
+    for hm in par_dt["hemisphere"]
+        now_dt["T_icedot_"*hm] = now_dt["Q_dif_"*hm] + now_dt["Q_drag_"*hm]
+    end
+    return now_dt
 end

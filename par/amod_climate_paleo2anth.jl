@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
 time_init = -5e5                # [yr] Starting time (model years)
-time_end = 0                  # [yr] Ending time (model years)  
+time_end = 1e6                  # [yr] Ending time (model years)  
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 hemisphere = ["n"]              # list with hemispheres to use: ["n"] for northern, ["s"] for southern or ["n", "s"] for both hemispheres
@@ -10,7 +10,7 @@ H_init_n = 0.0                  # [m] Initial condition for ice thickness
 H_init_s = 0.0                  # 
 Hsed_init_n = 1.0               # [--] Initial condition for sediments thickness
 Hsed_init_s = 1.0               # 
-B_init_n = 500.0                  # [m] Initial condition for bedrock elevation
+B_init_n = 0.0                  # [m] Initial condition for bedrock elevation
 B_init_s = 0.0                  # 
 t_init_n = 0.0                  # [ºC] Initial condition for regional temperature 
 t_init_s = -5.0                 # 
@@ -19,9 +19,6 @@ t_ice_init_s = -20.0            #
 A_init = 1e-16                  # [yr⁻¹Pa⁻³??] Initial condition for the flow parameter of the Glen's flow law
 
 ### Run parameters (PAR)
-# -- dev par (this should be removed for official release)
-height_temp = "useH"    # height-temp feedback: "useH", "useZ"
-
 # -- Switches
 active_outout = false           # Switch: generate out.out?
 active_iso = true               # Switch: include active isostatic rebound?
@@ -58,27 +55,26 @@ ins_ref_s = 526.0               # [W/m²] Present reference value for insolation
 ins_prei = 480.0                # [W/m²] Default preindustrial 
 co2_prei = 280.0                # [ppm] Default preindustrial 
 co2_ref = 280.0                 # [ppm] Reference value for co2dot
-tau_co2 = 10.0                  # [yr] Characteristic time for co2 evolution
+tau_co2 = 1000.0                  # [yr] Characteristic time for co2 evolution
 cco2 = 2.0                      # [K] sensitivity of reference temperature to co2 Concentration
-ktco2 = 10.0                    # [ppm/K] Proportionality between temperature and co2 forcing
+ktco2 = 7.0                    # [ppm/K] Proportionality between temperature and co2 forcing
 
 A_t = 35.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
 time_anth = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
-co2_anth = 3000.0                # [Gt] Anthropogenic amount of co2 produced
+co2_anth = 1000.0                # [Gt] Anthropogenic amount of co2 produced
 At_anth = 55.0                  # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
 Ac_anth = 20.0                   # [ppm] Amplitude of anthropogenic radiative forcing
 tau_anth = 200e3                # [yr] Relaxation time for anthropogenic forcing
 
 albedo_land = 0.2               # [--] ground albedo
-albedo_oldice = 0.25             # [--] old ice albedo
 albedo_newice = 0.9             # [--] new ice albedo 
 albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parameterization (1 per 100 kyrs)
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-csi = 0.135                     # [K/Wm²] climate sensitivity to insolation
-cs = 0.6                        # [K/Wm²] climate sensitivity to co2
+csi = 0.13                          # [K/Wm²] climate sensitivity to insolation
+cs = 0.6                       # [K/Wm²] climate sensitivity to co2
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 
 t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
@@ -136,3 +132,14 @@ Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern 
 A_te_n = 20.0                    # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
 A_te_s = 20.0                    # [K] Thermal amplitude due to ice extent (Southern Hemisphere)
 
+## Proxy files
+# -- variable names must be "T", "T_lo", "T_up"
+T_proxy = ["T_barker-etal_2011.nc"]
+           #"T_snyder_2016.nc"]
+
+# -- variable names must be "co2", "co2_lo", "co2_up"
+co2_proxy = ["co2_luthi-etal_2008.nc"]
+
+# -- variable names must be "V", "V_lo", "V_up"
+V_proxy = [#"V_waelbroeck-etal_2002.nc",
+           "V_spratt-lisiecki_2016.nc"]

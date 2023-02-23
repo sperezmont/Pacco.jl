@@ -13,7 +13,7 @@ function is_ensemble(exp)
         new_elems = elems
     else
         is_ens = true
-        
+
         new_elems = []
         for e in elems # drop "/results/" directory
             if e != "results"
@@ -22,6 +22,21 @@ function is_ensemble(exp)
         end
     end
     return new_elems, is_ens
+end
+
+function collect_variable(str::String)
+    if str[1:end-2] in ["T_surf", "T_ice", "T_rf"]
+        return str[1:end-2]
+    else
+        idx = 1
+        for i in eachindex(str)
+            if str[i] == '_'
+                idx = i
+                break
+            end
+        end
+        return str[1:idx-1]
+    end
 end
 
 @doc """
@@ -33,20 +48,26 @@ end
         plot_proxies    --> include proxy curves?
         proxy_files     --> dictionary with the names of the proxy files to use in T/, co2/ and V/
 """
-function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     out_path = pwd() * "/output/" * experiment * "/"
     proxy_path = pwd() .* "/data/"
 
-    color_list = collect(cgrad([:black, :royalblue4, :red4, :olive, :steelblue4], length(vars2plot), categorical=true))
-    palettes=(color=color_list,)
-
-    elements, isensemble = is_ensemble(experiment)
-    if isensemble
-        data_to_load = out_path .* elements .* "/amod.nc"
+    if experiments == []
+        elements, isensemble = is_ensemble(experiment)
+        if isensemble
+            data_to_load = out_path .* elements .* "/amod.nc"
+        else
+            data_to_load = out_path .* ["/amod.nc"]
+        end
     else
-        data_to_load = out_path .* ["/amod.nc"]
+        isensemble = false
+        data_to_load = pwd() .* "/output/" .* experiments .* "/amod.nc"
     end
+
+    colors = [:black, :royalblue4, :red4, :olive, :steelblue4]
+    color_list = collect(cgrad(colors, length(vars2plot), categorical=true))
+    palettes = (color=color_list,)
 
     # 2. Load data
     time, data, units = [], [], []          # data[variable][element][values]
@@ -57,11 +78,11 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
                 if v == vars2plot[1]
                     time = NCDataset(e, "r") do ds
                         ds["time"][:]
-                     end # ds is closed
+                    end # ds is closed
                 end
 
                 units_v = NCDataset(e, "r") do ds
-                   ds[v].attrib["units"]
+                    ds[v].attrib["units"]
                 end # ds is closed
                 push!(units, units_v)
             end
@@ -80,23 +101,24 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
     fgsz = (2000 * ncols, 600 * nrows)
     fntsz = 0.02 * sqrt(fgsz[1]^2 + fgsz[2]^2)
     fig = Figure(resolution=fgsz)
-    (isensemble) ? (linewidth=2) : (linewidth=4)
+    (isensemble) ? (linewidth = 2) : (linewidth = 4)
     for v in eachindex(vars2plot)
         data_v = data[v]
-        var_v = string(vars2plot[v][1])
+        var_v = collect_variable(vars2plot[v])
+
         # -- 3.2 Create axis
         if v == 1
-            ax = Axis(fig[v, 1], title="AMOD variables", titlesize= 0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
+            ax = Axis(fig[v, 1], title="AMOD variables", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
         else
-            ax = Axis(fig[v, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
+            ax = Axis(fig[v, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
         end
 
         # -- 3.3 Create PSD axis if desired
         if plot_PSD
             if v == 1
-                ax_PSD = Axis(fig[v, 2], title="Normalized PSD", titlesize= 0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
+                ax_PSD = Axis(fig[v, 2], title="Normalized PSD", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
             else
-                ax_PSD = Axis(fig[v, 2], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6*fntsz, yticklabelsize=0.7*fntsz)
+                ax_PSD = Axis(fig[v, 2], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
             end
         end
 
@@ -124,43 +146,54 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
                     t_nomiss = proxy_ds["time"][broadcast(!, ismissing.(proxy_ds[var_v]))]
                     new_d = Vector{Float64}(undef, length(d_nomiss))
                     new_d[:] = d_nomiss
-                    G, f = calc_spectrum(d_nomiss, 1/(t_nomiss[2]-t_nomiss[1]))
-                    G, f = G[f .> 1/150e3], f[f .> 1/150e3]   # filtering
+                    G, f = calc_spectrum(d_nomiss, 1 / (t_nomiss[2] - t_nomiss[1]))
+                    G, f = G[f.>1/150e3], f[f.>1/150e3]   # filtering
                     G = G ./ sum(G)
                     periods = 1 ./ f
-                    lines!(ax_PSD, periods, G, color=:black, linewidth=4) 
+                    lines!(ax_PSD, periods, G, color=:black, linewidth=4)
                 end
             end
         end
 
         # -- 3.7 Plot each simulation (and PSD if desired)
         for e in eachindex(data_to_load)
-            if var_v == "T"
-                lines!(ax, time, data_v[e][:] .- data_v[e][end], linewidth=linewidth, color=palettes[1][v])
+            if experiments == []
+                color_to_use = palettes[1][v]
             else
-                lines!(ax, time, data_v[e][:], linewidth=linewidth, color=palettes[1][v])
+                colors_experiments_mode = [:royalblue4, :red4, :olive, :purple]
+                color_to_use = colors_experiments_mode[e]
             end
+
+            if var_v == "T" # CHECK THIS, CUTRE
+                lines!(ax, time, data_v[e][:] .- 273.15, linewidth=linewidth, color=color_to_use)
+            else
+                lines!(ax, time, data_v[e][:], linewidth=linewidth, color=color_to_use)
+                if vars2plot[v][1] == 'T'
+                    hlines!(ax, 273.15, linestyle=:dash, color=:red)
+                end
+            end
+
             if plot_PSD
-                G, f = calc_spectrum(data_v[e][:], 1/(time[2]-time[1]))
-                G, f = G[f .> 1/150e3], f[f .> 1/150e3]   # filtering
+                G, f = calc_spectrum(data_v[e][:], 1 / (time[2] - time[1]))
+                G, f = G[f.>1/150e3], f[f.>1/150e3]   # filtering
                 G = G ./ sum(G)
                 periods = 1 ./ f
-                lines!(ax_PSD, periods, G, color=color=palettes[1][v], linewidth=linewidth) 
+                lines!(ax_PSD, periods, G, color=color_to_use, linewidth=linewidth)
             end
         end
 
         # -- 3.8 Formatting ...
         xlims!(ax, (time[1], time[end]))
-        
-        if (time[end] - time[1]) > 1.5e6
+
+        if (time[end] - time[1]) > 2.0e6
             tstep = 300e3
-        elseif (time[end] - time[1]) > 1e6
+        elseif (time[end] - time[1]) > 8e5
             tstep = 200e3
         else
             tstep = 100e3
         end
         ax.xticks = -5e6:tstep:5e6
-        ax.xtickformat = k -> string.(k / 1000)
+        ax.xtickformat = k -> string.(Int.(k / 1000))
 
         if plot_PSD
             ax_PSD.xticks = 0:20e3:150e3
@@ -169,21 +202,24 @@ function plot_amod(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n"
 
         if plot_proxies
             if var_v in collect(keys(proxy_files))
-                fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6*fntsz)
+                fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6 * fntsz)
             end
         end
 
     end
 
-    (plot_PSD) && (colsize!(fig.layout, 2, Relative(1/3)))
+    (plot_PSD) && (colsize!(fig.layout, 2, Relative(1 / 3)))
     resize_to_layout!(fig)
 
-    if isensemble
-        save(amod_path * "/output/" * experiment * "/results/" * "amod_results.png", fig)
+    if experiments == []
+        if isensemble
+            save(amod_path * "/output/" * experiment * "/results/" * "amod_results.png", fig)
+        else
+            save(amod_path * "/output/" * experiment * "/" * "amod_results.png", fig)
+        end
     else
-        save(amod_path * "/output/" * experiment * "/" * "amod_results.png", fig)
+        save(amod_path * "/output/" * experiments[1] * "/" * "amod-nruns_results.png", fig)
     end
-
 end
 
 @doc """
@@ -196,11 +232,12 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ## Compute Wavelets
     Wnorm, freqs = calc_wavelet(data, fs; sigma=sigma)
     periods = 1 ./ freqs
+    t_coi, p_coi = calc_coi(time[:], periods)
 
     ## Plot
     fig, fntsz = Figure(resolution=(800, 400)), 20
 
-    ax = Axis(fig[1, 1], title=var2plot * " (" * data.attrib["units"] * ")", titlesize= 0.8 * fntsz,
+    ax = Axis(fig[1, 1], title=var2plot * " (" * data.attrib["units"] * ")", titlesize=0.8 * fntsz,
         xlabelsize=fntsz, ylabelsize=fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
 
     cmap = :cividis
@@ -213,7 +250,14 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     c.extendhigh = :auto
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized PSD", ticklabelsize=fntsz)
 
-    text!(ax, -1.24e6, 5e3, text="MPT starts", fontsize=0.9*fntsz, color=:red)
+    approx, approx2 = fill(150.0e3, Int(length(t_coi) / 2)), fill(150.0e3, length(t_coi[Int(length(t_coi) / 2)+1:end]))
+    t_coi_2_1, p_coi_2_1 = t_coi[1:Int(length(t_coi) / 2)], p_coi[1:Int(length(t_coi) / 2)]
+    t_coi_2_2, p_coi_2_2 = t_coi[Int(length(t_coi) / 2)+1:end], p_coi[Int(length(t_coi) / 2)+1:end]
+
+    band!(ax, t_coi_2_1, p_coi_2_1, approx .+= p_coi_2_1, color=(:red, 0.5))
+    band!(ax, t_coi_2_2, approx2 .+= p_coi_2_2, p_coi_2_2, color=(:red, 0.5))
+
+    text!(ax, -1.24e6, 5e3, text="MPT starts", fontsize=0.9 * fntsz, color=:red)
     text!(ax, -0.69e6, 5e3, text="MPT ends", fontsize=0.9fntsz, color=:red)
 
     if (time[end] - time[1]) > 1.5e6
@@ -227,8 +271,9 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ax.xtickformat = k -> string.(k / 1000)
     xlims!(ax, (time[1], time[end]))
 
+    ax.yticks = 0:20e3:150e3
     ax.ytickformat = k -> string.(Int.(ceil.(k / 1000)))
-    ylims!(ax, (0, 120e3))
+    ylims!(ax, (0, 150e3))
 
     save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
@@ -237,7 +282,7 @@ end
     plot_ensemble:
         plots ensemble experiment and variables in vars2plot
 """
-function plot_ensemble(;experiment="test_default_ens", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], sims2highlight=[])
+function plot_ensemble(; experiment="test_default_ens", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], sims2highlight=[])
     locdir = pwd() * "/output/" * experiment * "/"
     runs = []
     for element in readdir(locdir)
@@ -278,7 +323,7 @@ end
 @doc """
     plot_all: plots H wavelet and amod main results
 """
-function plot_all(;experiment="test_default", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
+function plot_all(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
     plot_amod(experiment=experiment, vars2plot=vars2plot, MPT=MPT)
     plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT)
     plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT) # cutre, arreglar -- spm
@@ -286,7 +331,7 @@ end
 
 @doc """
 """
-function runplot_amod(; experiment="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1/1000, sigma=π)
+function runplot_amod(; experiment="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
     run_amod(experiment=experiment, par_file=par_file)
     plot_all(experiment=experiment, vars2plot=vars2plot, MPT=MPT, fs=fs, sigma=sigma)
 end

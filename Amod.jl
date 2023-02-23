@@ -35,17 +35,16 @@ include("./par/earth_const.jl")             # -- include earth constants
 include("./src/lib_amod.jl")                # -- include amod functions
 include("./src/amod_defs.jl")
 include("./src/amod_update.jl")
-include("./src/amod_radiative.jl")
-include("./src/amod_orbital.jl")
-include("./src/amod_diag.jl")
-include("./src/amod_dynamics.jl")
-include("./src/amod_thermodynamics.jl")
-include("./src/amod_derivative.jl")
+include("./src/forcing/amod_radiative.jl")
+include("./src/forcing/amod_orbital.jl")
+include("./src/physics/amod_diag.jl")
+include("./src/physics/amod_dynamics.jl")
+include("./src/physics/amod_thermodynamics.jl")
 println("Done!")
 
 # AMOD header
 printstyled("================================================================== \n", color=:light_blue)
-printstyled("| Amod v0.2.1                                                    | \n", color=:bold)
+printstyled("| Amod v0.3                                                      | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
 printstyled("|      --> run_amod(;experiment, par_file, par2change)           | \n")

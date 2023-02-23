@@ -99,3 +99,66 @@ function calc_U(now_d, par_d)
     end
     return now_d
 end
+
+
+#############################
+# Time derivatives
+#############################
+@doc """
+    update_Z:
+        updates ice surface elevation
+"""
+function update_Z(now_u::OrderedDict, par_u::OrderedDict)
+    for hm in par_u["hemisphere"]
+        if par_u["active_iso"]
+            now_u["Z_"*hm] = max(now_u["H_"*hm] + now_u["B_"*hm],
+                0.0 + (1 - (rhoi / rhow) * now_u["H_"*hm]))     # Pattyn 2017, Robinson 2020
+        else
+            now_u["Z_"*hm] = now_u["H_"*hm] + par_u["B_eq_"*hm]
+        end
+    end
+    return now_u
+end
+
+@doc """
+    calc_Hdot:
+        calculates ice thickness derivative
+"""
+function calc_Hdot(now_dt, par_dt)
+    for hm in par_dt["hemisphere"]
+        # -- climatic term
+        now_dt["Hdot_"*hm] = copy(now_dt["TMB_"*hm])
+
+        # -- dynamic term
+        if par_dt["active_ice"]
+            now_dt["Hdot_"*hm] -= now_dt["U_"*hm] * now_dt["H_"*hm] / par_dt["L"]
+        end
+    end
+    return now_dt
+end
+
+@doc """
+    calc_Hseddot:
+        calculates sediments thickness derivative
+"""
+function calc_Hseddot(now_dt, par_dt, ctl_dt)
+    for hm in par_dt["hemisphere"]
+        now_dt["Hseddot_"*hm] = -par_dt["f_1"] * now_dt["U_"*hm] + par_dt["f_2"] * now_dt["M_"*hm] / ctl_dt["dt"]
+    end
+    return now_dt
+end
+
+@doc """
+    calc_Bdot:
+        calculates bedrock elevation derivative
+"""
+function calc_Bdot(now_dt, par_dt)
+    for hm in par_dt["hemisphere"]
+        if par_dt["active_iso"]
+            now_dt["Bdot_"*hm] = -(now_dt["B_"*hm] - par_dt["B_eq_"*hm] + now_dt["H_"*hm] * rhoi / rhom) / par_dt["tau_bed_"*hm] # needs further improvement -- spm 2022.11.17
+        else
+            now_dt["Bdot_"*hm] = 0.0
+        end
+    end
+    return now_dt
+end

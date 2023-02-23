@@ -2,6 +2,35 @@
 #     Program: lib_amod.jl
 #     Aim: main functions of AMOD
 # =============================
+
+@doc """
+    update_forward: 
+        takes vars2update and calculates their time evolution
+        vars2update is a vector with the names of the variables to update
+        vars2update is computed in run_amod() function 
+"""
+function update_forward(now_u::OrderedDict, par_u::OrderedDict, ctl_u::OrderedDict, vars2update::Vector)
+    for hm in par_u["hemisphere"], v in vars2update
+        # -- calculate time evolution
+        variab, vardot = v * "_" * hm, v * "dot_" * hm
+        now_u[variab] += now_u[vardot] * ctl_u["dt"]    # now = now + dnow/dt * dt
+
+        # -- modify if desired
+        if variab in ["H_n", "H_s"]
+            now_u[variab] = max(now_u[variab], 0.0)
+        elseif variab in ["Hsed_n", "Hsed_s"]
+            now_u[variab] = min(max(now_u[variab], 0.0), 1.0) # sediments go from 0 to 1
+        elseif variab in ["B_n", "B_s"]
+            (~par_u["active_iso"]) && (now_u[variab] = par_u["B_eq_"*hm]) # reupdate to equilibrium value
+        elseif variab in ["T_ice_n", "T_ice_s"]
+            now_u[variab] = min(now_u[variab], degK)
+        elseif variab in ["co2_n", "co2_s"]
+            now_u[variab] = max(now_u[variab], 1.0)
+        end
+    end
+    return now_u
+end
+
 @doc """
         ===========================================================
             Model: AMOD (adimensional ice-sheet-sediment model)
@@ -104,6 +133,10 @@ function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::Or
                 write(file, "time = " * string(now["time"]) * "\n")
             end
         end
+
+        # Check if run presents instabilities
+        break_iter = check_run(now)
+        (break_iter) && (break)
     end
     return out
 end
@@ -246,7 +279,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "f_1" => 1.5e-8,
             "pr_ref" => 0.7, "lambda" => 0.07)
         run_amod(experiment="test_ice-artif_def", par_file="amod_default.jl", par2change=par_ice_artif)
-        plot_amod(experiment="test_ice-artif_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice-artif_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif_def", MPT=true, fs=1 / 1000, sigma=π)
 
         # -- paleo + anth
@@ -257,7 +290,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "f_1" => 1.5e-8,
             "pr_ref" => 0.7, "lambda" => 0.07)
         run_amod(experiment="test_ice-artif-anth_def", par_file="amod_default.jl", par2change=par_ice_artif_anth)
-        plot_amod(experiment="test_ice-artif-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice-artif-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif-anth_def", MPT=true, fs=1 / 1000, sigma=π)
         println("test 1a completed")
     end
@@ -273,7 +306,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "ka" => 0.008,
             "lambda" => 0.07, "Acc_ref_n" => 0.4)
         run_amod(experiment="test_ice-artif-lin_def", par_file="amod_default.jl", par2change=par_ice_artif_lin)
-        plot_amod(experiment="test_ice-artif-lin_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice-artif-lin_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif-lin_def", MPT=true, fs=1 / 1000, sigma=π)
 
         # -- no iso
@@ -285,7 +318,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "ka" => 0.008,
             "lambda" => 0.07, "Acc_ref_n" => 0.4)
         run_amod(experiment="test_ice-artif-lin-noiso_def", par_file="amod_default.jl", par2change=par_ice_artif_lin_noiso)
-        plot_amod(experiment="test_ice-artif-lin-noiso_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice-artif-lin-noiso_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif-lin-noiso_def", MPT=true, fs=1 / 1000, sigma=π)
 
         plot_amod_runs(experiment=["test_ice-artif-lin_def", "test_ice-artif-lin-noiso_def"], vars2plot=["ins_n", "H_n", "Hsed_n"], MPT=true)
@@ -299,7 +332,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "ka" => 0.008,
             "lambda" => 0.07, "Acc_ref_n" => 0.4)
         run_amod(experiment="test_ice-artif-lin-anth_def", par_file="amod_default.jl", par2change=par_ice_artif_lin_anth)
-        plot_amod(experiment="test_ice-artif-lin-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice-artif-lin-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif-lin-anth_def", MPT=true, fs=1 / 1000, sigma=π)
         println("test 1b completed")
     end
@@ -315,7 +348,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
             "ka" => 0.003,
             "lambda" => 0.1, "Acc_ref_n" => 0.4)
         run_amod(experiment="test_ice_def", par_file="amod_default.jl", par2change=par_ice)
-        plot_amod(experiment="test_ice_def", vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true)
+        plot_amod(experiment="test_ice_def", vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice_def", MPT=true, fs=1 / 1000, sigma=π)
         println("test 1c completed")
     end
@@ -323,25 +356,71 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
     # Test 2. Just climate
     if test2
         # -- only paleo
-        par_clim = Dict("time_init" => -1e6, "time_end" => 0,
-            "height_temp" => "useH",
-            "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM", "csi" => 0.11, "cs" => 0.65,
-            "lambda" => 0.05, "Acc_ref_n" => 0.1)
-        run_amod(experiment="test_clim_useH", par_file="amod_default.jl", par2change=par_clim)
-        plot_amod(experiment="test_clim_useH", vars2plot=["ins_n", "H_n", "Z_n", "B_n", "T_n", "co2_n", "V_n"], plot_MPT=true)
-        plot_wavelet(experiment="test_clim_useH", MPT=true, fs=1 / 1000, sigma=π)
+        # par_clim = Dict("time_init" => -8e5, "time_end" => 0,
+        #     "height_temp" => "useH",
+        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
+        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        #     "csi" => 0.13, "cs" => 0.6, "csz" => 0.0065, "cco2" => 2.0,
+        #     "ka" => 0.005, "ki" => 0.0095, "ktco2" => 10.0,
+        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
+        # run_amod(experiment="test_clim_useH", par_file="amod_default.jl", par2change=par_clim)
+        # plot_amod(experiment="test_clim_useH", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        # plot_wavelet(experiment="test_clim_useH", MPT=true, fs=1 / 1000, sigma=π)
 
-        par_clim = Dict("time_init" => -1e6, "time_end" => 0,
+        # par_clim = Dict("time_init" => -8e5, "time_end" => 0,
+        #     "height_temp" => "useZ",
+        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
+        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        #     "csi" => 0.135, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+        #     "ka" => 0.008, "ki" => 0.009, "ktco2" => 5.0,
+        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
+        # run_amod(experiment="test_clim_useZ", par_file="amod_default.jl", par2change=par_clim)
+        # plot_amod(experiment="test_clim_useZ", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        # plot_wavelet(experiment="test_clim_useZ", MPT=true, fs=1 / 1000, sigma=π)
+
+        # -- paleo + anth
+        # par_clim = Dict("time_init" => -8e5, "time_end" => 8e5,
+        #     "height_temp" => "useH",
+        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
+        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        #     "csi" => 0.15, "cs" => 0.6, "csz" => 0.0065, "cco2" => 2.0,
+        #     "ka" => 0.005, "ki" => 0.0095, "ktco2" => 10.0,
+        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
+        # run_amod(experiment="test_clim-anth_useH", par_file="amod_default.jl", par2change=par_clim)
+        # plot_amod(experiment="test_clim-anth_useH", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        # plot_wavelet(experiment="test_clim-anth_useH", MPT=true, fs=1 / 1000, sigma=π)
+
+        par_clim = Dict("time_init" => -5e5, "time_end" => 1e6,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM", "csi" => 0.11, "cs" => 0.65,
-            "lambda" => 0.05, "Acc_ref_n" => 0.1)
-        run_amod(experiment="test_clim_useZ", par_file="amod_default.jl", par2change=par_clim)
-        plot_amod(experiment="test_clim_useZ", vars2plot=["ins_n", "H_n", "Z_n", "B_n", "T_n", "co2_n", "V_n"], plot_MPT=true)
-        plot_wavelet(experiment="test_clim_useZ", MPT=true, fs=1 / 1000, sigma=π)
+            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+            "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
+            "lambda" => 0.01, "Acc_ref_n" => 0.1)
+        run_amod(experiment="test_clim-anth_useZ", par_file="amod_default.jl", par2change=par_clim)
+        plot_amod(experiment="test_clim-anth_useZ", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment="test_clim-anth_useZ", MPT=true, fs=1 / 1000, sigma=π)
+
 
         println("test 2 completed")
     end
 
+    if test3
+        # paleo
+        par_iceclim = Dict("time_init" => -1.5e6, "time_end" => 0,
+            "height_temp" => "useZ",
+            "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
+            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+            "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
+            "lambda" => 0.01, "Acc_ref_n" => 0.1,
+            "Hsed_init_n" => 1.0, "f_1" => 1e-6,
+            "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
+        run_amod(experiment="test_ice-clim_useZ", par_file="amod_default.jl", par2change=par_iceclim)
+        vrs2plt = ["H_n", "B_n", "Hsed_n", "SMB_n", "U_n", "Hdot_n"]#, "T_n", "co2_n", "V_n"]
+        plot_amod(experiment="test_ice-clim_useZ", vars2plot=vrs2plt, plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment="test_ice-clim_useZ", MPT=true, fs=1 / 1000, sigma=π)
+
+        # paleo + anth
+    end
 end
