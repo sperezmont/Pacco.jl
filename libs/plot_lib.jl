@@ -8,7 +8,7 @@
 
 function is_ensemble(exp)
     elems = readdir(pwd() * "/output/" * exp * "/")
-    if "amod.nc" in elems
+    if "pacco.nc" in elems
         is_ens = false
         new_elems = elems
     else
@@ -40,7 +40,7 @@ function collect_variable(str::String)
 end
 
 @doc """
-    plot_amod: calculates spectrum and plots results from AMOD (given or not the variables to plot)
+    plot_pacco: calculates spectrum and plots results from PACCO (given or not the variables to plot)
         experiment      --> experiment's name
         vars2plot       --> vector of variables to plot
         plot_MPT        --> plot MPT?   (Mid-Pleistocene Transition)
@@ -48,7 +48,7 @@ end
         plot_proxies    --> include proxy curves?
         proxy_files     --> dictionary with the names of the proxy files to use in T/, co2/ and V/
 """
-function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     out_path = pwd() * "/output/" * experiment * "/"
     proxy_path = pwd() .* "/data/"
@@ -61,13 +61,13 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
     if experiments == []
         elements, isensemble = is_ensemble(experiment)
         if isensemble
-            data_to_load = out_path .* elements .* "/amod.nc"
+            data_to_load = out_path .* elements .* "/pacco.nc"
         else
-            data_to_load = out_path .* ["/amod.nc"]
+            data_to_load = out_path .* ["/pacco.nc"]
         end
     else
         isensemble = false
-        data_to_load = pwd() .* "/output/" .* experiments .* "/amod.nc"
+        data_to_load = pwd() .* "/output/" .* experiments .* "/pacco.nc"
     end
 
     colors = [:black, :royalblue4, :red4, :olive, :steelblue4]
@@ -123,7 +123,7 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
 
         # -- 3.2 Create axis
         if v == 1
-            ax = Axis(fig[v, 1], title="AMOD variables", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
+            ax = Axis(fig[v, 1], title="PACCO variables", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
         else
             ax = Axis(fig[v, 1], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v]))", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
         end
@@ -181,7 +181,7 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
                 else
                     color_to_use = colors_2[e]
                 end
-                lbl = "AMOD"
+                lbl = "PACCO"
             else
                 lbl = experiments[e]
                 colors_experiments_mode = [:royalblue4, :red4, :olive, :purple]
@@ -239,12 +239,12 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
 
     if experiments == []
         if isensemble
-            save(amod_path * "/output/" * experiment * "/results/" * "amod_results.png", fig)
+            save(pacco_path * "/output/" * experiment * "/results/" * "pacco_results.png", fig)
         else
-            save(amod_path * "/output/" * experiment * "/" * "amod_results.png", fig)
+            save(pacco_path * "/output/" * experiment * "/" * "pacco_results.png", fig)
         end
     else
-        save(amod_path * "/output/" * experiments[1] * "/" * "amod-nruns_results.png", fig)
+        save(pacco_path * "/output/" * experiments[1] * "/" * "pacco-nruns_results.png", fig)
     end
 end
 
@@ -253,7 +253,7 @@ end
 """
 function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, sigma=π, MPT=false, time_anth=2000.0)
     ## Load output data 
-    df = NCDataset(amod_path * "/output/" * experiment * "/amod.nc")
+    df = NCDataset(pacco_path * "/output/" * experiment * "/pacco.nc")
     data, time = df[var2plot], df["time"]
 
     ## Compute Wavelets
@@ -313,7 +313,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     hidespines!(ax2)
     hidexdecorations!(ax2)
 
-    save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
+    save(pacco_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
 
 @doc """
@@ -337,7 +337,7 @@ function plot_ensemble(; experiment="test_default_ens", vars2plot=["ins_n", "H_n
             ax = Axis(fig[v, 1], ylabel=vars2plot[v])
         end
         for r in eachindex(runs)
-            run = NCDataset(locdir * "/" * runs[r] * "/amod.nc")
+            run = NCDataset(locdir * "/" * runs[r] * "/pacco.nc")
             t, d = run["time"], run[vars2plot[v]]
             if runs[r] in sims2highlight
                 lines!(ax, t, d, label=runs[r], linewidth=2, overdraw=true)
@@ -354,22 +354,22 @@ function plot_ensemble(; experiment="test_default_ens", vars2plot=["ins_n", "H_n
             ax.xticklabelsvisible = false
         end
     end
-    save(locdir * "amod_results.png", fig)
+    save(locdir * "pacco_results.png", fig)
 end
 
 # Shortcuts
 @doc """
-    plot_all: plots H wavelet and amod main results
+    plot_all: plots H wavelet and pacco main results
 """
 function plot_all(; experiment="test_default", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
-    plot_amod(experiment=experiment, vars2plot=vars2plot, MPT=MPT)
+    plot_pacco(experiment=experiment, vars2plot=vars2plot, MPT=MPT)
     plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT)
     plot_wavelet(experiment=experiment, var2plot="H_n", fs=fs, sigma=sigma, MPT=MPT) # cutre, arreglar -- spm
 end
 
 @doc """
 """
-function runplot_amod(; experiment="test_default", par_file="amod_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
-    run_amod(experiment=experiment, par_file=par_file)
+function runplot_pacco(; experiment="test_default", par_file="pacco_default.jl", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], MPT=false, fs=1 / 1000, sigma=π)
+    run_pacco(experiment=experiment, par_file=par_file)
     plot_all(experiment=experiment, vars2plot=vars2plot, MPT=MPT, fs=fs, sigma=sigma)
 end

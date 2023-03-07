@@ -1,6 +1,6 @@
 # =============================
 #     Program: analysis.jl
-#     Aim: analyze results from AMOD simulations
+#     Aim: analyze results from PACCO simulations
 #     Author: Sergio Pérez-Montero, 2023.01.26
 # =============================
 
@@ -8,8 +8,8 @@ function cut_time_series(d1::Dict, d2::Dict)
     elements_d1, elements_d2 = collect(keys(d1)), collect(keys(d2))
 
     first_ts = [abs(d1[k]["time"][1]) for k in elements_d1]
-    proxy_min_t, amod_min_t = findmin(first_ts), abs(d2[elements_d2[1]]["time"][1])
-    min_t = min(proxy_min_t[1], amod_min_t)
+    proxy_min_t, pacco_min_t = findmin(first_ts), abs(d2[elements_d2[1]]["time"][1])
+    min_t = min(proxy_min_t[1], pacco_min_t)
     if min_t == proxy_min_t[1]
         min_name = collect(elements_d1)[proxy_min_t[2]]
         new_t1, new_tend = d1[min_name]["time"][1], d1[min_name]["time"][end]
@@ -196,7 +196,7 @@ function nans_detector(; experiment::String="test_default_ens", variable="H_n")
     # Look for nans and scream their names, times and variables!
     k = 0
     for e in elements
-        d = NCDataset(locdir * "/" * e * "/amod.nc")[variable]
+        d = NCDataset(locdir * "/" * e * "/pacco.nc")[variable]
         isnan_list, ismissing_list = isnan.(d), ismissing.(d)
         if sum(isnan_list) > 0
             printstyled("NaN found in $e", color=:red)
@@ -213,14 +213,14 @@ function nans_detector(; experiment::String="test_default_ens", variable="H_n")
 end
 
 @doc """
-    analyze_amod:
+    analyze_pacco:
         Analyzes a simulation or ensemble against available proxies
         experiment      --> experiment name to analyze
         isens           --> is it an ensemble?
         TisTsl          --> are we using regional or sea level temperature?
         tref            --> temperature to use when computing anomalies
 """
-function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true, TisTsl=false, tref::Real=273.15)
+function analyze_pacco(; experiment::String="test_default_ens", isens::Bool=true, TisTsl=false, tref::Real=273.15)
     # Define some local variables
     locdir = pwd() * "/output/" * experiment * "/"
 
@@ -258,26 +258,26 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
     end
 
     # Load certain results from the ensemble (comparable variables to proxy info)
-    amod_data = Dict()
+    pacco_data = Dict()
     vars2load = ["time"; vars2compare .* "_n"]
     vars2compare_aux = ["time"; vars2compare]
     for i in eachindex(elements)
-        df = NCDataset(locdir * elements[i] * "/amod.nc")
-        amod_data[elements[i]] = Dict(vars2compare_aux[v] => df[vars2load[v]][:] for v in eachindex(vars2load))
+        df = NCDataset(locdir * elements[i] * "/pacco.nc")
+        pacco_data[elements[i]] = Dict(vars2compare_aux[v] => df[vars2load[v]][:] for v in eachindex(vars2load))
         if TisTsl
-            amod_data[elements[i]]["T"] = df["T_sl_n"][:]
+            pacco_data[elements[i]]["T"] = df["T_sl_n"][:]
         end
         if "T" in vars2compare
-            amod_data[elements[i]]["T"] = amod_data[elements[i]]["T"] .- tref # anomaly (tref)
+            pacco_data[elements[i]]["T"] = pacco_data[elements[i]]["T"] .- tref # anomaly (tref)
         end
     end
 
-    # Cut time series, assume all amod runs have the same time length
-    proxy_data, amod_data, new_t1, new_tend = cut_time_series(proxy_data, amod_data)
+    # Cut time series, assume all pacco runs have the same time length
+    proxy_data, pacco_data, new_t1, new_tend = cut_time_series(proxy_data, pacco_data)
 
     # Compute Statistics
     proxy_stats = gen_stats_dict(proxy_data)
-    amod_stats = gen_stats_dict(amod_data)
+    pacco_stats = gen_stats_dict(pacco_data)
 
     # ---- ensemble vs proxy
     comp_data = Dict()
@@ -286,8 +286,8 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         for v in vars2compare
             stats_kpv = Dict()
             if v in keys(proxy_data[kp])
-                for ka in keys(amod_data)
-                    d1, d2 = proxy_data[kp][v], amod_data[ka][v]
+                for ka in keys(pacco_data)
+                    d1, d2 = proxy_data[kp][v], pacco_data[ka][v]
                     fs = 1 / (proxy_data[kp]["time"][2] - proxy_data[kp]["time"][1])
                     new_d2 = interp_2series(d1, d2)
                     stats_kpv[ka] = compute_comp_stats(d1, new_d2, fs)
@@ -310,7 +310,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
     for i in eachindex(elements)
         for j in eachindex(vars2compare)
             for k in eachindex(stat_vars)
-                d[i, j, k] = amod_stats[elements[i]][vars2compare[j]][stat_vars[k]]
+                d[i, j, k] = pacco_stats[elements[i]][vars2compare[j]][stat_vars[k]]
             end
         end
     end
@@ -326,8 +326,8 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
             ax = Axis(fig[i, 1], ylabel=vars2compare[i])
         end
         for j in eachindex(elements)
-            d2p = amod_data[elements[j]][vars2compare[i]]
-            lines!(ax, amod_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
+            d2p = pacco_data[elements[j]][vars2compare[i]]
+            lines!(ax, pacco_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
         end
         k = 1
         for p in 1:length(keys(proxy_data))
@@ -337,7 +337,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
                 k += 1
             end
         end
-        xlims!(ax, amod_data[elements[1]]["time"][1] / 1000, amod_data[elements[1]]["time"][end] / 1000)
+        xlims!(ax, pacco_data[elements[1]]["time"][1] / 1000, pacco_data[elements[1]]["time"][end] / 1000)
 
         # ---- ensemble stats
         ax_stats = Axis(fig[i, 2])
@@ -362,7 +362,7 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
 
         # ---- variance
         ax_vari = Axis(fig[i, 3])
-        boxplot!(ax_vari, ones(length(elements)), d[:, i, end], color="grey", label="AMOD")
+        boxplot!(ax_vari, ones(length(elements)), d[:, i, end], color="grey", label="PACCO")
         k = 1
         for p in 1:length(keys(proxy_stats))
             prxnm = collect(keys(proxy_stats))[p]
@@ -416,10 +416,10 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
             ax = Axis(fig[i, 1], ylabel=proxy_label)
         end
         for j in eachindex(elements)
-            d2p = amod_data[elements[j]][var2plot]
-            lines!(ax, amod_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
+            d2p = pacco_data[elements[j]][var2plot]
+            lines!(ax, pacco_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
         end
-        lines!(ax, amod_data[elements[max_cor[2]]]["time"] ./ 1000, amod_data[elements[max_cor[2]]][var2plot], color="green")
+        lines!(ax, pacco_data[elements[max_cor[2]]]["time"] ./ 1000, pacco_data[elements[max_cor[2]]][var2plot], color="green")
         lines!(ax, proxy_data[proxy_label]["time"] ./ 1000, proxy_data[proxy_label][var2plot], color="red")
 
         # ---- differences
@@ -474,20 +474,20 @@ function analyze_amod(; experiment::String="test_default_ens", isens::Bool=true,
         p1 = [percentile(d1, p) for p in 1:100]
         list_of_mins, list_of_maxs = [], []
         for j in eachindex(elements)
-            d2 = amod_data[elements[j]][var2plot]
+            d2 = pacco_data[elements[j]][var2plot]
             new_d2 = interp_2series(d1, d2)
             p2 = [percentile(new_d2, p) for p in 1:100]
             scatter!(ax_vs, p2, p1, color="grey", markersize=2)
             push!(list_of_mins, minimum(p2))
             push!(list_of_maxs, maximum(p2))
         end
-        d2_best_cor = interp_2series(d1, amod_data[elements[max_cor[2]]][var2plot])
+        d2_best_cor = interp_2series(d1, pacco_data[elements[max_cor[2]]][var2plot])
         best_p2 = [percentile(d2_best_cor, p) for p in 1:100]
         scatter!(ax_vs, best_p2, p1, color="green", markersize=4)
 
         min_proxy, max_proxy = minimum(p1), maximum(p1)
-        min_amod, max_amod = minimum(list_of_mins), maximum(list_of_maxs)
-        min_ax, max_ax = min(min_proxy, min_amod), max(max_proxy, max_amod)
+        min_pacco, max_pacco = minimum(list_of_mins), maximum(list_of_maxs)
+        min_ax, max_ax = min(min_proxy, min_pacco), max(max_proxy, max_pacco)
         xlims!(ax_vs, min_ax, max_ax)
         ylims!(ax_vs, min_ax, max_ax)
 

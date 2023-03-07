@@ -26,7 +26,7 @@ function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict
 
     # assign values
     for (key, val) in d
-        try # only assign value if it is defined in amod_defs (out_attr)
+        try # only assign value if it is defined in pacco_defs (out_attr)
             ds[key][:] = d[key]
         catch
             continue

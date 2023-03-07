@@ -142,7 +142,7 @@ end
 
 @doc """
     gen_lhs:
-        Generate a Latin Hypercube Sampling for AMOD ensembles using LatinHypercubeSampling.jl
+        Generate a Latin Hypercube Sampling for PACCO ensembles using LatinHypercubeSampling.jl
         par2per     --> Dictionary with parameters to permute, key => (min, max)
         nsim        --> number of simulations (number of sample points)
         ngns        --> number of generations
