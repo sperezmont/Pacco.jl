@@ -4,7 +4,7 @@
 # =============================
 println("Getting Julia ready to run AMOD ...")
 using Pkg
-Pkg.activate("amod_env")                    # -- activate amod virtual environment
+Pkg.activate("env")                         # -- activate amod virtual environment
 global amod_path = pwd()                    # -- determine amod path. This line assumes we are working from the main AMOD directory
 
 # -- import dependencies

@@ -1,36 +1,33 @@
+# =============================
+#   Program: config.jl
+#   Aim: This script configures the dependencies for using AMOD
+#   Author: Sergio Pérez Montero
+#   Date: 25.10.2022
+# =============================
+using Pkg
 
-"""
-Author: Sergio Pérez Montero\n
-Date: 25.10.2022\n
-
-Aim: This script configures the dependencies for using AMOD, by Jorge Alvarez-Solas (julia version)\n
-
-"""
+env_name = "env"
 
 # Check if environment exists
-if isdir("amod_env") # check if amod_env is activated 
-    rm("amod_env", recursive=true)
+if isdir(env_name)
+    Pkg.activate(env_name)
+    Pkg.instantiate()
+else
+    # Environment generation
+    Pkg.generate(env_name)
+    Pkg.activate(env_name)
+
+    # Adding dependencies ... 
+    display("** Adding dependencies ... **")
+    packages = ["NCDatasets", "DataStructures", "Insolation", "ProgressBars",
+                "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
+                "StatsBase", "Interpolations", "LatinHypercubeSampling"]
+    for i in packages
+        Pkg.add(i)
+    end
 end
 
-# Environment generation
-using Pkg
-Pkg.generate("amod_env")
-Pkg.activate("amod_env")
-
-# Adding dependencies ... 
-display("** Adding dependencies ... **")
-packages = ["NCDatasets", "DataStructures", "Insolation", "ProgressBars"
-            "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics", "StatsBase", "Interpolations", "LatinHypercubeSampling"]
-for i in packages
-    Pkg.add(i)
-end
-
-# Precompile -- last very long... move to REPL
-# using PackageCompiler
-# create_sysimage(packages, sysimage_path="sys_amod.so", precompile_execution_file=["amod.jl", "plot_amod.jl"])
-
-# Check status
+# Check status and precompile
 Pkg.precompile()
-Pkg.instantiate()
 display("**** AMOD ready ****")
 
