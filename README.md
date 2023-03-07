@@ -1,13 +1,12 @@
-## AMOD (adimensional ice-sheet-sediment model)
-by Jorge Alvarez-Solas (Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero (2022)
-
+## PACCO(Palma Adimensional Criosphere Climate mOdel)
+by Jorge Alvarez-Solas (AMOD, Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero (2022)
 
 # Quick-start guide
-Clone `amod`
+Clone `pacco`
 ```bash
-git clone https://github.com/sperezmont/amod.git
+git clone https://github.com/sperezmont/pacco.git
 ```
-Go to the main `amod` directory and configure the model
+Go to the main `pacco` directory and configure the model
 ```bash
 julia config/config.jl
 ```
@@ -29,18 +28,18 @@ julia
 ```
 Include the main script
 ```julia
-include("Amod.jl")
+include("Pacco.jl")
 ```
 Now, you can run experiments using
 ```julia
-run_amod(;experiment, par_file, par2change)
+run_pacco(;experiment, par_file, par2change)
 ```
 Note: remember to use `?function` in Julia REPL if you need to know how to use model's functions
 
 # How to quick-plotting results
-AMOD store the model variables in a netCDF file called `amod.nc` so they can be visualized through `ncview` but in order to further analyze them `libs/plot_lib.jl` is included. First, open `julia` REPL and include `Amod.jl`. Once the script is loaded, you can plot experiments using
+PACCO store the model variables in a netCDF file called `pacco.nc` so they can be visualized through `ncview` but in order to further analyze them `libs/plot_lib.jl` is included. First, open `julia` REPL and include `Pacco.jl`. Once the script is loaded, you can plot experiments using
 ```julia
-plot_amod(;experiment/experiments, vars2plot)  
+plot_pacco(;experiment/experiments, vars2plot)  
 ```
 Note: remember to use `?function` in Julia REPL if you need to know how to use model's functions
 # How to run ensembles
@@ -48,7 +47,7 @@ To run ensembles we only need to use its own functions in `julia` REPL and wait
 
 If we want to use a Latin Hypercube Sampling method (preferred methodoly)
 ```julia
-run_amod_lhs(par2per, nsim; experiment, par_file)
+run_pacco_lhs(par2per, nsim; experiment, par_file)
 ```
 or if we want to use strictly certain values
 ```julia
@@ -61,9 +60,9 @@ Example:
 par2per = Dict("ki"=>(0.001, 0.09), "lambda"=>(0.01, 0.1))
 nsims = 30
 exp2do = "ice-clim_sed0_ki"
-parfile = "amod_ice-climate_def.jl"
+parfile = "pacco_ice-climate_def.jl"
 
-run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
 ```
 This example should provide 30 simulations combining random values of parameters `ki` and `lambda` in the selected range. 
 
@@ -72,7 +71,7 @@ new_parameters = OrderedDict("active_iso"=>[true, false],
                              "H_init"=>[0.0, 1000.0, 2000.0],
                              "active_sed"=>[true, false],
                              "Hsed_init"=>[0.0, 1.0])
-run_amod_ensemble(new_parameters, out_name="test1", par_file="amod_default.jl")
+run_pacco_ensemble(new_parameters, out_name="test1", par_file="pacco_default.jl")
 ```
 This ensemble will run 24 simulations swapping between the values of `new_parameters` and store their results in subdirectories located in `output/test1/`.
 
