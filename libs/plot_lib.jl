@@ -273,9 +273,9 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     minW, maxW = minimum(Wnorm), maximum(Wnorm)
     stepW = 0.1 * max(minW, maxW)
     c = contourf!(ax, time, log10.(periods ./ 1e3), Wnorm, colormap=cmap, levels=minW:stepW:maxW)
-    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=2, color=:red, linestyle=:dash))    # plot MPT
-    (time[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=2, color=:red, linestyle=:dash))
-    hlines!(ax, log10.([19, 23, 41, 100]), linewidth=2, color=:red, linestyle=:dash)
+    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash))    # plot MPT
+    (time[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=1, color=:black, linestyle=:dash))
+    hlines!(ax, log10.([19, 23, 41, 100]), linewidth=1, color=:black, linestyle=:dash)
     c.extendlow = :auto
     c.extendhigh = :auto
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized PSD", ticklabelsize=fntsz)

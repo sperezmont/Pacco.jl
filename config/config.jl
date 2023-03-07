@@ -1,6 +1,6 @@
 # =============================
 #   Program: config.jl
-#   Aim: This script configures the dependencies for using AMOD
+#   Aim: This script configures the dependencies for using PACCO
 #   Author: Sergio Pérez Montero
 #   Date: 25.10.2022
 # =============================
@@ -29,5 +29,5 @@ end
 
 # Check status and precompile
 Pkg.precompile()
-display("**** AMOD ready ****")
+display("**** PACCO ready ****")
 

@@ -333,208 +333,97 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
 
     # Test 1a. Just ice dynamics and artificial insolation
     if test1a
-        # -- only paleo
-        par_ice_artif = Dict("time_init" => -2e6, "time_end" => 0,
+        expname = "test1a_ice-artif_def"
+        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
             "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
             "ins_case" => "artificial", "ac_case" => "ins", "sm_case" => "PDD",
             "A_t" => 20.0,
             "f_1" => 1.5e-8,
             "pr_ref" => 0.7, "lambda" => 0.07)
-        run_pacco(experiment="test_ice-artif_def", par_file="pacco_default.jl", par2change=par_ice_artif)
-        plot_pacco(experiment="test_ice-artif_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-artif_def", MPT=true, fs=1 / 1000, sigma=π)
-
-        # -- paleo + anth
-        par_ice_artif_anth = Dict("time_init" => -2e6, "time_end" => 2e6,
-            "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "artificial", "ac_case" => "ins", "sm_case" => "PDD",
-            "A_t" => 20.0,
-            "f_1" => 1.5e-8,
-            "pr_ref" => 0.7, "lambda" => 0.07)
-        run_pacco(experiment="test_ice-artif-anth_def", par_file="pacco_default.jl", par2change=par_ice_artif_anth)
-        plot_pacco(experiment="test_ice-artif-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-artif-anth_def", MPT=true, fs=1 / 1000, sigma=π)
-        println("test 1a completed")
+        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        println("test 1a $(expname) completed")
     end
 
     # Test 1b. Just ice dynamics, artificial insolation and linear Clausius-clapeyron
     if test1b
         # -- only paleo
-        par_ice_artif_lin = Dict("time_init" => -2e6, "time_end" => 0,
+        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
             "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
             "ins_case" => "artificial", "ac_case" => "linear", "sm_case" => "PDD",
             "A_t" => 20.0,
             "f_1" => 0.3e-7,
             "ka" => 0.008,
             "lambda" => 0.07, "Acc_ref_n" => 0.4)
-        run_pacco(experiment="test_ice-artif-lin_def", par_file="pacco_default.jl", par2change=par_ice_artif_lin)
-        plot_pacco(experiment="test_ice-artif-lin_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-artif-lin_def", MPT=true, fs=1 / 1000, sigma=π)
+        expname = "test1b_ice-artif-lin_def"
+        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
 
         # -- no iso
-        par_ice_artif_lin_noiso = Dict("time_init" => -2e6, "time_end" => 0,
-            "active_iso" => false, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "artificial", "ac_case" => "linear", "sm_case" => "PDD",
-            "A_t" => 20.0,
-            "f_1" => 0.3e-7,
-            "ka" => 0.008,
-            "lambda" => 0.07, "Acc_ref_n" => 0.4)
-        run_pacco(experiment="test_ice-artif-lin-noiso_def", par_file="pacco_default.jl", par2change=par_ice_artif_lin_noiso)
-        plot_pacco(experiment="test_ice-artif-lin-noiso_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-artif-lin-noiso_def", MPT=true, fs=1 / 1000, sigma=π)
+        pars["active_iso"] = false
+        expname2 = "test1b_ice-artif-lin-noiso_def"
+        run_pacco(experiment=expname2, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname2, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname2, MPT=true, fs=1 / 1000, sigma=π)
 
-        plot_pacco(experiments=["test_ice-artif-lin_def", "test_ice-artif-lin-noiso_def"], vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
+        plot_pacco(experiments=[expname, expname2], vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
 
-        # -- paleo + anth
-        par_ice_artif_lin_anth = Dict("time_init" => -2e6, "time_end" => 2e6,
-            "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "artificial", "ac_case" => "linear", "sm_case" => "PDD",
-            "A_t" => 20.0,
-            "f_1" => 0.3e-7,
-            "ka" => 0.008,
-            "lambda" => 0.07, "Acc_ref_n" => 0.4)
-        run_pacco(experiment="test_ice-artif-lin-anth_def", par_file="pacco_default.jl", par2change=par_ice_artif_lin_anth)
-        plot_pacco(experiment="test_ice-artif-lin-anth_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-artif-lin-anth_def", MPT=true, fs=1 / 1000, sigma=π)
-        println("test 1b completed")
+        println("test 1b $(expname) completed")
     end
 
     # Test 1c. Just ice dynamics, laskar insolation and linear Clausius-clapeyron
     if test1c
         # -- only paleo
-        par_ice = Dict("time_init" => -2e6, "time_end" => 0,
+        expname = "test1c_ice_def"
+        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
             "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "PDD",
             "A_t" => 35.0,
             "f_1" => 0.3e-7,
             "ka" => 0.003,
             "lambda" => 0.1, "Acc_ref_n" => 0.4)
-        run_pacco(experiment="test_ice_def", par_file="pacco_default.jl", par2change=par_ice)
-        plot_pacco(experiment="test_ice_def", vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice_def", MPT=true, fs=1 / 1000, sigma=π)
-        println("test 1c completed")
+        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        println("test 1c $(expname) completed \n Note: not fully calibrated")
     end
 
     # Test 2. Just climate
     if test2
-        # -- only paleo
-        # par_clim = Dict("time_init" => -8e5, "time_end" => 0,
-        #     "height_temp" => "useH",
-        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        #     "csi" => 0.13, "cs" => 0.6, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.005, "ki" => 0.0095, "ktco2" => 10.0,
-        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
-        # run_pacco(experiment="test_clim_useH", par_file="pacco_default.jl", par2change=par_clim)
-        # plot_pacco(experiment="test_clim_useH", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
-        # plot_wavelet(experiment="test_clim_useH", MPT=true, fs=1 / 1000, sigma=π)
-
-        # par_clim = Dict("time_init" => -8e5, "time_end" => 0,
-        #     "height_temp" => "useZ",
-        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        #     "csi" => 0.135, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.008, "ki" => 0.009, "ktco2" => 5.0,
-        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
-        # run_pacco(experiment="test_clim_useZ", par_file="pacco_default.jl", par2change=par_clim)
-        # plot_pacco(experiment="test_clim_useZ", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
-        # plot_wavelet(experiment="test_clim_useZ", MPT=true, fs=1 / 1000, sigma=π)
-
-        # -- paleo + anth
-        # par_clim = Dict("time_init" => -8e5, "time_end" => 8e5,
-        #     "height_temp" => "useH",
-        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        #     "csi" => 0.15, "cs" => 0.6, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.005, "ki" => 0.0095, "ktco2" => 10.0,
-        #     "lambda" => 0.1, "Acc_ref_n" => 0.1)
-        # run_pacco(experiment="test_clim-anth_useH", par_file="pacco_default.jl", par2change=par_clim)
-        # plot_pacco(experiment="test_clim-anth_useH", vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
-        # plot_wavelet(experiment="test_clim-anth_useH", MPT=true, fs=1 / 1000, sigma=π)
-
-        par_clim = Dict("time_init" => -5e5, "time_end" => 1e6,
+        expname = "test2_clim_def"
+        pars = Dict("time_init" => -5e5, "time_end" => 1e6,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
             "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
             "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
             "lambda" => 0.01, "Acc_ref_n" => 0.1)
-        run_pacco(experiment="test_clim-anth_useZ", par_file="pacco_default.jl", par2change=par_clim)
-        plot_pacco(experiment="test_clim-anth_useZ", vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
-        plot_wavelet(experiment="test_clim-anth_useZ", MPT=true, fs=1 / 1000, sigma=π)
-
-
-        println("test 2 completed")
+        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        println("test 2 $(expname) completed \n Note: needs further improvement in calibration")
     end
 
     if test3 # default mode, ice + coupled climate 
-        # paleo
-        # par_iceclim = Dict("time_init" => -2e6, "time_end" => 0,
-        # "height_temp" => "useZ",
-        # "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
-        # "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        # "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-        # "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
-        # "lambda" => 0.01, "Acc_ref_n" => 0.1,
-        # "f_1" => 1e-6, "C_s" => 1e-7,
-        # "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
-        par_iceclim = Dict("time_init" => -8e5, "time_end" => 2e5,
+        expname = "test3_ice-clim_def"
+        pars = Dict("time_init" => -8e5, "time_end" => 2e5,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
             "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
             "ka" => 0.008, "ki" => 0.008, "ktco2" => 7.0, "t_threshold" => -5.0,
-            "lambda" => 0.05, "Acc_ref_n" => 0.4,
+            "lambda" => 0.1, "Acc_ref_n" => 0.4,
             "f_1" => 1e-6, "C_s" => 1e-7,
             "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
         vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
         
-        par_iceclim["Hsed_init_n"] = 0.0
-        run_pacco(experiment="test_ice-clim_useZ_sed0", par_file="pacco_default.jl", par2change=par_iceclim)
-        plot_pacco(experiment="test_ice-clim_useZ_sed0", vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-clim_useZ_sed0", MPT=true, fs=1 / 1000, sigma=3.45)
+        pars["Hsed_init_n"] = 0.0
+        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        plot_pacco(experiment=expname, vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=3.45)
 
-        # vrs2plot = ["H_n"]
-        # nsims = 30
-        # parfile = "pacco_ice-climate_def.jl"
-
-        # exp2do = "ice-clim_sed0_ki"
-        # par2per = Dict("ki"=>(0.001, 0.09))
-        # run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
-        # plot_pacco(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
-
-        # exp2do = "ice-clim_sed0_csi"
-        # par2per = Dict("csi"=>(0.01, 0.5))
-        # run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
-        # plot_pacco(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
-
-        # exp2do = "ice-clim_sed0_cs"
-        # par2per = Dict("cs"=>(0.1, 0.9))
-        # run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
-        # plot_pacco(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
-
-        # exp2do = "ice-clim_sed0_csz"
-        # par2per = Dict("csz"=>(0.001, 0.01))
-        # run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
-        # plot_pacco(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
-
-        # exp2do = "ice-clim_sed0_lambda"
-        # par2per = Dict("lambda"=>(0.01, 0.1))
-        # run_pacco_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
-        # plot_pacco(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
-
-        #par_iceclim["Hsed_init_n"] = 1.0
-        #run_pacco(experiment="test_ice-clim_useZ_sed1", par_file="pacco_default.jl", par2change=par_iceclim)
-        #plot_pacco(experiment="test_ice-clim_useZ_sed1", vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
-        #plot_wavelet(experiment="test_ice-clim_useZ_sed1", MPT=true, fs=1 / 1000, sigma=3.45)
-        
-        #par_iceclim["active_sed"], par_iceclim["Hsed_init_n"] = true, 1.0
-        #run_pacco(experiment="test_ice-clim_useZ", par_file="pacco_default.jl", par2change=par_iceclim)
-        #plot_wavelet(experiment="test_ice-clim_useZ", MPT=true, fs=1 / 1000, sigma=3.45)
-
-        #plot_pacco(experiments=["test_ice-clim_useZ", "test_ice-clim_useZ_sed0", "test_ice-clim_useZ_sed1"], vars2plot=vrs2plt, plot_MPT=true)
-
-        # paleo + anth
-        println("test 3 completed")
+        println("test 3 $(expname) completed \n Note: Work in progress")
     end
 end
