@@ -11,7 +11,7 @@ Go to the main `amod` directory and configure the model
 ```bash
 julia config/config.jl
 ```
-This will create the directory `amod_env` which is the virtual environment that includes the required Julia dependencies. Once it finishes you can run the model. Now create the directory for proxy data using a symbolic link:
+This will create the directory `env` which is the virtual environment that includes the required Julia dependencies. Once it finishes you can run the model. Now create the directory for proxy data using a symbolic link:
 ```bash
 ln -s path/to/proxy/directory/ data/
 ```
@@ -23,7 +23,7 @@ julia
 ```
 Include the main script
 ```julia
-include("amod.jl")
+include("Amod.jl")
 ```
 Now, you can run experiments using
 ```julia
