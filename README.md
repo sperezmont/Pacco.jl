@@ -6,6 +6,11 @@ Clone `pacco`
 ```bash
 git clone https://github.com/sperezmont/pacco.git
 ```
+Select or create your branch (for develomental purpose)
+```bash
+git checkout branch-name      # for an existing branch
+git checkout -b new-branch    # for a new branch
+```
 Go to the main `pacco` directory and configure the model
 ```bash
 julia config/config.jl
