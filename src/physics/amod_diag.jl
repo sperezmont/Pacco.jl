@@ -20,7 +20,7 @@ function calc_E(now, par)
         else    
             Temp = now["T_sl_"*hm]
         end
-        now["E_"*hm] = par["E_ref_"*hm] * (Temp - par["T_ref_"*hm]) / par["A_te_"*hm]
+        now["E_"*hm] = par["E_ref_"*hm] * (Temp - par["T_ref0_"*hm]) / par["A_te_"*hm]
     end
     return now
 end

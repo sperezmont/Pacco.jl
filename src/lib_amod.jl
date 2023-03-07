@@ -487,7 +487,7 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
             "lambda" => 0.05, "Acc_ref_n" => 0.4,
             "f_1" => 1e-6, "C_s" => 1e-7,
             "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
-        vrs2plt = ["ins_anom_n", "H_n", "T_rf_n", "M_n", "SMB_n", "U_n"]
+        vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
         
         par_iceclim["Hsed_init_n"] = 0.0
         run_amod(experiment="test_ice-clim_useZ_sed0", par_file="amod_default.jl", par2change=par_iceclim)

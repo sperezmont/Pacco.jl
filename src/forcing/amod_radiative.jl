@@ -68,9 +68,54 @@ function calc_T_sl(now_r::OrderedDict, par_r::OrderedDict)
         end
 
         # Finally, calculate sea-level temperature 
-        now_r["T_sl_"*hm] = par_r["T_ref_"*hm] + par_r["A_t"] * now_r["ins_norm_"*hm] + T_anth
+        now_r["T_sl_"*hm] = par_r["T_ref0_"*hm] + par_r["A_t"] * now_r["ins_norm_"*hm] + T_anth
     end
     return now_r
+end
+
+"""
+    calc_temp_and_tempref(now, par, hm)
+selects temperature to use and computes reference temperature desired
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `par` Dictionary with run parameters
+* `hm` Hemisphere in which we calculate ("_n" or "_s")
+
+## Return
+`temp` and `now["T_ref_"*hm]` to use
+"""
+function calc_temp_and_tempref(now::OrderedDict, par::OrderedDict, hm)
+    if par["active_climate"]
+        if par["height_temp"] == "useH"
+            temp = now["T_surf_"*hm]
+        elseif par["height_temp"] == "useZ"
+            temp = now["T_"*hm]
+        else
+            printstyled("dev par must be removed!", color=:red)
+        end
+
+    else
+        temp = now["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
+    end
+
+    # Anthropogenic forcing?
+    if now["time"] < par["time_anth"] # unperturbed climate
+        if par["height_temp"] == "useH"
+            now["T_ref_"*hm] = par["T_ref0_"*hm] - grad * now["Z_"*hm]
+        elseif par["height_temp"] == "useZ"
+            now["T_ref_"*hm] = par["T_ref0_"*hm]
+        end
+    else    # perturbed climate
+        if par["height_temp"] == "useH"
+            now["T_ref_"*hm] = par["T_ref0_"*hm] - grad * now["Z_"*hm]
+            now["T_ref_"*hm] += par["cco2"] * now["co2_"*hm] / par["co2_ref"]
+        elseif par["height_temp"] == "useZ"
+            now["T_ref_"*hm] = par["T_ref0_"*hm] + par["cco2"] * now["co2_"*hm] / par["co2_ref"]
+        end
+    end
+
+    return temp, now["T_ref_"*hm]
 end
 
 #############################
@@ -80,65 +125,65 @@ end
     calc_Tdot:
         calculates regional temperature derivative
 """
-function calc_Tdot(now_dt, par_dt)
-    for hm in par_dt["hemisphere"]
+function calc_Tdot(now, par)
+    for hm in par["hemisphere"]
 
         # Anthropogenic forcing?
-        if now_dt["time"] < par_dt["time_anth"] # unperturbed climate
-            temp_ref = par_dt["T_ref_"*hm]
+        if now["time"] < par["time_anth"] # unperturbed climate
+            now["T_ref_"*hm] = par["T_ref0_"*hm]
         else    # perturbed climate
-            temp_ref = par_dt["T_ref_"*hm] + par_dt["cco2"] * now_dt["co2_"*hm] / par_dt["co2_ref"]
+            now["T_ref_"*hm] = par["T_ref0_"*hm] + par["cco2"] * now["co2_"*hm] / par["co2_ref"]
         end
 
-        if par_dt["height_temp"] == "useH"
-            HTF = now_dt["H_"*hm]
-        elseif par_dt["height_temp"] == "useZ"
-            HTF = now_dt["Z_"*hm]
+        if par["height_temp"] == "useH"
+            HTF = now["H_"*hm]
+        elseif par["height_temp"] == "useZ"
+            HTF = now["Z_"*hm]
         else
             printstyled("dev par must be removed!", color=:red)
         end
 
-        now_dt["Tdot_"*hm] = (temp_ref - now_dt["T_"*hm]
+        now["Tdot_"*hm] = (now["T_ref_"*hm] - now["T_"*hm]
                               +
-                              now_dt["T_rf_"*hm]
+                              now["T_rf_"*hm]
                               -
-                              par_dt["csz"] * HTF) / par_dt["tau_rf_"*hm]
+                              par["csz"] * HTF) / par["tau_rf_"*hm]
     end
-    return now_dt
+    return now
 end
 
 @doc """
     calc_albedodot:
         calculates albedo derivative
 """
-function calc_albedodot(now_dt, par_dt)
-    for hm in par_dt["hemisphere"]
-        now_dt["albedodot_"*hm] = (now_dt["albedo_ref_"*hm] - now_dt["albedo_"*hm]) / par_dt["tau_albedo"]
+function calc_albedodot(now, par)
+    for hm in par["hemisphere"]
+        now["albedodot_"*hm] = (now["albedo_ref_"*hm] - now["albedo_"*hm]) / par["tau_albedo"]
 
-        if now_dt["H_"*hm] == 0.0
-            now_dt["albedo_"*hm] = par_dt["albedo_land"]
-            now_dt["albedodot_"*hm] = 0.0
-        elseif now_dt["ice_time_"*hm] < 10.0 # First ice
-            now_dt["albedo_"*hm] = par_dt["albedo_newice"]
-            now_dt["albedodot_"*hm] = 0.0
+        if now["H_"*hm] == 0.0
+            now["albedo_"*hm] = par["albedo_land"]
+            now["albedodot_"*hm] = 0.0
+        elseif now["ice_time_"*hm] < 10.0 # First ice
+            now["albedo_"*hm] = par["albedo_newice"]
+            now["albedodot_"*hm] = 0.0
         end
     end
-    return now_dt
+    return now
 end
 
 @doc """
     calc_co2dot:
         calculates co2 derivative
 """
-function calc_co2dot(now_dt, par_dt)
-    for hm in par_dt["hemisphere"]
+function calc_co2dot(now, par)
+    for hm in par["hemisphere"]
 
         # -- anthropogenic forcing?
-        if now_dt["time"] < par_dt["time_anth"] # unperturbed climate
-            co2ref = par_dt["co2_ref"]
+        if now["time"] < par["time_anth"] # unperturbed climate
+            co2ref = par["co2_ref"]
         else    # perturbed climate
-            actual_diftime = now_dt["time"] - par_dt["time_anth"]
-            co2ref = par_dt["co2_ref"] + par_dt["co2_anth"] * (
+            actual_diftime = now["time"] - par["time_anth"]
+            co2ref = par["co2_ref"] + par["co2_anth"] * (
                 0.75 / exp(actual_diftime / 365.0)  # ocean invasion
                 + 0.135 / exp(actual_diftime / 5500.0)  # sea floor CaCO3 neutralization 
                 + 0.035 / exp(actual_diftime / 8200.0)  # terrestrial floor CaCO3 neutralization
@@ -146,9 +191,10 @@ function calc_co2dot(now_dt, par_dt)
             )   # Archer 1997
         end
 
-        now_dt["co2dot_"*hm] = (co2ref - now_dt["co2_"*hm] + par_dt["ktco2"] * (now_dt["T_"*hm] - par_dt["T_ref_"*hm])) / par_dt["tau_co2"]
+        temp, now["T_ref_"*hm] = calc_temp_and_tempref(now, par, hm)
+        now["co2dot_"*hm] = (co2ref - now["co2_"*hm] + par["ktco2"] * (temp - now["T_ref_"*hm])) / par["tau_co2"]
     end
-    return now_dt
+    return now
 end
 
 

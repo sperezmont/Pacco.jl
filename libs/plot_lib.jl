@@ -25,7 +25,7 @@ function is_ensemble(exp)
 end
 
 function collect_variable(str::String)
-    if str[1:end-2] in ["T_surf", "T_ice", "T_rf"]
+    if str[1:end-2] in ["T_surf", "T_ice", "T_rf", "T_ref"]
         return str[1:end-2]
     else
         idx = 1
@@ -52,6 +52,11 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
     # 1. Define some local variables and check if ensemble
     out_path = pwd() * "/output/" * experiment * "/"
     proxy_path = pwd() .* "/data/"
+
+    if ~isdir(proxy_path)
+        (plot_proxies) && (printstyled("can't find proxy data directory \n", color=:red))
+        plot_proxies = false
+    end
 
     if experiments == []
         elements, isensemble = is_ensemble(experiment)

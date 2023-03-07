@@ -82,8 +82,8 @@ csi = 0.135                     # [K/Wm²] climate sensitivity to insolation
 cs = 0.6                        # [K/Wm²] climate sensitivity to co2
 csz = 0.0065                    # [K/m³] climate sensitivity to ice sheet elevation
 
-t_ref_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
-t_ref_s = -5.0                   # [ºC] Reference climatic temperature for southern hemisphere
+t_ref0_n = 0.0                    # [ºC] Reference climatic temperature for northern hemisphere
+t_ref0_s = -5.0                   # [ºC] Reference climatic temperature for southern hemisphere
 
 tau_rf_n = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
 tau_rf_s = 1000.0                # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for southern hemisphere

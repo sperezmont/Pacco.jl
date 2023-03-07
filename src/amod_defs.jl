@@ -99,7 +99,7 @@ function load_defs(par_path)
         "csi" => csi,
         "cs" => cs,
         "csz" => csz,
-        "T_ref_n" => t_ref_n + degK, "T_ref_s" => t_ref_s + degK,
+        "T_ref0_n" => t_ref0_n + degK, "T_ref0_s" => t_ref0_s + degK,
         "tau_rf_n" => tau_rf_n, "tau_rf_s" => tau_rf_s,
         # -- Geophysical parameters
         "B_eq_n" => B_eq_n, "B_eq_s" => B_eq_s,
@@ -145,7 +145,8 @@ function load_defs(par_path)
         "ins_norm_n" => 0.0, "ins_norm_s" => 0.0,
         "ins_anom_n" => 0.0, "ins_anom_s" => 0.0,
         "T_rf_n" => 0.0, "T_rf_s" => 0.0,
-        "T_sl_n" => par["T_ref_n"], "T_sl_s" => par["T_ref_s"],      # -- amod variables
+        "T_sl_n" => par["T_ref0_n"], "T_sl_s" => par["T_ref0_s"],
+        "T_ref_n" => par["T_ref0_n"], "T_ref_s" => par["T_ref0_s"], 
         # ---- time-updatable
         "H_n" => INCOND["H_init_n"], "H_s" => INCOND["H_init_s"],
         "B_n" => INCOND["B_init_n"], "B_s" => INCOND["B_init_s"],
@@ -202,6 +203,7 @@ function load_defs(par_path)
         "ins_anom_n" => [], "ins_anom_s" => [],
         "T_rf_n" => [], "T_rf_s" => [],
         "T_sl_n" => [], "T_sl_s" => [],
+        "T_ref_n" => [], "T_ref_s" => [], 
         # -- amod variables
         # ---- time-updatable
         "H_n" => [], "H_s" => [],
@@ -256,6 +258,8 @@ function load_defs(par_path)
         "T_rf_s" => Dict("units" => "K/yr", "long_name" => "Radiative Forcing Temp.", "group" => "Forcing"),
         "T_sl_n" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
         "T_sl_s" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
+        "T_ref_n" => Dict("units" => "K", "long_name" => "Reference Air Temperature", "group" => "Forcing"),
+        "T_ref_s" => Dict("units" => "K", "long_name" => "Reference Air Temperature", "group" => "Forcing"),
         # -- amod variables
         # ---- time-updatable
         "H_n" => Dict("units" => "m", "long_name" => "Ice Thickness", "group" => "Geometry"),

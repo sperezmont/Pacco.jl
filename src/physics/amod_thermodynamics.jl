@@ -21,51 +21,6 @@ function calc_P(now::OrderedDict, par::OrderedDict)
 end
 
 """
-    calc_temp_and_tempref(now, par, hm)
-selects temperature to use and computes reference temperature desired
-
-## Attributes
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-* `hm` Hemisphere in which we calculate ("_n" or "_s")
-
-## Return
-updated `now` dictionary
-"""
-function calc_temp_and_tempref(now::OrderedDict, par::OrderedDict, hm)
-    if par["active_climate"]
-        if par["height_temp"] == "useH"
-            temp = now["T_surf_"*hm]
-        elseif par["height_temp"] == "useZ"
-            temp = now["T_"*hm]
-        else
-            printstyled("dev par must be removed!", color=:red)
-        end
-
-    else
-        temp = now["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
-    end
-
-    # Anthropogenic forcing?
-    if now["time"] < par["time_anth"] # unperturbed climate
-        if par["height_temp"] == "useH"
-            temp_ref = par["T_ref_"*hm] - grad * now["Z_"*hm]
-        elseif par["height_temp"] == "useZ"
-            temp_ref = par["T_ref_"*hm]
-        end
-    else    # perturbed climate
-        if par["height_temp"] == "useH"
-            temp_ref = par["T_ref_"*hm] - grad * now["Z_"*hm]
-            temp_ref += par["cco2"] * now["co2_"*hm] / par["co2_ref"]
-        elseif par["height_temp"] == "useZ"
-            temp_ref = par["T_ref_"*hm] + par["cco2"] * now["co2_"*hm] / par["co2_ref"]
-        end
-    end
-
-    return temp, temp_ref
-end
-
-"""
     calc_T_surf(now, par)
 calculates air temperature at ice sheet surface level
 
@@ -119,8 +74,8 @@ function calc_Acc(now::OrderedDict, par::OrderedDict)
             end
             now["Acc_"*hm] = max(snf, 0.0)
         elseif par["ac_case"] == "linear"
-            temp, temp_ref = calc_temp_and_tempref(now, par, hm)
-            now["Acc_"*hm] = par["Acc_ref_"*hm] + par["ka"] * (temp - temp_ref)
+            temp, now["T_ref_"*hm] = calc_temp_and_tempref(now, par, hm)
+            now["Acc_"*hm] = par["Acc_ref_"*hm] + par["ka"] * (temp - now["T_ref_"*hm])
             now["Acc_"*hm] = max(now["Acc_"*hm], 0.0)
         end
     end
@@ -140,7 +95,7 @@ updated `now` dictionary
 """
 function calc_M(now::OrderedDict, par::OrderedDict)
     for hm in par["hemisphere"]
-        temp, temp_ref = calc_temp_and_tempref(now, par, hm)
+        temp, now["T_ref_"*hm] = calc_temp_and_tempref(now, par, hm)
         if par["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
 
             if now["T_surf_"*hm] >= (par["T_threshold"])
