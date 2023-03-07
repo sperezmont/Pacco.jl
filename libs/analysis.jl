@@ -69,21 +69,16 @@ end
 @doc """
     calc_coi:
         calculates cone of influence from a wavelet analysis
-        adapted from 
-        https://github.com/dioph/periodicity/blob/master/src/periodicity/timefrequency.py
+        adapted from Torrence and Compo, 1998, BAMS
+        https://es.mathworks.com/help/wavelet/ug/boundary-effects-and-the-cone-of-influence.html
 """
-function calc_coi(time, periods; coi_samples=1000)
-    corr = exp2(0.5)
-    t_min, t_max = minimum(time), maximum(time)
-    dif_t_2 = (t_max - t_min) / 2
-    p_min, p_max = minimum(periods), maximum(periods)
-    p_samples = exp.(range(log(p_min), stop=log(p_max), length=coi_samples))
-    p_samples = p_samples[(corr.*p_samples).<dif_t_2]
-    t1 = t_min .+ corr .* p_samples
-    t2 = t_max .- corr .* p_samples
+function calc_coi(t, f, cf)
+    predtimes = sqrt(2) .* cf ./ f
+    tmax, tmin = maximum(t), minimum(t)
+    t1 = tmin .+ predtimes
+    t2 = tmax .- predtimes
     t_samples = vcat(t1, t2)
-    p_samples = vcat(p_samples, p_samples)
-
+    p_samples = vcat(1 ./ f, 1 ./ f)
     return t_samples, p_samples
 end
 

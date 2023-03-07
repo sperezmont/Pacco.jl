@@ -2,20 +2,33 @@
 #     Program: amod_update.jl
 #     Aim: functions to update amod output variables and check runs
 # =============================
-@doc """
-    update_amod_out:
-        updates output variable (OUT)
 """
-function update_amod_out(outf::OrderedDict, vals::OrderedDict)
-    for (key, value) in outf
-        push!(outf[key], vals[key])
+    update_amod_out(now, out)
+updates output variable
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `out` Dictionary with stored values of the model variables (output)
+
+## Return
+updated `out` variable
+"""
+function update_amod_out(now::OrderedDict, out::OrderedDict)
+    for (key, value) in out
+        push!(out[key], now[key])
     end
-    return outf
+    return out
 end
 
-@doc """
-    check_run:
-        checks if run is doing well
+"""
+    check_run(run_to_check)
+checks if run is doing well
+
+## Attributes
+* `run_to_check` Dictionary with values to check
+
+## Return
+`true`/`false` 
 """
 function check_run(run_to_check::OrderedDict)
     counter, break_iteration = 0, false

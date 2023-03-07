@@ -2,13 +2,28 @@
 #     Program: amod_defs.jl
 #     Aim: definition of parameters as dictionaries
 # =============================
+"""
+    load_defs
+Include parameter file selected in Julia and assign values to model variables
+
+## Attributes
+* `par_path` Path to parameter file selected
+
+## Return
+* `ctl` Run control parameters
+* `par` Dictionary with run parameters
+* `now` Dictionary with values of the model variables at first timestep
+* `out` Dictionary with stored values of the model variables (output)
+* `out_prec` Numeric precision in output file (netCDF file)
+* `out_attr` Attributes of each output variable (netCDF file)
+"""
 function load_defs(par_path)
     # Include parameters file
     include(par_path)
 
     # We define run parameters as dictionaries and model variables as a vector 
     # -- run control settings
-    CTL = OrderedDict(
+    ctl = OrderedDict(
         "time_init" => time_init::Real,
         "time_end" => time_end::Real,
         "dt" => dt::Real,
@@ -31,7 +46,7 @@ function load_defs(par_path)
     )
 
     # -- run parameters
-    PAR = OrderedDict(
+    par = OrderedDict(
         # -- dev par (this should be removed for official release)
         "height_temp" => height_temp,
         # -- ctl
@@ -59,6 +74,7 @@ function load_defs(par_path)
         "ins_day" => ins_day,
         "ins_lat_n" => ins_lat_n, "ins_lat_s" => ins_lat_s,
         # -- Radiative forcing parameters 
+        "ins_const" => ins_const,
         "ins_min" => ins_min,
         "ins_max" => ins_max,
         "ins_ref_n" => ins_ref_n, "ins_ref_s" => ins_ref_s,
@@ -111,7 +127,7 @@ function load_defs(par_path)
         "T_snow" => t_snow + degK,
         "T_rain" => t_rain + degK,
         "lambda" => lambda,
-        "melt_offset" => melt_offset + degK,
+        "T_threshold" => t_threshold + degK,
         "c" => c,
         "km" => km,
         "ki" => ki,
@@ -120,16 +136,16 @@ function load_defs(par_path)
         "A_te_n" => A_te_n, "A_te_s" => A_te_s
     )
 
-    # Assign initial conditions (first NOW step)
-    amod_INCOND = OrderedDict(
+    # Assign initial conditions (first now step)
+    now = OrderedDict(
         # -- ctl
-        "time" => CTL["time_init"],
+        "time" => ctl["time_init"],
         # -- forcing
-        "ins_n" => PAR["ins_prei"], "ins_s" => PAR["ins_prei"],
+        "ins_n" => par["ins_prei"], "ins_s" => par["ins_prei"],
         "ins_norm_n" => 0.0, "ins_norm_s" => 0.0,
         "ins_anom_n" => 0.0, "ins_anom_s" => 0.0,
         "T_rf_n" => 0.0, "T_rf_s" => 0.0,
-        "T_sl_n" => PAR["T_ref_n"], "T_sl_s" => PAR["T_ref_s"],      # -- amod variables
+        "T_sl_n" => par["T_ref_n"], "T_sl_s" => par["T_ref_s"],      # -- amod variables
         # ---- time-updatable
         "H_n" => INCOND["H_init_n"], "H_s" => INCOND["H_init_s"],
         "B_n" => INCOND["B_init_n"], "B_s" => INCOND["B_init_s"],
@@ -138,14 +154,16 @@ function load_defs(par_path)
         "V_n" => 0.0, "V_s" => 0.0,
         "T_ice_n" => INCOND["T_ice_init_n"], "T_ice_s" => INCOND["T_ice_init_s"],
         "T_n" => INCOND["T_init_n"], "T_s" => INCOND["T_init_s"],
-        "co2_n" => PAR["co2_prei"], "co2_s" => PAR["co2_prei"],
-        "albedo_n" => PAR["albedo_land"], "albedo_s" => PAR["albedo_land"],
+        "co2_n" => par["co2_prei"], "co2_s" => par["co2_prei"],
+        "albedo_n" => par["albedo_land"], "albedo_s" => par["albedo_land"],
         "ice_time_n" => 0.0, "ice_time_s" => 0.0,
         "Z_n" => 0.0, "Z_s" => 0.0,
         # ---- albedo
-        "albedo_ref_n" => PAR["albedo_land"], "albedo_ref_s" => PAR["albedo_land"],        # ---- ice dynamics
+        "albedo_ref_n" => par["albedo_land"], "albedo_ref_s" => par["albedo_land"], 
+        # ---- dynamics
         "tau_d_n" => 0.0, "tau_d_s" => 0.0,
         "tau_b_n" => 0.0, "tau_b_s" => 0.0,
+        "A" => INCOND["A_init"],
         "U_d_n" => 0.0, "U_d_s" => 0.0,
         "U_b_n" => 0.0, "U_b_s" => 0.0,
         "U_n" => 0.0, "U_s" => 0.0,
@@ -154,7 +172,6 @@ function load_defs(par_path)
         "fstreamdot_n" => 0.0, "fstreamdot_s" => 0.0,
         "fstream_n" => fstream_min_n, "fstream_s" => fstream_min_s,
         # ---- thermodynamics
-        "A" => INCOND["A_init"],
         "T_surf_n" => degK, "T_surf_s" => degK,
         "Acc_n" => 0.0, "Acc_s" => 0.0,
         "M_n" => 0.0, "M_s" => 0.0,
@@ -176,7 +193,7 @@ function load_defs(par_path)
     )
 
     # -- model variables
-    OUT = OrderedDict(
+    out = OrderedDict(
         # -- ctl
         "time" => [],
         # -- forcing
@@ -201,6 +218,7 @@ function load_defs(par_path)
         "Z_n" => [], "Z_s" => [],
         # ---- ice dynamics
         "tau_d_n" => [], "tau_d_s" => [],
+        "tau_b_n" => [], "tau_b_s" => [],
         "U_d_n" => [], "U_d_s" => [],
         "U_b_n" => [], "U_b_s" => [],
         "U_n" => [], "U_s" => [],
@@ -223,7 +241,7 @@ function load_defs(par_path)
     )
 
     # Output file settings
-    out_precc = Float64
+    out_prec = Float64
     out_attr = OrderedDict(
         # -- ctl
         "time" => Dict("units" => "yr", "long_name" => "Simulation Time", "group" => "Time"),
@@ -319,7 +337,7 @@ function load_defs(par_path)
         "co2dot_n" => Dict("units" => "ppm/a", "long_name" => "co2 Change", "group" => "Derivatives"),
         "co2dot_s" => Dict("units" => "ppm/a", "long_name" => "co2 Change", "group" => "Derivatives")
     )
-    return CTL, amod_INCOND, PAR, OUT, out_precc, out_attr
+    return ctl, now, par, out, out_prec, out_attr
 end
 
 

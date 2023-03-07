@@ -3,44 +3,57 @@
 #     Aim: main functions of AMOD
 # =============================
 
-@doc """
-    update_forward: 
-        takes vars2update and calculates their time evolution
-        vars2update is a vector with the names of the variables to update
-        vars2update is computed in run_amod() function 
 """
-function update_forward(now_u::OrderedDict, par_u::OrderedDict, ctl_u::OrderedDict, vars2update::Vector)
-    for hm in par_u["hemisphere"], v in vars2update
+    update_forward(now, par, ctl, vars2update) 
+
+takes vars2update and calculates their time evolution vars2update is a vector with the names of the variables to update vars2update is computed in run_amod() function 
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `par` Dictionary with run parameters
+* `ctl` Run control parameters
+* `vars2update` Vector of variables to update in time as var = var + vardot * dt
+## Return
+updated `now` dictionary
+"""
+function update_forward(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vars2update::Vector)
+    for hm in par["hemisphere"], v in vars2update
         # -- calculate time evolution
         variab, vardot = v * "_" * hm, v * "dot_" * hm
-        now_u[variab] += now_u[vardot] * ctl_u["dt"]    # now = now + dnow/dt * dt
+        now[variab] += now[vardot] * ctl["dt"]    # now = now + dnow/dt * dt
 
         # -- modify if desired
         if variab in ["H_n", "H_s"]
-            now_u[variab] = max(now_u[variab], 0.0)
+            now[variab] = max(now[variab], 0.0)
         elseif variab in ["Hsed_n", "Hsed_s"]
-            now_u[variab] = min(max(now_u[variab], 0.0), 1.0) # sediments go from 0 to 1
+            now[variab] = min(max(now[variab], 0.0), 1.0) # sediments go from 0 to 1
         elseif variab in ["B_n", "B_s"]
-            (~par_u["active_iso"]) && (now_u[variab] = par_u["B_eq_"*hm]) # reupdate to equilibrium value
+            (~par["active_iso"]) && (now[variab] = par["B_eq_"*hm]) # reupdate to equilibrium value
         elseif variab in ["T_ice_n", "T_ice_s"]
-            now_u[variab] = min(now_u[variab], degK)
+            now[variab] = min(now[variab], degK)
         elseif variab in ["co2_n", "co2_s"]
-            now_u[variab] = max(now_u[variab], 1.0)
+            now[variab] = max(now[variab], 1.0)
         end
     end
-    return now_u
+    return now
 end
 
-@doc """
-        ===========================================================
-            Model: AMOD (adimensional ice-sheet-sediment model)
-                 by Jorge Alvarez-Solas (Fortran, 2017)
-        ===========================================================
-            Adapted to Julia by Sergio Pérez-Montero (2022)
 """
-function amod(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector)
+     amod(now, par, ctl, vars2update)
+
+AMOD model 
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `par` Dictionary with run parameters
+* `ctl` Run control parameters
+* `vars2update` Vector of variables to update in time as var = var + vardot * dt
+## Return
+updated `now` dictionary
+"""
+function amod(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vars2update::Vector)
     # Update variables
-    now = update_forward(now, par, ctl, vart)
+    now = update_forward(now, par, ctl, vars2update)
     now = update_Z(now, par)
 
     now = calc_E(now, par)
@@ -86,7 +99,7 @@ function amod(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector
     # -- sediment thickness
     if par["active_ice"]
         if par["active_sed"]
-            now = calc_Hseddot(now, par, ctl)
+            now = calc_Hseddot(now, par)
         end
         # -- ice temperature
         now = calc_T_icedot(now, par)
@@ -107,10 +120,21 @@ function amod(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector
     return now
 end
 
-@doc """
-    amod_loop: contains the time loop of the model
 """
-function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::OrderedDict, vart::Vector, file)
+    amod_loop(now, out, par, ctl, vars2update, file)
+calculates the time loop of the model
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `out` Dictionary with stored values of the model variables (output)
+* `par` Dictionary with run parameters
+* `ctl` Run control parameters
+* `vars2update` Vector of variables to update in time as var = var + vardot * dt
+* `file` out.out file  
+## Return
+updated `out` dictionary
+"""
+function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::OrderedDict, vars2update::Vector, file)
     time_length = ceil((ctl["time_end"] - ctl["time_init"]) / ctl["dt"])
     for n in 1:time_length
         # update simulation time
@@ -124,11 +148,11 @@ function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::Or
         end
 
         # run AMOD
-        now = amod(now, par, ctl, vart)
+        now = amod(now, par, ctl, vars2update)
 
         # only update output variable at desired frequency
         if mod(now["time"], ctl["dt_out"]) == 0
-            out = update_amod_out(out, now)
+            out = update_amod_out(now, out)
             if par["active_outout"]
                 write(file, "time = " * string(now["time"]) * "\n")
             end
@@ -141,8 +165,17 @@ function amod_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::Or
     return out
 end
 
-@doc """
-    run_amod: main function of AMOD
+"""
+    run_amod(; experiment, par_file, par2change)
+        
+main function of AMOD (all arguments are optional)
+
+## Attributes 
+* `experiment`  Name of the experiment to perform
+* `par_file`    Name of the parameter file to use
+* `pars2change` Dictionary with the (parameter => new value) to change in the original `par_file` parameter file
+## Return
+nothing
 """
 function run_amod(; experiment::String="test_default", par_file::String="amod_default.jl", par2change=[])
     ## Now, load arguments
@@ -155,52 +188,58 @@ function run_amod(; experiment::String="test_default", par_file::String="amod_de
     end
 
     # Assign parameters
-    # -- assign parameters, CTL, INCOND, PAR, amod_INCOND
-    CTL, amod_INCOND, PAR, OUT, out_precc, out_attr = load_defs(output_path * "namelist.jl")
+    # -- assign parameters
+    ctl, now, par, out, out_prec, out_attr = load_defs(output_path * "namelist.jl")
 
     ## Open out.out
     # if out.out exists remove it
     isfile(output_path * "/out.out") && rm(output_path * "/out.out")
     f = open(output_path * "/out.out", "w")
-    if PAR["active_outout"]
+    if par["active_outout"]
         write(f, "**** Starting AMOD " * experiment * " ... ****\n")
     end
 
     ## Initialize
-    NOW = copy(amod_INCOND)
-    OUT = update_amod_out(OUT, NOW) # update output
+    out = update_amod_out(now, out) # update output
 
-    if PAR["active_outout"]
-        write(f, "time = " * string(NOW["time"]) * "\n")
+    if par["active_outout"]
+        write(f, "time = " * string(now["time"]) * "\n")
     end
 
     ## Let's run!
     # -- define updatable (in time) variables
-    VARt = ["H", "B"]
-    (PAR["active_ice"]) && (VARt = vcat(VARt, ["Hsed", "T_ice"]))
-    (PAR["active_climate"]) && (VARt = vcat(VARt, ["T", "co2", "albedo", "ice_time"]))
+    vars2update = ["H", "B"]
+    (par["active_ice"]) && (vars2update = vcat(vars2update, ["Hsed", "T_ice"]))
+    (par["active_climate"]) && (vars2update = vcat(vars2update, ["T", "co2", "albedo", "ice_time"]))
 
     # -- run AMOD
-    OUT = amod_loop(NOW, OUT, PAR, CTL, VARt, f)
+    out = amod_loop(now, out, par, ctl, vars2update, f)
 
     ## Create output nc file
     # if outfile exists remove it
     isfile(output_path * "/amod.nc") && rm(output_path * "/amod.nc")
-    genout_nc(output_path, "amod.nc", OUT, out_precc, out_attr)
+    genout_nc(output_path, "amod.nc", out, out_prec, out_attr)
 
-    if PAR["active_outout"]
+    if par["active_outout"]
         write(f, "**** AMOD " * experiment * " done! ****" * "\n")
     end
     close(f)
-    (PAR["active_outout"] == false) && rm(output_path * "/out.out")
+    (par["active_outout"] == false) && rm(output_path * "/out.out")
 
     ## Done!
 end
 
-@doc """
-    run_amod_ensemble: 
-        Takes an (ordered) dictionary of parameters to be exchanged
-        in order to run an ensemble and runs AMOD for each combination
+"""
+    run_amod_ensemble(par2per; experiment, par_file)
+        
+Takes an (ordered) dictionary of parameters to be exchanged in order to run an ensemble and runs AMOD for each combination
+Deprecated, use `run_amod_lhs()` instead
+
+## Attributes 
+* `par2per`     Dictionary with parameters to be exchanged
+## Optional attributes
+* `experiment`  Name of the experiment to perform
+* `par_file`    Name of the parameter file to use
 """
 function run_amod_ensemble(par2per::OrderedDict; experiment::String="test_default_ens", par_file::String="amod_default.jl")
     # First, obtain simulations
@@ -223,10 +262,20 @@ function run_amod_ensemble(par2per::OrderedDict; experiment::String="test_defaul
     # Done!
 end
 
-@doc """
-    run_amod_lhs: 
-        Takes a dictionary of parameters and create LHS, key => (min, max)
-        to run an ensemble and runs AMOD for each combination (not valid for bool parameters)
+"""
+    run_amod_lhs(par2per, nsim; experiment, par_file)
+        
+Takes a dictionary of parameters and create LHS, key => (min, max) to run an ensemble and runs AMOD for each combination
+
+## Attributes 
+* `par2per`     Dictionary with parameters to be exchanged, key => (min, max)
+* `nsim`        Number of simulations to perform
+
+## Optional attributes
+* `experiment`  Name of the experiment to perform
+* `par_file`    Name of the parameter file to use
+## Return
+nothing
 """
 function run_amod_lhs(par2per::Dict, nsim::Int; experiment::String="test_default_ens", par_file::String="amod_default.jl")
     parnames = collect(keys(par2per))
@@ -266,8 +315,21 @@ end
 
 
 # Some shortcuts
+"""
+    run_tests(; test1a, test1b, test1c, test2, test3)
+        
+Shortcut to run some general tests (dev), all attributes are optional
 
-function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=true)
+## Attributes (default value is `false`)
+* `test1a`  Just ice dynamics and artificial insolation
+* `test1b`  Just ice dynamics, artificial insolation and linear Clausius-clapeyron
+* `test1c`  Just ice dynamics, laskar insolation and linear Clausius-clapeyron
+* `test2`   Just climate
+* `test3`   Default mode, ice dynamics + coupled climate
+## Return
+nothing
+"""
+function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false)
 
     # Test 1a. Just ice dynamics and artificial insolation
     if test1a
@@ -321,7 +383,7 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
         plot_amod(experiment="test_ice-artif-lin-noiso_def", vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment="test_ice-artif-lin-noiso_def", MPT=true, fs=1 / 1000, sigma=π)
 
-        plot_amod_runs(experiment=["test_ice-artif-lin_def", "test_ice-artif-lin-noiso_def"], vars2plot=["ins_n", "H_n", "Hsed_n"], MPT=true)
+        plot_amod(experiments=["test_ice-artif-lin_def", "test_ice-artif-lin-noiso_def"], vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
 
         # -- paleo + anth
         par_ice_artif_lin_anth = Dict("time_init" => -2e6, "time_end" => 2e6,
@@ -405,22 +467,74 @@ function run_tests(; test1a=true, test1b=true, test1c=true, test2=true, test3=tr
         println("test 2 completed")
     end
 
-    if test3
+    if test3 # default mode, ice + coupled climate 
         # paleo
-        par_iceclim = Dict("time_init" => -1.5e6, "time_end" => 0,
+        # par_iceclim = Dict("time_init" => -2e6, "time_end" => 0,
+        # "height_temp" => "useZ",
+        # "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
+        # "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        # "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+        # "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
+        # "lambda" => 0.01, "Acc_ref_n" => 0.1,
+        # "f_1" => 1e-6, "C_s" => 1e-7,
+        # "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
+        par_iceclim = Dict("time_init" => -8e5, "time_end" => 2e5,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-            "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
-            "lambda" => 0.01, "Acc_ref_n" => 0.1,
-            "Hsed_init_n" => 1.0, "f_1" => 1e-6,
+            "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+            "ka" => 0.008, "ki" => 0.008, "ktco2" => 7.0, "t_threshold" => -5.0,
+            "lambda" => 0.05, "Acc_ref_n" => 0.4,
+            "f_1" => 1e-6, "C_s" => 1e-7,
             "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
-        run_amod(experiment="test_ice-clim_useZ", par_file="amod_default.jl", par2change=par_iceclim)
-        vrs2plt = ["H_n", "B_n", "Hsed_n", "SMB_n", "U_n", "Hdot_n"]#, "T_n", "co2_n", "V_n"]
-        plot_amod(experiment="test_ice-clim_useZ", vars2plot=vrs2plt, plot_MPT=false, plot_PSD=true)
-        plot_wavelet(experiment="test_ice-clim_useZ", MPT=true, fs=1 / 1000, sigma=π)
+        vrs2plt = ["ins_anom_n", "H_n", "T_rf_n", "M_n", "SMB_n", "U_n"]
+        
+        par_iceclim["Hsed_init_n"] = 0.0
+        run_amod(experiment="test_ice-clim_useZ_sed0", par_file="amod_default.jl", par2change=par_iceclim)
+        plot_amod(experiment="test_ice-clim_useZ_sed0", vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment="test_ice-clim_useZ_sed0", MPT=true, fs=1 / 1000, sigma=3.45)
+
+        # vrs2plot = ["H_n"]
+        # nsims = 30
+        # parfile = "amod_ice-climate_def.jl"
+
+        # exp2do = "ice-clim_sed0_ki"
+        # par2per = Dict("ki"=>(0.001, 0.09))
+        # run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+        # plot_amod(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
+
+        # exp2do = "ice-clim_sed0_csi"
+        # par2per = Dict("csi"=>(0.01, 0.5))
+        # run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+        # plot_amod(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
+
+        # exp2do = "ice-clim_sed0_cs"
+        # par2per = Dict("cs"=>(0.1, 0.9))
+        # run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+        # plot_amod(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
+
+        # exp2do = "ice-clim_sed0_csz"
+        # par2per = Dict("csz"=>(0.001, 0.01))
+        # run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+        # plot_amod(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
+
+        # exp2do = "ice-clim_sed0_lambda"
+        # par2per = Dict("lambda"=>(0.01, 0.1))
+        # run_amod_lhs(par2per, nsims; experiment=exp2do, par_file=parfile)
+        # plot_amod(experiment=exp2do, vars2plot=vrs2plot, plot_MPT=true)
+
+        #par_iceclim["Hsed_init_n"] = 1.0
+        #run_amod(experiment="test_ice-clim_useZ_sed1", par_file="amod_default.jl", par2change=par_iceclim)
+        #plot_amod(experiment="test_ice-clim_useZ_sed1", vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
+        #plot_wavelet(experiment="test_ice-clim_useZ_sed1", MPT=true, fs=1 / 1000, sigma=3.45)
+        
+        #par_iceclim["active_sed"], par_iceclim["Hsed_init_n"] = true, 1.0
+        #run_amod(experiment="test_ice-clim_useZ", par_file="amod_default.jl", par2change=par_iceclim)
+        #plot_wavelet(experiment="test_ice-clim_useZ", MPT=true, fs=1 / 1000, sigma=3.45)
+
+        #plot_amod(experiments=["test_ice-clim_useZ", "test_ice-clim_useZ_sed0", "test_ice-clim_useZ_sed1"], vars2plot=vrs2plt, plot_MPT=true)
 
         # paleo + anth
+        println("test 3 completed")
     end
 end

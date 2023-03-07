@@ -2,32 +2,46 @@
 #     Program: amod_diag.jl
 #     Aim: This program contains functions to calculate diagnostic variables
 # =============================
-@doc """
-    calc_E: 
-        calculates ice-sheet extension
 """
-function calc_E(now_di, par_di)
-    for hm in par_di["hemisphere"]
-        if par_di["active_climate"]
-            Temp = now_di["T_"*hm]
+    calc_E(now, par)
+calculates ice-sheet extension
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `par` Dictionary with run parameters
+
+## Return
+updated `now` dictionary
+"""
+function calc_E(now, par)
+    for hm in par["hemisphere"]
+        if par["active_climate"]
+            Temp = now["T_"*hm]
         else    
-            Temp = now_di["T_sl_"*hm]
+            Temp = now["T_sl_"*hm]
         end
-        now_di["E_"*hm] = par_di["E_ref_"*hm] * (Temp - par_di["T_ref_"*hm]) / par_di["A_te_"*hm]
+        now["E_"*hm] = par["E_ref_"*hm] * (Temp - par["T_ref_"*hm]) / par["A_te_"*hm]
     end
-    return now_di
+    return now
 end
 
-@doc """
-    calc_V: 
-        calculates ice-sheet volume from prognostic mean H and diagnosed E
 """
-function calc_V(now_di, par_di)
-    for hm in par_di["hemisphere"]
-        now_di["V_"*hm] = now_di["E_"*hm] * now_di["H_"*hm] / 1e3   # km3
-        now_di["V_"*hm] = now_di["V_"*hm] * rhoi / rhow * 1e3 / A_oc    # m sle
+    calc_V(now, par) 
+calculates ice-sheet volume from prognostic mean H and diagnosed E
+
+## Attributes
+* `now` Dictionary with values of the model variables at current timestep
+* `par` Dictionary with run parameters
+
+## Return
+updated `now` dictionary
+"""
+function calc_V(now, par)
+    for hm in par["hemisphere"]
+        now["V_"*hm] = now["E_"*hm] * now["H_"*hm] / 1e3   # km3
+        now["V_"*hm] = now["V_"*hm] * rhoi / rhow * 1e3 / A_oc    # m sle
     end
-    return now_di
+    return now
 end
 
 

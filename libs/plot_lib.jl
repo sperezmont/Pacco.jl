@@ -48,7 +48,7 @@ end
         plot_proxies    --> include proxy curves?
         proxy_files     --> dictionary with the names of the proxy files to use in T/, co2/ and V/
 """
-function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     out_path = pwd() * "/output/" * experiment * "/"
     proxy_path = pwd() .* "/data/"
@@ -66,8 +66,18 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
     end
 
     colors = [:black, :royalblue4, :red4, :olive, :steelblue4]
-    color_list = collect(cgrad(colors, length(vars2plot), categorical=true))
-    palettes = (color=color_list,)
+    if length(vars2plot) == 1 
+        palettes = [[colors[1]]]
+    else
+        color_list = collect(cgrad(colors, length(vars2plot), categorical=true))
+        palettes = (color=color_list,)
+    end
+
+    if length(data_to_load) == 1
+        colors_2 = [:black]
+    else
+        colors_2 = cgrad(:copper, length(data_to_load), categorical = true, rev = true)
+    end
 
     # 2. Load data
     time, data, units = [], [], []          # data[variable][element][values]
@@ -130,7 +140,9 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
 
         # -- 3.5 Plot MPT and main Milankovitch periods
         (plot_MPT) && (vspan!(ax, -1.25e6, -0.7e6, color=(:red, 0.2)))    # plot Mid-Pleistocene Transition
-        (plot_PSD) && (vlines!(ax_PSD, [21e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash))  # main Milankovitch periods
+        (plot_PSD) && (vlines!(ax_PSD, [19e3, 23e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash))  # main Milankovitch periods
+        (time[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=3, color=(:red, 0.5)))
+
 
         # -- 3.6 If desired, plot proxy files
         if plot_proxies
@@ -156,22 +168,27 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
         end
 
         # -- 3.7 Plot each simulation (and PSD if desired)
+        lins = []
         for e in eachindex(data_to_load)
             if experiments == []
-                color_to_use = palettes[1][v]
+                if length(data_to_load) == 1
+                    color_to_use = palettes[1][v]
+                else
+                    color_to_use = colors_2[e]
+                end
+                lbl = "AMOD"
             else
+                lbl = experiments[e]
                 colors_experiments_mode = [:royalblue4, :red4, :olive, :purple]
                 color_to_use = colors_experiments_mode[e]
             end
 
             if var_v == "T" # CHECK THIS, CUTRE
-                lines!(ax, time, data_v[e][:] .- 273.15, linewidth=linewidth, color=color_to_use)
+                l = lines!(ax, time, data_v[e][:] .- 273.15, linewidth=linewidth, color=color_to_use)
             else
-                lines!(ax, time, data_v[e][:], linewidth=linewidth, color=color_to_use)
-                if vars2plot[v][1] == 'T'
-                    hlines!(ax, 273.15, linestyle=:dash, color=:red)
-                end
+                l = lines!(ax, time, data_v[e][:], linewidth=linewidth, color=color_to_use)
             end
+            push!(lins, l)
 
             if plot_PSD
                 G, f = calc_spectrum(data_v[e][:], 1 / (time[2] - time[1]))
@@ -200,6 +217,10 @@ function plot_amod(; experiment="test_default", experiments=[], vars2plot=["ins_
             ax_PSD.xtickformat = k -> string.(Int.(ceil.(k / 1000)))
         end
 
+        if (experiments != []) && (v == 1) 
+            fig[1, ncols+1] = Legend(fig, lins, experiments, framevisible=false, labelsize=0.6 * fntsz)
+        end
+
         if plot_proxies
             if var_v in collect(keys(proxy_files))
                 fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6 * fntsz)
@@ -225,40 +246,44 @@ end
 @doc """
     plot_wavelet: Plots a map of the wavelet scalogram
 """
-function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, sigma=π, MPT=false)
+function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, sigma=π, MPT=false, time_anth=2000.0)
     ## Load output data 
-    data, time = load_nc(amod_path * "/output/" * experiment * "/amod.nc", [var2plot])
+    df = NCDataset(amod_path * "/output/" * experiment * "/amod.nc")
+    data, time = df[var2plot], df["time"]
 
     ## Compute Wavelets
     Wnorm, freqs = calc_wavelet(data, fs; sigma=sigma)
     periods = 1 ./ freqs
-    t_coi, p_coi = calc_coi(time[:], periods)
+    t_coi, p_coi = calc_coi(time, freqs, 2*pi / sigma)  # convert rad/s to Hz (for cf)
+    p_coi = log10.(p_coi ./ 1e3)
 
     ## Plot
     fig, fntsz = Figure(resolution=(800, 400)), 20
 
-    ax = Axis(fig[1, 1], title=var2plot * " (" * data.attrib["units"] * ")", titlesize=0.8 * fntsz,
+    ax = Axis(fig[1, 1], titlesize=0.8 * fntsz,
         xlabelsize=fntsz, ylabelsize=fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
+    ax2 = Axis(fig[1, 1], ylabelsize=fntsz, yaxisposition = :right)
 
     cmap = :cividis
     minW, maxW = minimum(Wnorm), maximum(Wnorm)
     stepW = 0.1 * max(minW, maxW)
-    c = contourf!(ax, time, periods, Wnorm, colormap=cmap, levels=minW:stepW:maxW)
-    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=3, color=:red, linestyle=:dash))    # plot MPT
-    hlines!(ax, [21e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash)
+    c = contourf!(ax, time, log10.(periods ./ 1e3), Wnorm, colormap=cmap, levels=minW:stepW:maxW)
+    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=2, color=:red, linestyle=:dash))    # plot MPT
+    (time[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=2, color=:red, linestyle=:dash))
+    hlines!(ax, log10.([19, 23, 41, 100]), linewidth=2, color=:red, linestyle=:dash)
     c.extendlow = :auto
     c.extendhigh = :auto
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized PSD", ticklabelsize=fntsz)
 
-    approx, approx2 = fill(150.0e3, Int(length(t_coi) / 2)), fill(150.0e3, length(t_coi[Int(length(t_coi) / 2)+1:end]))
-    t_coi_2_1, p_coi_2_1 = t_coi[1:Int(length(t_coi) / 2)], p_coi[1:Int(length(t_coi) / 2)]
-    t_coi_2_2, p_coi_2_2 = t_coi[Int(length(t_coi) / 2)+1:end], p_coi[Int(length(t_coi) / 2)+1:end]
+    t1, p1 = t_coi[1:Int(length(p_coi)/2)], p_coi[1:Int(length(p_coi)/2)]
+    t2, p2 = t_coi[Int(length(p_coi)/2)+1:end], p_coi[Int(length(p_coi)/2)+1:end]
 
-    band!(ax, t_coi_2_1, p_coi_2_1, approx .+= p_coi_2_1, color=(:red, 0.5))
-    band!(ax, t_coi_2_2, approx2 .+= p_coi_2_2, p_coi_2_2, color=(:red, 0.5))
+    lines!(ax, t1, p1, color=:red, linestyle=:dash)
+    lines!(ax, t2, p2, color=:red, linestyle=:dash)
+    lines!(ax2, time, data, color=:white, linewidth=1)
 
-    text!(ax, -1.24e6, 5e3, text="MPT starts", fontsize=0.9 * fntsz, color=:red)
-    text!(ax, -0.69e6, 5e3, text="MPT ends", fontsize=0.9fntsz, color=:red)
+    band!(ax, t1, p1, 50, color=("red", 0.3))
+    band!(ax, t2, p2, 50, color=("red", 0.3))
 
     if (time[end] - time[1]) > 1.5e6
         tstep = 300e3
@@ -268,12 +293,20 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
         tstep = 100e3
     end
     ax.xticks = -5e6:tstep:5e6
-    ax.xtickformat = k -> string.(k / 1000)
-    xlims!(ax, (time[1], time[end]))
+    ax.xtickformat = k -> string.(Int.(k / 1000))
+    xlims!(ax, (minimum(time), maximum(time)))
+    xlims!(ax2, (minimum(time), maximum(time)))
 
-    ax.yticks = 0:20e3:150e3
-    ax.ytickformat = k -> string.(Int.(ceil.(k / 1000)))
-    ylims!(ax, (0, 150e3))
+    ax.ytickformat = k -> string.(Int.(ceil.(10 .^ k)))
+    ax.yticks = log10.([19, 23, 41, 100])
+
+    ax2.ytickformat = k -> string.(Int.(ceil.(k ./ 100) .* 100)) .* " $(df[var2plot].attrib["units"])"
+    ax2.yticks = range(minimum(data), stop=maximum(data), length=3)
+    ylims!(ax, (1, maximum(p_coi)))
+    ylims!(ax2, (minimum(data), 8*maximum(data)))
+
+    hidespines!(ax2)
+    hidexdecorations!(ax2)
 
     save(amod_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end

@@ -52,10 +52,7 @@ printstyled("|      --> run_amod_lhs(par2per, nsim; experiment, par_file)     | 
 printstyled("|      --> run_ensemble(par2per; experiment, par_file)           | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
-printstyled("|      --> plot_amod(;experiment, vars2plot, MPT)                | \n")
+printstyled("|      --> plot_amod(;experiment/experiments, vars2plot)         | \n")
 printstyled("|      --> plot_wavelet(;experiment, var2plot)                   | \n")
 printstyled("================================================================== \n", color=:light_blue)
-
-
-
 

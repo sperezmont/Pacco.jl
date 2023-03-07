@@ -87,7 +87,11 @@ end
         Compute daily average insolation
 """
 function calc_ins(now_o, par_o)
-    if par_o["ins_case"] == "artificial"
+    if par_o["ins_case"] == "constant"
+        for hm in par_o["hemisphere"]
+            now_o["ins_"*hm] = copy(par_o["ins_const"])
+        end
+    elseif par_o["ins_case"] == "artificial"
         now_o = calc_artificial_insolation(now_o, par_o)
     elseif par_o["ins_case"] == "laskar"
         for hm in par_o["hemisphere"]
