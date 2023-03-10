@@ -6,24 +6,6 @@
 
 # Functions
 
-function is_ensemble(exp)
-    elems = readdir(pwd() * "/output/" * exp * "/")
-    if "pacco.nc" in elems
-        is_ens = false
-        new_elems = elems
-    else
-        is_ens = true
-
-        new_elems = []
-        for e in elems # drop "/results/" directory
-            if e != "results"
-                push!(new_elems, e)
-            end
-        end
-    end
-    return new_elems, is_ens
-end
-
 function collect_variable(str::String)
     if str[1:end-2] in ["T_surf", "T_ice", "T_rf", "T_ref"]
         return str[1:end-2]
@@ -37,6 +19,35 @@ function collect_variable(str::String)
         end
         return str[1:idx-1]
     end
+end
+
+"""
+    fast_plot(runss; var2plot="H_n", cmap=:heat)
+this function assumes we want a no so fancy plot so it just plots variable `var2plot` of good runs stored in `good_runs.txt` with a gradation of colors
+
+"""
+function fast_plot(experiment; var2plot="H_n", cmap=:batlow)
+    path_to_results = get_path_to_results(experiment)
+    runs = get_good_runs_from_file(path_to_results)
+    labels = get_exp_labels(runs)
+    
+    fig = Figure()
+    ax = Axis(fig[1, 1], ylabel=var2plot, xlabel="Time")
+    color_list = collect(cgrad(cmap, length(runs), categorical=true))
+    palettes, k = (color=color_list,)[1], 1
+    for run in runs
+        df = NCDataset(run, "r")
+        x, t = df[var2plot], df["time"]
+        lines!(ax, t, x, color=palettes[k])
+        k += 1
+    end
+    ticks_selected = 1:Int(round(length(runs)/10)):length(runs)
+    new_labels = labels[ticks_selected]
+    Colorbar(fig[1, 2], height=Relative(1/2), colormap=cmap,
+        colorrange = (1, length(runs)),
+        ticks = (ticks_selected, new_labels),    
+    )
+    save(path_to_results * "/fast_plot.png", fig)
 end
 
 @doc """
@@ -58,17 +69,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         plot_proxies = false
     end
 
-    if experiments == []
-        elements, isensemble = is_ensemble(experiment)
-        if isensemble
-            data_to_load = out_path .* elements .* "/pacco.nc"
-        else
-            data_to_load = out_path .* ["/pacco.nc"]
-        end
-    else
-        isensemble = false
-        data_to_load = pwd() .* "/output/" .* experiments .* "/pacco.nc"
-    end
+    isensemble, data_to_load = is_experiment_or_experiments(experiment, experiments)
 
     colors = [:black, :royalblue4, :red4, :olive, :steelblue4]
     if length(vars2plot) == 1 
@@ -81,7 +82,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
     if length(data_to_load) == 1
         colors_2 = [:black]
     else
-        colors_2 = cgrad(:copper, length(data_to_load), categorical = true, rev = true)
+        colors_2 = cgrad(:darktest, length(data_to_load), categorical = true, rev = true)
     end
 
     # 2. Load data

@@ -6,7 +6,7 @@
     calc_E(now, par)
 calculates ice-sheet extension
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -29,7 +29,7 @@ end
     calc_V(now, par) 
 calculates ice-sheet volume from prognostic mean H and diagnosed E
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 

@@ -31,3 +31,8 @@ end
 Pkg.precompile()
 display("**** PACCO ready ****")
 
+# Check if output/ directory is present
+if isdir("output") == false
+    mkdir("output")
+end
+

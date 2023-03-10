@@ -6,7 +6,7 @@
     update_pacco_out(now, out)
 updates output variable
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `out` Dictionary with stored values of the model variables (output)
 
@@ -24,7 +24,7 @@ end
     check_run(run_to_check)
 checks if run is doing well
 
-## Attributes
+## Arguments
 * `run_to_check` Dictionary with values to check
 
 ## Return

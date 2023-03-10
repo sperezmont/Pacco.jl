@@ -4,6 +4,124 @@
 #     Author: Sergio Pérez-Montero, 2022.11.25
 # =============================
 
+function get_exp_labels(runs)
+    labels = []
+    for run in runs
+        elements = split(run, "/")
+        for e in 2:length(elements)
+            if elements[e] == "results"
+                push!(labels, elements[e-1])
+            elseif elements[e] == "pacco.nc"
+                push!(labels, elements[e-1])
+            end
+        end
+    end
+    return labels     
+end
+
+function get_good_runs_from_file(exp_path)
+    return readlines(exp_path * "/good_runs.txt")
+end
+
+function get_path_to_results(experiment)
+    exp_path = pwd() * "/output/" * experiment
+    elements = readdir(exp_path)
+    if "results" in elements
+        return exp_path * "/results/"
+    else
+        return exp_path
+    end 
+end
+
+function is_ensemble(exp)
+    elems = readdir(pwd() * "/output/" * exp * "/")
+    if "pacco.nc" in elems
+        is_ens = false
+        new_elems = elems
+    else
+        is_ens = true
+
+        new_elems = readdir(pwd() * "/output/" * exp * "/runs/")
+        new_new_elems = []
+        for e in new_elems # drop "/results/" directory
+            push!(new_new_elems, e)
+        end
+    end
+    return new_new_elems, is_ens
+end
+
+"""
+    is_experiment_or_experiments(experiment, experiments)
+takes `experiment` and `experiments` and determine if the directory contains a single run, an ensemble or if needs to take different runs from different directories
+
+## Arguments
+* `experiment` String with the name of the run/ensemble
+* `experiments` Vector with the names of the specific runs
+
+## Return
+returns if it is an ensemble `isensemble` and a vector with the paths to the desired runs `desired_runs`
+"""
+function is_experiment_or_experiments(experiment, experiments)
+    out_path = pwd() * "/output/" * experiment * "/"
+    
+    if experiments == []
+        elements, isensemble = is_ensemble(experiment)
+        if isensemble
+            desired_runs = out_path .* "/runs/" .* elements .* "/pacco.nc"
+        else
+            desired_runs = out_path .* ["/pacco.nc"]
+        end
+    else
+        isensemble = false
+        desired_runs = pwd() .* "/output/" .* experiments .* "/pacco.nc"
+    end
+    return isensemble, desired_runs
+end
+
+@doc """
+    readdir_store_sims:
+"""
+function readdir_store_sims(path_to_experiment)
+    elements = []
+    for element in readdir(path_to_experiment)
+        if element[end-3:end] != ".png"
+            push!(elements, element)
+        end
+    end
+    return elements
+end
+
+
+@doc """
+    nans_detector:
+        This function will scream if any nan or missing is found in the ensemble runs
+"""
+function nans_detector(; experiment::String="test_default_ens", variable="H_n")
+    # Define some local variables
+    locdir = pwd() * "/output/" * experiment * "/"
+
+    # Read directory
+    elements = readdir_store_sims(locdir)
+
+    # Look for nans and scream their names, times and variables!
+    k = 0
+    for e in elements
+        d = NCDataset(locdir * "/" * e * "/pacco.nc")[variable]
+        isnan_list, ismissing_list = isnan.(d), ismissing.(d)
+        if sum(isnan_list) > 0
+            printstyled("NaN found in $e", color=:red)
+            k += 1
+        end
+        if sum(ismissing_list) > 0
+            printstyled("missing found in $e", color=:red)
+            k += 1
+        end
+    end
+    if k == 0
+        printstyled("no NaN or missing found", color=:green)
+    end
+end
+
 @doc """
     change_namelist
         Takes a dictionary of new values for parameters and change them in the namelist.jl file
@@ -152,7 +270,7 @@ end
         Based on example from:
             https://mrurq.github.io/LatinHypercubeSampling.jl/stable/man/lhcoptim/
 """
-function gen_lhs(par2per::Dict, nsim::Int; ngens=10, pars_type=1, pars_type_list=[], ncatvals=2, catWeigth=0.0025)
+function gen_lhs(par2per::Dict, nsim::Int; ngens=5, pars_type=1, pars_type_list=[], ncatvals=2, catWeigth=0.0025)
     # Generate a vector with [min, max] values
     minmax = [par2per[i] for i in keys(par2per)]
 

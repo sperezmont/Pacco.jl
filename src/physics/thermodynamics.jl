@@ -6,7 +6,7 @@
     calc_P(now, par)
 calculates surface pressure
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -24,7 +24,7 @@ end
     calc_T_surf(now, par)
 calculates air temperature at ice sheet surface level
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -52,7 +52,7 @@ end
     calc_Acc(now, par)
 calculates accumulation rate
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -86,7 +86,7 @@ end
     calc_M(now, par)
 calculates surface melting rate
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -129,7 +129,7 @@ end
     calc_SMB(now, par)
 calculates surface mass balance
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -154,7 +154,7 @@ end
     calc_TMB(now, par)
 calculates total mass balance
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -172,7 +172,7 @@ end
     calc_Qdif(now, par)
 calculates diffusive heat
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -206,7 +206,7 @@ end
     calc_Qdrag(now, par)
 calculates drag heat
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -231,7 +231,7 @@ end
     calc_T_icedot(now, par)
 calculates ice temperature derivative
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 

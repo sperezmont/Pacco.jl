@@ -8,7 +8,7 @@
 
 takes vars2update and calculates their time evolution vars2update is a vector with the names of the variables to update vars2update is computed in run_pacco() function 
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 * `ctl` Run control parameters
@@ -43,7 +43,7 @@ end
 
 PACCO model 
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 * `ctl` Run control parameters
@@ -124,7 +124,7 @@ end
     pacco_loop(now, out, par, ctl, vars2update, file)
 calculates the time loop of the model
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `out` Dictionary with stored values of the model variables (output)
 * `par` Dictionary with run parameters
@@ -165,12 +165,24 @@ function pacco_loop(now::OrderedDict, out::OrderedDict, par::OrderedDict, ctl::O
     return out
 end
 
+
+function write_run_info(outpath, expname, parname, changed_pars)
+    isfile(outpath * "/run-info.txt") && rm(outpath * "/run-info.txt")
+    f = open(outpath * "/run-info.txt", "w")
+    write(f, "$(expname)\n")
+    write(f, "Source parameter file: $(parname)\n")
+    write(f, "Parameters used: \n")
+    write(f, "$(changed_pars)\n")
+    close(f)
+end
+
+
 """
     run_pacco(; experiment, par_file, par2change)
         
 main function of PACCO (all arguments are optional)
 
-## Attributes 
+## Arguments 
 * `experiment`  Name of the experiment to perform
 * `par_file`    Name of the parameter file to use
 * `pars2change` Dictionary with the (parameter => new value) to change in the original `par_file` parameter file
@@ -181,6 +193,7 @@ function run_pacco(; experiment::String="test_default", par_file::String="pacco_
     ## Now, load arguments
     output_path = load_out(pacco_path, experiment)
     load_parf(pacco_path, output_path, par_file)
+    write_run_info(output_path, experiment, par_file, par2change)
 
     # -- check if some parameters need to be changed
     if par2change != []
@@ -235,9 +248,9 @@ end
 Takes an (ordered) dictionary of parameters to be exchanged in order to run an ensemble and runs PACCO for each combination
 Deprecated, use `run_pacco_lhs()` instead
 
-## Attributes 
+## Arguments 
 * `par2per`     Dictionary with parameters to be exchanged
-## Optional attributes
+## Optional Arguments
 * `experiment`  Name of the experiment to perform
 * `par_file`    Name of the parameter file to use
 """
@@ -246,16 +259,22 @@ function run_pacco_ensemble(par2per::OrderedDict; experiment::String="test_defau
     perm = calc_permutations(par2per)
 
     # Second, get number of simulations
-    nperm = length(perm)
+    nperms = length(perm)
 
-    # Third, create ensemble directory and run each permutation in it
-    isdir(pacco_path * "/output/" * experiment) || mkdir(pacco_path * "/output/" * experiment)
-    for i in 1:nperm
-        if i < 10   # create subdirectory name
-            experimenti = "/s0$i" * "/"
-        else
-            experimenti = "/s$i" * "/"
-        end
+    # Now, create ensemble directory
+    if isdir(pacco_path * "/output/" * experiment)
+        rm(pacco_path * "/output/" * experiment, recursive=true)
+    end
+    mkdir(pacco_path * "/output/" * experiment)
+    mkdir(pacco_path * "/output/" * experiment * "/runs/")
+    mkdir(pacco_path * "/output/" * experiment * "/results")
+
+    # Third, run each permutation
+    ndigits = Int(round(log10(nperms)) + 1)
+    for i in 1:nperms
+        experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+        println("s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])")
+
         run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
     end
 
@@ -267,11 +286,11 @@ end
         
 Takes a dictionary of parameters and create LHS, key => (min, max) to run an ensemble and runs PACCO for each combination
 
-## Attributes 
+## Arguments 
 * `par2per`     Dictionary with parameters to be exchanged, key => (min, max)
 * `nsim`        Number of simulations to perform
 
-## Optional attributes
+## Optional Arguments
 * `experiment`  Name of the experiment to perform
 * `par_file`    Name of the parameter file to use
 ## Return
@@ -287,6 +306,7 @@ function run_pacco_lhs(par2per::Dict, nsim::Int; experiment::String="test_defaul
         rm(pacco_path * "/output/" * experiment, recursive=true)
     end
     mkdir(pacco_path * "/output/" * experiment)
+    mkdir(pacco_path * "/output/" * experiment * "/runs/")
 
     # Plot (if possible) the LHS
     mkdir(pacco_path * "/output/" * experiment * "/results")
@@ -305,8 +325,10 @@ function run_pacco_lhs(par2per::Dict, nsim::Int; experiment::String="test_defaul
     # Run each permutation
     nperms = length(permutations_dict)
     ndigits = Int(round(log10(nperms)) + 1)
-    for i in ProgressBar(1:nperms)
-        experimenti = "/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+    for i in 1:nperms #ProgressBar(1:nperms)
+        experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+
+        println("s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])")
         run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=permutations_dict[i])
     end
 
@@ -320,20 +342,26 @@ end
         
 Shortcut to run some general tests (dev), all attributes are optional
 
-## Attributes (default value is `false`)
+## Arguments (default value is `false`)
 * `test1a`  Just ice dynamics and artificial insolation
 * `test1b`  Just ice dynamics, artificial insolation and linear Clausius-clapeyron
 * `test1c`  Just ice dynamics, laskar insolation and linear Clausius-clapeyron
 * `test2`   Just climate
 * `test3`   Default mode, ice dynamics + coupled climate
+* `all_tests` Runs all tests if set to `true`
 ## Return
 nothing
 """
-function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false)
+function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false, all_tests=false)
+    if all_tests == true
+        test1a, test1b, test1c = true, true, true
+        test2 = true
+        test3 = true
+    end
 
     # Test 1a. Just ice dynamics and artificial insolation
     if test1a
-        expname = "test1a_ice-artif_def"
+        expname = "tests/test1a_ice-artif_def"
         pars = Dict("time_init" => -2e6, "time_end" => 2e6,
             "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
             "ins_case" => "artificial", "ac_case" => "ins", "sm_case" => "PDD",
@@ -343,7 +371,7 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        println("test 1a $(expname) completed")
+        printstyled("test 1a $(expname) completed\n", color=:green)
     end
 
     # Test 1b. Just ice dynamics, artificial insolation and linear Clausius-clapeyron
@@ -356,27 +384,27 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
             "f_1" => 0.3e-7,
             "ka" => 0.008,
             "lambda" => 0.07, "Acc_ref_n" => 0.4)
-        expname = "test1b_ice-artif-lin_def"
+        expname = "tests/test1b_ice-artif-lin_def"
         run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
 
         # -- no iso
         pars["active_iso"] = false
-        expname2 = "test1b_ice-artif-lin-noiso_def"
+        expname2 = "tests/test1b_ice-artif-lin-noiso_def"
         run_pacco(experiment=expname2, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname2, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment=expname2, MPT=true, fs=1 / 1000, sigma=π)
 
         plot_pacco(experiments=[expname, expname2], vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
 
-        println("test 1b $(expname) completed")
+        printstyled("test 1b $(expname) completed\n", color=:green)
     end
 
     # Test 1c. Just ice dynamics, laskar insolation and linear Clausius-clapeyron
     if test1c
         # -- only paleo
-        expname = "test1c_ice_def"
+        expname = "tests/test1c_ice_def"
         pars = Dict("time_init" => -2e6, "time_end" => 2e6,
             "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "PDD",
@@ -387,12 +415,12 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        println("test 1c $(expname) completed \n Note: not fully calibrated")
+        printstyled("test 1c $(expname) completed \n Note: not fully calibrated\n", color=:red)
     end
 
     # Test 2. Just climate
     if test2
-        expname = "test2_clim_def"
+        expname = "tests/test2_clim_def"
         pars = Dict("time_init" => -5e5, "time_end" => 1e6,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
@@ -403,27 +431,58 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        println("test 2 $(expname) completed \n Note: needs further improvement in calibration")
+        printstyled("test 2 $(expname) completed \n Note: needs further improvement in calibration\n", color=:green)
     end
 
     if test3 # default mode, ice + coupled climate 
-        expname = "test3_ice-clim_def"
-        pars = Dict("time_init" => -8e5, "time_end" => 2e5,
-            "height_temp" => "useZ",
-            "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
-            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-            "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-            "ka" => 0.008, "ki" => 0.008, "ktco2" => 7.0, "t_threshold" => -5.0,
-            "lambda" => 0.1, "Acc_ref_n" => 0.4,
-            "f_1" => 1e-6, "C_s" => 1e-7,
-            "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
-        vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
+        expname = "tests/test3_ice-clim_def"
+        # pars = Dict("time_init" => -5e5, "time_end" => 2e5,
+        #     "height_temp" => "useZ",
+        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
+        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        #     "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+        #     "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
+        #     "lambda" => 0.01, "Acc_ref_n" => 0.1)
+        # pars = Dict("time_init" => -8e5, "time_end" => 2e5,
+        #     "height_temp" => "useZ",
+        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
+        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
+        #     "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
+        #     "ka" => 0.008, "ki" => 0.1, "ktco2" => 7.0, "t_threshold" => -5.0,
+        #     "lambda" => 0.1, "Acc_ref_n" => 0.4,
+        #     "f_1" => 1e-6, "C_s" => 1e-7,
+        #     "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
+        # vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
         
-        pars["Hsed_init_n"] = 0.0
-        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
-        plot_pacco(experiment=expname, vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=3.45)
+        # pars["Hsed_init_n"] = 0.0
+        # run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        # plot_pacco(experiment=expname, vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
+        # plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=3.45)
 
-        println("test 3 $(expname) completed \n Note: Work in progress")
+        # pars2perm =OrderedDict("Acc_ref_n" => [0.1, 0.2, 0.3, 0.4, 0.5],
+        #                         "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
+        #                         "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
+        #                         "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
+        #                         "lambda"=>[0.01, 0.05, 0.08, 0.1])
+        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble", par_file="test_climate_ensemble.jl")
+
+        pars2perm =OrderedDict("Acc_ref_n" => [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1.0],
+        "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
+        "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
+        "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
+        "lambda"=>[0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0])
+        run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_2", par_file="test_climate_ensemble.jl")
+
+        # pars2perm = Dict("Acc_ref_n" => (0.1, 0.5),
+        #                  "csi"=>(0.01, 0.15),
+        #                  "ki"=>(0.005, 0.1),
+        #                  "ka"=>(0.005, 0.1),
+        #                  "lambda"=>(0.01,0.1))
+        # @time run_pacco_lhs(pars2perm, 6600, experiment="test_climate_lhs", par_file="test_climate_ensemble.jl")
+        # plot_pacco(experiment="test_climate_lhs", vars2plot=["H_n"])
+
+
+
+        printstyled("test 3 $(expname) completed \n Note: Work in progress\n", color=:red)
     end
 end

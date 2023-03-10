@@ -4,6 +4,47 @@
 #     Author: Sergio Pérez-Montero, 2023.01.26
 # =============================
 
+function write_filtered_ensemble(outpath, runs)
+    isfile(outpath * "/good_runs.txt") && rm(outpath * "/good_runs.txt")
+    f = open(outpath * "/good_runs.txt", "w")
+    for run in runs
+        write(f, run * "\n")
+    end
+    close(f)
+end
+
+"""
+    detect_deglaciation(x, dt)
+detects complete deglaciations in a time series
+
+## Arguments
+* `x` time series (> 0) to analyze (e.g ice thickness or ice volume)
+* `t` time dimension
+
+## Return
+`number_of_deglaciations` and `timing`
+"""
+function detect_deglaciation(x::Vector, t::Vector)
+    dx = x[2:end] .- x[1:end-1]
+    dt = t[2:end] .- t[1:end-1]
+
+    dxdt = (dx ./ dt)
+
+    is_deglaciation = zeros(length(dxdt))
+    for i in eachindex(dxdt)
+        if x[i+1] == 0.0    # no ice
+            if sign(dxdt[i]) < 0   # glacial termination found
+                is_deglaciation[i] = 1.0
+            end
+        else
+            is_deglaciation[i] = 0.0
+        end
+    end
+    number_of_deglaciations = sum(is_deglaciation)
+    timing = vcat(0.0, is_deglaciation) # in this way, we extend to the same length as original data
+    return number_of_deglaciations, timing
+end
+
 function cut_time_series(d1::Dict, d2::Dict)
     elements_d1, elements_d2 = collect(keys(d1)), collect(keys(d2))
 
@@ -168,385 +209,85 @@ function gen_stats_dict(d::Dict)
     return stats_dict
 end
 
-@doc """
-    readdir_store_sims:
+sentence_rule1 = "only considers runs with at least 1 complete deglaciation in ice thickness and with main periodicity between 80-120 kyr"
 """
-function readdir_store_sims(path_to_experiment)
-    elements = []
-    for element in readdir(path_to_experiment)
-        if element[end-3:end] != ".png"
-            push!(elements, element)
+    rule1(runs)
+$(sentence_rule1)
+"""
+function rule1(runs; sentence=sentence_rule1)
+    var_to_load = "H_n" 
+
+    good, bad, stats = [], [], []
+    for run in runs
+        df = NCDataset(run, "r")
+        x, t = df[var_to_load][:], df["time"][:]
+        number_of_deglaciations, timing = detect_deglaciation(x, t)
+        G, f = calc_spectrum(x, 1 / (t[2] - t[1]))
+        G, f = G[f.>1/150e3], f[f.>1/150e3]   # filtering
+        G = G ./ sum(G)
+        periods = 1 ./ f
+        maxG = findmax(G)   # (maxval, index)
+        main_period = periods[maxG[2]]
+
+        stats_run = Dict("number_of_deglaciations" => number_of_deglaciations, 
+                         "mean" => mean(x), "std" => std(x), "min" => minimum(x), "max" => maximum(x),
+                         "main_period" => main_period)
+        if number_of_deglaciations > 1
+            if stats_run["main_period"] in 80e3..120e3
+                if stats_run["mean"] > 1000
+                    push!(good, run)
+                end
+            end
+        else
+            push!(bad, run)
         end
+        push!(stats, stats_run)
+        close(df)
     end
-    return elements
+
+    return good, bad, stats, sentence
 end
 
 
-@doc """
-    nans_detector:
-        This function will scream if any nan or missing is found in the ensemble runs
 """
-function nans_detector(; experiment::String="test_default_ens", variable="H_n")
-    # Define some local variables
-    locdir = pwd() * "/output/" * experiment * "/"
+    analyze_runs(;experiment = "test_ensemble_default", experiments = [], rules = 1)
+analyzes the run/ensemble `experiment` or the runs in `experiments` based on the rules dictated by `rule`
 
-    # Read directory
-    elements = readdir_store_sims(locdir)
+## Arguments
+* `experiment` Name of the run or ensemble to analyze
+* `experiments` Vector with the names of the specific runs to analyze
+* `rule` rules to apply (check ?rule# to obtain info about the different options)
 
-    # Look for nans and scream their names, times and variables!
-    k = 0
-    for e in elements
-        d = NCDataset(locdir * "/" * e * "/pacco.nc")[variable]
-        isnan_list, ismissing_list = isnan.(d), ismissing.(d)
-        if sum(isnan_list) > 0
-            printstyled("NaN found in $e", color=:red)
-            k += 1
-        end
-        if sum(ismissing_list) > 0
-            printstyled("missing found in $e", color=:red)
-            k += 1
-        end
-    end
-    if k == 0
-        printstyled("no NaN or missing found", color=:green)
-    end
-end
-
-@doc """
-    analyze_pacco:
-        Analyzes a simulation or ensemble against available proxies
-        experiment      --> experiment name to analyze
-        isens           --> is it an ensemble?
-        TisTsl          --> are we using regional or sea level temperature?
-        tref            --> temperature to use when computing anomalies
+## Return
+* `good_runs` Vector with the names of the runs that fullfill the rules
+* `bad_runs` Vector with the names of the runs that do not fullfill the rules
+* `stats` Dictionary with the stats associated to `good_runs`
 """
-function analyze_pacco(; experiment::String="test_default_ens", isens::Bool=true, TisTsl=false, tref::Real=273.15)
-    # Define some local variables
-    locdir = pwd() * "/output/" * experiment * "/"
+function analyze_runs(; experiment="test_ensemble_default", experiments=[], rule::Integer=1)
+    isensemble, data_to_load = is_experiment_or_experiments(experiment, experiments)
 
-    # Check if experiment is an ensemble and extract subdirectories
-    elements = []
-    for element in readdir(locdir)
-        if element[end-3:end] != ".png"
-            push!(elements, element)
-        end
+    if rule == 1
+        good_runs, bad_runs, stats, rule_sentence = rule1(data_to_load)
+    else
+        error("Rule option not recognized")
+    end
+        
+    if experiments != []
+        println("In the experiments selected I have found $(string(length(good_runs))) / $(string(length(data_to_load))) good runs")
+    else
+        println("In the experiment $(experiment) I have found $(string(length(good_runs))) / $(string(length(data_to_load))) good runs")
     end
 
-    # Check available proxies
-    data_list, proxy_data, vars2compare = readdir(pwd() * "/data/"), Dict(), []
-    for i in 1:length(data_list)
-        element_name = data_list[i]
-        if element_name[end-2:end] == ".nc" # -- filt netCDF files
-            df = NCDataset(pwd() * "/data/" * element_name) # -- load data frame
-            varnames = keys(df)
-
-            proxy_data[element_name[1:end-3]] = Dict(v => df[v][:] for v in varnames)   # -- store info in dictionary
-
-            varidx = 2
-            for letter in eachindex(element_name[1:end-3])
-                if element_name[1:end-3][letter] == '_'
-                    varidx = letter - 1
-                    break
-                end
-            end
-            if element_name[1:varidx] in vars2compare
-                continue
-            else
-                push!(vars2compare, element_name[1:varidx])
-            end
-        end
-    end
-
-    # Load certain results from the ensemble (comparable variables to proxy info)
-    pacco_data = Dict()
-    vars2load = ["time"; vars2compare .* "_n"]
-    vars2compare_aux = ["time"; vars2compare]
-    for i in eachindex(elements)
-        df = NCDataset(locdir * elements[i] * "/pacco.nc")
-        pacco_data[elements[i]] = Dict(vars2compare_aux[v] => df[vars2load[v]][:] for v in eachindex(vars2load))
-        if TisTsl
-            pacco_data[elements[i]]["T"] = df["T_sl_n"][:]
-        end
-        if "T" in vars2compare
-            pacco_data[elements[i]]["T"] = pacco_data[elements[i]]["T"] .- tref # anomaly (tref)
-        end
-    end
-
-    # Cut time series, assume all pacco runs have the same time length
-    proxy_data, pacco_data, new_t1, new_tend = cut_time_series(proxy_data, pacco_data)
-
-    # Compute Statistics
-    proxy_stats = gen_stats_dict(proxy_data)
-    pacco_stats = gen_stats_dict(pacco_data)
-
-    # ---- ensemble vs proxy
-    comp_data = Dict()
-    for kp in keys(proxy_data)
-        stats_kp = Dict()
-        for v in vars2compare
-            stats_kpv = Dict()
-            if v in keys(proxy_data[kp])
-                for ka in keys(pacco_data)
-                    d1, d2 = proxy_data[kp][v], pacco_data[ka][v]
-                    fs = 1 / (proxy_data[kp]["time"][2] - proxy_data[kp]["time"][1])
-                    new_d2 = interp_2series(d1, d2)
-                    stats_kpv[ka] = compute_comp_stats(d1, new_d2, fs)
-
-                    if isnan(stats_kpv[ka]["corr"]) # vari is 0
-                        stats_kpv[ka]["corr"] = 0.0
-                    end
-
-                end
-                stats_kp[v] = stats_kpv
-            end
-        end
-        comp_data[kp] = stats_kp
-    end
-
-    # Plot results
-    stat_vars = ["min", "mean", "max", "vari"]
-    # -- convert to array stats data
-    d = Array{Real}(undef, length(elements), length(vars2compare), length(stat_vars))
-    for i in eachindex(elements)
-        for j in eachindex(vars2compare)
-            for k in eachindex(stat_vars)
-                d[i, j, k] = pacco_stats[elements[i]][vars2compare[j]][stat_vars[k]]
-            end
-        end
-    end
-
-    # -- Figure 1, time series and stats
-    fig = Figure(resolution=(1000, 500))
-    prx_clr = [:navy, :firebrick, :olive, :indigo]
-    for i in eachindex(vars2compare)
-        # ---- time series
-        if i == length(vars2compare)
-            ax = Axis(fig[i, 1], xlabel="Time (kyr)", ylabel=vars2compare[i])
+    if experiments != []
+        write_filtered_ensemble(pwd() * "/output/$(experiments[1])/", good_runs)
+    else
+        if isensemble
+            write_filtered_ensemble(pwd() * "/output/$(experiment)/results/", good_runs)
         else
-            ax = Axis(fig[i, 1], ylabel=vars2compare[i])
-        end
-        for j in eachindex(elements)
-            d2p = pacco_data[elements[j]][vars2compare[i]]
-            lines!(ax, pacco_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
-        end
-        k = 1
-        for p in 1:length(keys(proxy_data))
-            prxnm = collect(keys(proxy_data))[p]
-            if vars2compare[i] in keys(proxy_data[prxnm])
-                scatter!(ax, proxy_data[prxnm]["time"] ./ 1000, proxy_data[prxnm][vars2compare[i]], color=prx_clr[k], markersize=5)
-                k += 1
-            end
-        end
-        xlims!(ax, pacco_data[elements[1]]["time"][1] / 1000, pacco_data[elements[1]]["time"][end] / 1000)
-
-        # ---- ensemble stats
-        ax_stats = Axis(fig[i, 2])
-        for j in eachindex(stat_vars[1:3])  # only min, mean and max
-            boxplot!(ax_stats, j .* ones(length(elements)), d[:, i, j], color="grey")
-            k = 1
-            for p in 1:length(keys(proxy_stats))
-                prxnm = collect(keys(proxy_stats))[p]
-                if vars2compare[i] in keys(proxy_stats[prxnm])
-                    if j == 1
-                        scatter!(ax_stats, j, proxy_stats[prxnm][vars2compare[i]][stat_vars[j]], color=prx_clr[k])
-                    else
-                        scatter!(ax_stats, j, proxy_stats[prxnm][vars2compare[i]][stat_vars[j]], color=prx_clr[k])
-                    end
-                    k += 1
-                end
-            end
-        end
-        linkyaxes!(ax, ax_stats)
-        ax_stats.xtickformat = k -> stat_vars[1:3]
-        ax_stats.yticklabelsvisible = false
-
-        # ---- variance
-        ax_vari = Axis(fig[i, 3])
-        boxplot!(ax_vari, ones(length(elements)), d[:, i, end], color="grey", label="PACCO")
-        k = 1
-        for p in 1:length(keys(proxy_stats))
-            prxnm = collect(keys(proxy_stats))[p]
-            if vars2compare[i] in keys(proxy_stats[prxnm])
-                scatter!(ax_vari, 1, proxy_stats[prxnm][vars2compare[i]]["vari"], color=prx_clr[k], label=prxnm[length(vars2compare[i] * "_")+1:end])
-                k += 1
-            end
-        end
-
-        fig[i, 4] = Legend(fig, ax_vari, framevisible=false, labelsize=15)
-
-        ax_vari.xticks = ([1.0], ["variance"])
-
-        if i != length(vars2compare)
-            ax.xticklabelsvisible = false
-            ax_stats.xticklabelsvisible = false
-            ax_vari.xticklabelsvisible = false
+            write_filtered_ensemble(pwd() * "/output/$(experiment)/", good_runs)
         end
     end
+    println("following rule $(string(rule)): $(rule_sentence)")
 
-    colsize!(fig.layout, 2, Relative(2 / 10))
-    colsize!(fig.layout, 3, Relative(2 / 10))
-    colsize!(fig.layout, 4, Relative(2 / 10))
-    save(locdir * "time-series_ens_stats.png", fig)
-
-    # -- Figure 2, comparative stats
-    fig = Figure(resolution=(1600, 900))
-    prx_clr = [:navy, :firebrick, :olive, :indigo]
-    for i in eachindex(collect(keys(comp_data)))
-        # ---- preamble
-        proxy_label = collect(keys(comp_data))[i]
-        idx = 1
-        for l in 1:length(proxy_label)
-            if proxy_label[l] == '_'
-                idx = l
-                break
-            end
-        end
-        var2plot = proxy_label[1:idx-1]
-
-        cor_ar = [comp_data[proxy_label][var2plot][e]["corr"] for e in elements]
-        max_cor = findmax(cor_ar)
-        best_cor = comp_data[proxy_label][var2plot][elements[max_cor[2]]]["dif"]
-
-        # ---- time series
-        if i == 1
-            ax = Axis(fig[i, 1], title="Time series", ylabel=proxy_label)
-        elseif i == length(collect(keys(comp_data)))
-            ax = Axis(fig[i, 1], ylabel=proxy_label, xlabel="Time (kyr)")
-        else
-            ax = Axis(fig[i, 1], ylabel=proxy_label)
-        end
-        for j in eachindex(elements)
-            d2p = pacco_data[elements[j]][var2plot]
-            lines!(ax, pacco_data[elements[j]]["time"] ./ 1000, d2p, color="grey")
-        end
-        lines!(ax, pacco_data[elements[max_cor[2]]]["time"] ./ 1000, pacco_data[elements[max_cor[2]]][var2plot], color="green")
-        lines!(ax, proxy_data[proxy_label]["time"] ./ 1000, proxy_data[proxy_label][var2plot], color="red")
-
-        # ---- differences
-        if i == 1
-            ax = Axis(fig[i, 2], title="Difference, Simulated - Proxy")
-        elseif i == length(collect(keys(comp_data)))
-            ax = Axis(fig[i, 2], xlabel="Time (kyr)")
-        else
-            ax = Axis(fig[i, 2])
-        end
-        idx = 1
-        for l in 1:length(proxy_label)
-            if proxy_label[l] == '_'
-                idx = l
-                break
-            end
-        end
-        for j in eachindex(elements)
-            dij = comp_data[proxy_label][var2plot][elements[j]]["dif"]
-            lines!(ax, range(new_t1, new_tend, length=length(dij)) ./ 1000, dij, color="grey")
-        end
-
-        # ---- ensemble correlation boxplot
-        if i == 1
-            ax_cor = Axis(fig[i, 3], title="Correlation")
-        else
-            ax_cor = Axis(fig[i, 3])
-        end
-
-        lines!(ax, range(new_t1, new_tend, length=length(best_cor)) ./ 1000, best_cor, color="green", label=elements[max_cor[2]])
-        boxplot!(ax_cor, ones(length(elements)), cor_ar, color="grey")
-        scatter!(ax_cor, 1.0, max_cor[1], color="green", markersize=5)
-
-        ax_cor.xticks = ([1.0], [""])
-        fig[i, 6] = Legend(fig, ax, framevisible=false, labelsize=15)
-
-        if i != length(collect(keys(comp_data)))
-            ax.xticklabelsvisible = false
-            ax_cor.xticklabelsvisible = false
-        end
-
-        # ---- proxy percentile values vs simulation
-        if i == 1
-            ax_vs = Axis(fig[i, 4], aspect=AxisAspect(1.0), title="Percentile")
-        elseif i == length(collect(keys(comp_data)))
-            ax_vs = Axis(fig[i, 4], aspect=AxisAspect(1.0), xlabel="Simulated")
-        else
-            ax_vs = Axis(fig[i, 4], aspect=AxisAspect(1.0))
-        end
-
-        d1 = proxy_data[proxy_label][var2plot]
-        p1 = [percentile(d1, p) for p in 1:100]
-        list_of_mins, list_of_maxs = [], []
-        for j in eachindex(elements)
-            d2 = pacco_data[elements[j]][var2plot]
-            new_d2 = interp_2series(d1, d2)
-            p2 = [percentile(new_d2, p) for p in 1:100]
-            scatter!(ax_vs, p2, p1, color="grey", markersize=2)
-            push!(list_of_mins, minimum(p2))
-            push!(list_of_maxs, maximum(p2))
-        end
-        d2_best_cor = interp_2series(d1, pacco_data[elements[max_cor[2]]][var2plot])
-        best_p2 = [percentile(d2_best_cor, p) for p in 1:100]
-        scatter!(ax_vs, best_p2, p1, color="green", markersize=4)
-
-        min_proxy, max_proxy = minimum(p1), maximum(p1)
-        min_pacco, max_pacco = minimum(list_of_mins), maximum(list_of_maxs)
-        min_ax, max_ax = min(min_proxy, min_pacco), max(max_proxy, max_pacco)
-        xlims!(ax_vs, min_ax, max_ax)
-        ylims!(ax_vs, min_ax, max_ax)
-
-        # ---- difference in spectrum
-        if i == 1
-            ax_spect = Axis(fig[i, 5], title="Difference in PSD")
-        elseif i == length(collect(keys(comp_data)))
-            ax_spect = Axis(fig[i, 5], xlabel="Period (kyr)")
-        else
-            ax_spect = Axis(fig[i, 5])
-        end
-
-        vlines!(ax_spect, [21, 41, 100], color="red", linestyle=:dash)
-        for j in eachindex(elements)
-            dij = comp_data[proxy_label][var2plot][elements[j]]["spect_dif"][1]
-            dinx = comp_data[proxy_label][var2plot][elements[j]]["spect_dif"][2]
-            lines!(ax_spect, dinx ./ 1000, dij, color="grey")
-        end
-        best_cor_spect = comp_data[proxy_label][var2plot][elements[max_cor[2]]]["spect_dif"]
-        lines!(ax_spect, best_cor_spect[2] ./ 1000, best_cor_spect[1], color="green")
-    end
-    colsize!(fig.layout, 1, Relative(4 / 16))
-    colsize!(fig.layout, 2, Relative(4 / 16))
-    colsize!(fig.layout, 3, Relative(1 / 16))
-    colsize!(fig.layout, 4, Relative(2 / 16))
-    colsize!(fig.layout, 5, Relative(4 / 16))
-    colsize!(fig.layout, 6, Relative(1 / 16))
-    save(locdir * "comp-stats_ens.png", fig)
-
-    # -- Figure 3
-    fig = Figure()
-    ax_heatmap = Axis(fig[1, 1], aspect=AxisAspect(1.0), title="Correlation", xlabel="Ensemble")
-    cor_arr = Array{Real}(undef, length(elements), length(collect(keys(proxy_data))))
-    lbls = []
-    for i in 1:size(cor_arr)[2]
-        proxy_label = collect(keys(proxy_data))[i]
-        idx = 1
-        for l in 1:length(proxy_label)
-            if proxy_label[l] == '_'
-                idx = l
-                break
-            end
-        end
-        var2plot = proxy_label[1:idx-1]
-        k = 1
-        for j in elements
-            cor_arr[k, i] = comp_data[proxy_label][var2plot][j]["corr"]
-            k += 1
-        end
-        push!(lbls, proxy_label)
-    end
-    max_corr = findmax(cor_arr, dims=1)
-    c = heatmap!(ax_heatmap, cor_arr, colormap=:speed)
-    for point in max_corr[2]
-        scatter!(ax_heatmap, point[1], point[2], color="red")
-    end
-    ax_heatmap.yticks = (1:size(cor_arr)[2], lbls)
-    ax_heatmap.xticks = (1:Int(size(cor_arr)[1] / 10):size(cor_arr)[1], elements[1:Int(size(cor_arr)[1] / 10):end])
-    Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20)
-    save(locdir * "corr_heatmap.png", fig)
+    return good_runs, bad_runs, stats
 end
-

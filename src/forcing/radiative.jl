@@ -77,7 +77,7 @@ end
     calc_temp_and_tempref(now, par, hm)
 selects temperature to use and computes reference temperature desired
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 * `hm` Hemisphere in which we calculate ("_n" or "_s")

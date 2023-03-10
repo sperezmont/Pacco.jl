@@ -6,7 +6,7 @@
     load_defs
 Include parameter file selected in Julia and assign values to model variables
 
-## Attributes
+## Arguments
 * `par_path` Path to parameter file selected
 
 ## Return
@@ -254,8 +254,8 @@ function load_defs(par_path)
         "ins_norm_s" => Dict("units" => "W/m²", "long_name" => "Normalized Insolation", "group" => "Forcing"),
         "ins_anom_n" => Dict("units" => "W/m²", "long_name" => "Insolation Anomaly", "group" => "Forcing"),
         "ins_anom_s" => Dict("units" => "W/m²", "long_name" => "Insolation Anomaly", "group" => "Forcing"),
-        "T_rf_n" => Dict("units" => "K/yr", "long_name" => "Radiative Forcing Temp.", "group" => "Forcing"),
-        "T_rf_s" => Dict("units" => "K/yr", "long_name" => "Radiative Forcing Temp.", "group" => "Forcing"),
+        "T_rf_n" => Dict("units" => "K", "long_name" => "Temperature anomaly due to Radiative Forcing", "group" => "Forcing"),
+        "T_rf_s" => Dict("units" => "K", "long_name" => "Temperature anomaly due to Radiative Forcing", "group" => "Forcing"),
         "T_sl_n" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
         "T_sl_s" => Dict("units" => "K", "long_name" => "Sea-level Temperature", "group" => "Forcing"),
         "T_ref_n" => Dict("units" => "K", "long_name" => "Reference Air Temperature", "group" => "Forcing"),

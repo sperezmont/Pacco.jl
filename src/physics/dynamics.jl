@@ -7,7 +7,7 @@
 calculates total driving stress through: \n
 `taud = rhoi * g * H * Z / L` 
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -28,7 +28,7 @@ calculates total basal stress through: \n
 It is assumed that `tau_d = tau_b` as in the SIA \n
 Shallow Ice Approximation (SIA): The basal shear stress balances out completely the driving stress
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -48,7 +48,7 @@ calculates the driving velocity through different options \n
 `"glen"` case: \n
 `U_d = 2.0 * A * H * tau_d^glen_n / (glen_n + 2)`
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -72,7 +72,7 @@ calculates the basal velocity: \n
 `"weertman"` case: Weertman sliding law\n
 
 Note: sliding treatment assumes temperate base in streaming areas, so no dependence on temperature just on sediments
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -96,7 +96,7 @@ end
     calc_fstream(now, par, ctl)
 calculates stream fraction
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 * `ctl` Run control parameters
@@ -125,7 +125,7 @@ end
     calc_U(now, par)
 calculates total velocity
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -147,7 +147,7 @@ end
     update_Z(now, par)
 updates ice surface elevation
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -172,7 +172,7 @@ end
     calc_Hdot(now, par)
 calculates ice thickness derivative
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -194,7 +194,7 @@ end
     calc_Hseddot(now, par)
 calculates sediments thickness derivative
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
@@ -212,7 +212,7 @@ end
     calc_Bdot(now, par)
 calculates bedrock elevation derivative
 
-## Attributes
+## Arguments
 * `now` Dictionary with values of the model variables at current timestep
 * `par` Dictionary with run parameters
 
