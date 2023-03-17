@@ -49,6 +49,7 @@ function load_defs(par_path)
     par = OrderedDict(
         # -- dev par (this should be removed for official release)
         "height_temp" => height_temp,
+        "div_weight" => div_weight,
         # -- ctl
         "hemisphere" => hemisphere,
         # -- Switches
@@ -292,8 +293,8 @@ function load_defs(par_path)
         "tau_d_s" => Dict("units" => "Pa", "long_name" => "Driving stress", "group" => "Dynamics"),
         "tau_b_n" => Dict("units" => "Pa", "long_name" => "Basal stress", "group" => "Dynamics"),
         "tau_b_s" => Dict("units" => "Pa", "long_name" => "Basal stress", "group" => "Dynamics"),
-        "U_d_n" => Dict("units" => "m/a", "long_name" => "Driving Velocity", "group" => "Dynamics"),
-        "U_d_s" => Dict("units" => "m/a", "long_name" => "Driving Velocity", "group" => "Dynamics"),
+        "U_d_n" => Dict("units" => "m/a", "long_name" => "Deformational Velocity", "group" => "Dynamics"),
+        "U_d_s" => Dict("units" => "m/a", "long_name" => "Deformational Velocity", "group" => "Dynamics"),
         "U_b_n" => Dict("units" => "m/a", "long_name" => "Basal Velocity", "group" => "Dynamics"),
         "U_b_s" => Dict("units" => "m/a", "long_name" => "Basal Velocity", "group" => "Dynamics"),
         "U_n" => Dict("units" => "m/a", "long_name" => "Total Velocity", "group" => "Dynamics"),

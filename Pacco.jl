@@ -23,6 +23,7 @@ using Statistics            # to make some minor calculations
 using StatsBase             # ""
 using Interpolations        # ""
 using LatinHypercubeSampling    # ""
+using Images: findlocalmaxima   # we only need findlocalmaxima() (IMPORTANT!!)
 
 # -- import model libraries and functions
 include("./libs/misc.jl")              # -- include libraries

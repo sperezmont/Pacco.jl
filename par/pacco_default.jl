@@ -21,6 +21,7 @@ A_init = 1e-16                  # [Pa-3 a−1] Initial condition for the flow pa
 ### Run parameters (PAR)
 # -- dev par (this should be removed for official release)
 height_temp = "useZ"    # height-temp feedback: "useH", "useZ"
+div_weight = 0.0        # ice divergence weight (Hdot = SMB - div_weight * U*H/L), for calibration purposes
 
 # -- Switches
 active_outout = false           # Switch: generate out.out?

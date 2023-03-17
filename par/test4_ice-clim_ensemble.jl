@@ -1,5 +1,5 @@
 ### Run Settings (CTL)
-time_init = -500000.0 # [yr] Starting time (model years)
+time_init = -1e6 # [yr] Starting time (model years)
 time_end = 0.0 # [yr] Ending time (model years)
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
@@ -79,7 +79,7 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-csi = 0.07 # [K/Wm²] climate sensitivity to insolation
+csi = 0.08 # [K/Wm²] climate sensitivity to insolation
 cs = 0.65 # [K/Wm²] climate sensitivity to co2
 csz = 0.0065 # [K/m³] climate sensitivity to ice sheet elevation
 
@@ -132,7 +132,7 @@ km = 0.0                        # [m/yr] offset melting in ITM-like calculation
 ki = 0.0095 # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
 ka = 0.008 # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
-Acc_ref_n = 0.1 # [m/yr] Reference Accumulation for northern hemisphere
+Acc_ref_n = 0.4 # [m/yr] Reference Accumulation for northern hemisphere
 Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern hemisphere
 
 A_te_n = 20.0                    # [K] Thermal amplitude due to ice extent (Northern Hemisphere)

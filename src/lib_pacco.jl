@@ -69,7 +69,7 @@ function pacco(now::OrderedDict, par::OrderedDict, ctl::OrderedDict, vars2update
         now = calc_tau_d(now, par)           # -- driving stress
         now = calc_tau_b(now, par)           # -- basal shear stress
 
-        now = calc_U_d(now, par)             # -- mean driving velocity
+        now = calc_U_d(now, par)             # -- mean deformational velocity
         now = calc_U_b(now, par)             # -- mean basal velocity
 
         now = calc_fstream(now, par, ctl)   # -- stream fraction
@@ -270,12 +270,27 @@ function run_pacco_ensemble(par2per::OrderedDict; experiment::String="test_defau
     mkdir(pacco_path * "/output/" * experiment * "/results")
 
     # Third, run each permutation
+    printstyled("Running $(experiment): $(nperms) runs\n", color=:green)
     ndigits = Int(round(log10(nperms)) + 1)
     for i in 1:nperms
         experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
-        println("s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])")
+        line2print = "s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])"
 
-        run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
+        if i == 1
+            time1run = @elapsed run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
+            time_needed, t_units = nperms * time1run / 60 / 60, "h"
+            if time_needed < 1
+                time_needed, t_units = nperms * time1run / 60, "m"
+                if time_needed < 1
+                    time_needed, t_units = nperms * time1run, "s"
+                end
+            end
+
+            printstyled("It is expected to take $(time_needed) $(t_units) ($(time1run)s/it)\n", color=:blue)
+        else
+            run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
+        end
+        println(line2print)
     end
 
     # Done!
@@ -323,15 +338,28 @@ function run_pacco_lhs(par2per::Dict, nsim::Int; experiment::String="test_defaul
     end
 
     # Run each permutation
+    printstyled("Running $(experiment): $(nperms) runs\n", color=:green)
     nperms = length(permutations_dict)
     ndigits = Int(round(log10(nperms)) + 1)
-    for i in 1:nperms #ProgressBar(1:nperms)
+    for i in 1:nperms
         experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+        line2print = "s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])"
 
-        println("s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])")
-        run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=permutations_dict[i])
+        if i == 1
+            time1run = @elapsed run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=permutations_dict[i])
+            time_needed, t_units = nperms * time1run / 60 / 60, "h"
+            if time_needed < 1
+                time_needed, t_units = time_needed * 60, "m"
+                if time_needed < 1
+                    time_needed, t_units = time_needed * 60 * 60, "s"
+                end
+            end
+            printstyled("It is expected to take $(time_needed) $(t_units) ($(time1run)s/it)\n", color=:blue)
+        else
+            run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=permutations_dict[i])
+        end
+        println(line2print)
     end
-
     # Done!
 end
 
@@ -348,15 +376,17 @@ Shortcut to run some general tests (dev), all attributes are optional
 * `test1c`  Just ice dynamics, laskar insolation and linear Clausius-clapeyron
 * `test2`   Just climate
 * `test3`   Default mode, ice dynamics + coupled climate
+* `test4`   Runs an ensemble of ice+climate with different weights in ice divergence
 * `all_tests` Runs all tests if set to `true`
 ## Return
 nothing
 """
-function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false, all_tests=false)
+function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false, test4=false, all_tests=false)
     if all_tests == true
         test1a, test1b, test1c = true, true, true
         test2 = true
         test3 = true
+        test4 = true
     end
 
     # Test 1a. Just ice dynamics and artificial insolation
@@ -453,7 +483,7 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         #     "f_1" => 1e-6, "C_s" => 1e-7,
         #     "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
         # vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
-        
+
         # pars["Hsed_init_n"] = 0.0
         # run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         # plot_pacco(experiment=expname, vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
@@ -466,12 +496,26 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         #                         "lambda"=>[0.01, 0.05, 0.08, 0.1])
         # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble", par_file="test_climate_ensemble.jl")
 
-        pars2perm =OrderedDict("Acc_ref_n" => [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1.0],
-        "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
-        "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
-        "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
-        "lambda"=>[0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0])
-        run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_2", par_file="test_climate_ensemble.jl")
+        # pars2perm =OrderedDict("Acc_ref_n" => [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1.0],
+        # "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
+        # "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
+        # "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
+        # "lambda"=>[0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0])
+        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_2", par_file="test_climate_ensemble.jl")
+
+        # pars2perm =OrderedDict("Acc_ref_n" => [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 1.0, 5.0],
+        # "csi"=>[0.0, 0.001, 0.01, 0.07, 0.1, 0.5, 1.0],
+        # "ki"=>[0.0001, 0.0005, 0.0095, 0.05, 0.1, 1.0, 2.0],
+        # "ka"=>[0.0001, 0.0005, 0.008, 0.05, 0.1, 1.0, 2.0],
+        # "lambda"=>[0.0, 0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0, 5.0])
+        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_3", par_file="test_climate_ensemble.jl")
+
+        pars2perm = OrderedDict("Acc_ref_n" => [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 1.0, 5.0],
+            "csi" => [0.1, 0.5, 1.0, 1.5, 2.0, 5.0],
+            "ki" => [0.1, 1.0, 2.0, 3.0, 5.0],
+            "ka" => [0.0001, 0.0005, 0.008, 0.05, 0.1, 1.0, 2.0],
+            "lambda" => [0.0, 0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0, 5.0])
+        run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_4", par_file="test_climate_ensemble.jl")
 
         # pars2perm = Dict("Acc_ref_n" => (0.1, 0.5),
         #                  "csi"=>(0.01, 0.15),
@@ -484,5 +528,137 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
 
 
         printstyled("test 3 $(expname) completed \n Note: Work in progress\n", color=:red)
+    end
+    if test4
+        # expname = "test4_div_weight"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "div_weight" => 0:0.1:1.0)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # plot_pacco(experiment=expname, vars2plot=["H_n"])
+
+        # expname = "test4_csi"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "csi" => [0.01, 0.05, 0.08, 0.1, 0.2, 0.5, 0.7, 1.0])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_ki"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "ki" => 0.009:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_lambda"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "lambda" => 0.01:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_ka"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "ka" => [0.005, 0.008, 0.01, 0.02, 0.05, 0.08, 0.1])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_ki"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "csi" => [0.01, 0.025, 0.05, 0.08, 0.1, 0.2, 0.3, 0.4], "ki" => 0.009:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_lambda"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "csi" => [0.01, 0.025, 0.05, 0.08, 0.1, 0.2, 0.3, 0.4], "lambda" => 0.01:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_ki_lambda"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "ki" => 0.009:0.01:0.1, "lambda" => 0.01:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_ka"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "csi" => [0.01, 0.025, 0.05, 0.08, 0.1, 0.2, 0.3, 0.4], "ka" => [0.005, 0.008, 0.01, 0.02, 0.05, 0.08, 0.1])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_ki_lambda"
+        # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "csi" => [0.01, 0.025, 0.05, 0.08, 0.1, 0.2, 0.3, 0.4], "ki" => 0.009:0.01:0.1, "lambda" => 0.01:0.01:0.1)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=3)
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r3.txt")
+        # fast_histogram(expname, "good_runs_r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r3r6.txt", all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_ki_ka_lambda"  # ESTA TIENE RESULTADOS PROMETEDORES; MIRAR A FONDO!!
+        # pars2perm = OrderedDict(
+        #     "Acc_ref_n" => [0.3, 0.35, 0.4],
+        #     "csi" => 0.3:0.025:0.5,
+        #     "ki" => [0.05],
+        #     "ka" => [0.001, 0.005, 0.008],
+        #     "lambda" => [0.05, 0.07, 0.1])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=false)
+        # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=true)
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+
+        expname = "test4_csi_ki_ka_lambda_2"  # Version 2 de la anterior, mirar el lunes!!
+        pars2perm = OrderedDict(
+            "Acc_ref_n" => 0.2:0.01:0.4,
+            "csi" => 0.3:0.01:0.5,
+            "ki" => 0.04:0.0025:0.06,
+            "ka" => 0.001:0.00025:0.009,
+            "lambda" => 0.04:0.0025:0.15)
+        run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        analyze_runs(experiment=expname, rule=1)
+        analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=false)
+        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=false)
+        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=true)
+        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+
+        # expname = "test4_full_2"
+        # par2change = Dict(
+        #     "Acc_ref_n" => 0.4,
+        #     "csi" => 0.4,
+        #     "ki" => 0.05,
+        #     "ka" => 0.005,
+        #     "lambda" => 0.1)
+        # run_pacco(experiment=expname, par_file="test4_ice-clim_ensemble.jl", par2change=par2change)
+
+        printstyled("test 4 $(expname) completed \n Note: Work in progress\n", color=:red)
     end
 end

@@ -44,7 +44,7 @@ end
 
 """
     calc_U_d(now, par)
-calculates the driving velocity through different options \n
+calculates the deformational velocity through different options \n
 `"glen"` case: \n
 `U_d = 2.0 * A * H * tau_d^glen_n / (glen_n + 2)`
 
@@ -182,7 +182,7 @@ updated `now` dictionary
 function calc_Hdot(now, par)
     for hm in par["hemisphere"]
         if par["active_ice"]
-            now["Hdot_"*hm] = now["TMB_"*hm] - now["U_"*hm] * now["H_"*hm] / par["L"]
+            now["Hdot_"*hm] = now["TMB_"*hm] - par["div_weight"] * now["U_"*hm] * now["H_"*hm] / par["L"]
         else
             now["Hdot_"*hm] = now["TMB_"*hm] + 0.0
         end

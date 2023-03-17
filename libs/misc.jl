@@ -4,30 +4,158 @@
 #     Author: Sergio Pérez-Montero, 2022.11.25
 # =============================
 
+"""
+    get_parameters_from_good_runs(experiment, filename)
+returns the parameter names and values of an ensemble
+"""
+function get_parameters_from_runs(experiment, filename; all_runs=true)
+    path_to_results = get_path_to_results_or_runs(experiment, "results")
+
+    if all_runs
+        runs = readlines(path_to_results * "/$(filename)") .* "/pacco.nc"
+    else
+        runs = get_good_runs_from_file(path_to_results * "/$(filename)") .* "/pacco.nc"
+    end
+
+    length_to_remove = length("/pacco.nc")
+    vector_of_run_info = []
+    for e in eachindex(runs)
+        if runs[e][1:3] == "NS_"
+            new_name = runs[e][4:end]
+            new_name = new_name[1:end-length_to_remove]
+            push!(vector_of_run_info, get_path_to_results_or_runs(experiment, "runs") * "/$(new_name)/run-info.txt")
+        else
+            push!(vector_of_run_info, runs[e][1:end-length_to_remove] * "/run-info.txt")
+        end
+    end
+    par_names, parameters = [], []
+    for i in eachindex(vector_of_run_info)
+        open(vector_of_run_info[i]) do file
+            lines = readlines(file)
+            for line in lines
+                if line[1:11] == "OrderedDict"
+                    new_line = split(line[13:end-1], " ")
+                    pars = []
+
+                    for e in new_line[1:3:end]
+                        if i == 1
+                            push!(par_names, e[2:end-1])
+                        end
+                    end
+                    
+                    for e in new_line[3:3:end]
+                        if e[end] == ','
+                            e2save = e[1:end-1]
+                        else
+                            e2save = e[1:end]
+                        end
+                        push!(pars, parse(Float64, e2save))
+                    end
+                    push!(parameters, pars)
+                end
+            end
+        end
+    end
+    return par_names, parameters
+end
+
+"""
+    detect_deglaciation(x, dt)
+detects complete deglaciations in a time series
+
+## Arguments
+* `x` time series (> 0) to analyze (e.g ice thickness or ice volume)
+* `t` time dimension
+
+## Return
+`number_of_deglaciations` and `timing`
+"""
+function detect_deglaciation(x::Vector, t::Vector)
+    dx = x[2:end] .- x[1:end-1]
+    dt = t[2:end] .- t[1:end-1]
+
+    dxdt = (dx ./ dt)
+
+    is_deglaciation = zeros(length(dxdt))
+    for i in eachindex(dxdt)
+        if x[i+1] == 0.0    # no ice
+            if sign(dxdt[i]) < 0   # glacial termination found
+                is_deglaciation[i] = true
+            end
+        else
+            is_deglaciation[i] = false
+        end
+    end
+    number_of_deglaciations = sum(is_deglaciation)
+    timing = vcat(false, is_deglaciation) # in this way, we extend to the same length as original data
+    return number_of_deglaciations, timing
+end
+
+function read_dir_good_runs(outpath)
+    elements = readdir(outpath)
+    nchars, k = length("good_runs"), 1
+    only_txt_files = []
+    for e in elements
+        if e[1:nchars] == "good_runs"
+            push!(only_txt_files, e)
+        end
+    end
+    return only_txt_files
+end
+
+function write_filtered_ensemble(outpath, mask, rule, file)
+    if file != []
+        only_txt_files = read_dir_good_runs(outpath)
+        if only_txt_files == []
+            file_name = "good_runs_r$(rule).txt"
+        else
+            file_name = "$(file[1:end-4])r$(rule).txt"
+        end
+    else
+        file_name = "good_runs_r$(rule).txt"
+    end
+    
+    f = open(outpath * "/$(file_name)", "w")
+    path_to_runs = join(split(outpath, "/")[1:end-2], "/") * "/runs/"
+    runs = readdir(path_to_runs)
+    for i in eachindex(mask)
+        if mask[i] == true
+            write(f, "$(path_to_runs)$(runs[i])\n")
+        else
+            write(f, "NS_$(runs[i])\n") # NOT SELECTED RUN
+        end
+    end
+    close(f)
+end
+
 function get_exp_labels(runs)
     labels = []
     for run in runs
         elements = split(run, "/")
-        for e in 2:length(elements)
-            if elements[e] == "results"
-                push!(labels, elements[e-1])
-            elseif elements[e] == "pacco.nc"
-                push!(labels, elements[e-1])
-            end
+        if run[1:3] == "NS_"
+            push!(labels, elements[end-1][4:end])
+        else
+            push!(labels, elements[end-1])
         end
     end
     return labels     
 end
 
-function get_good_runs_from_file(exp_path)
-    return readlines(exp_path * "/good_runs.txt")
+function get_good_runs_from_file(path_to_file)
+    runs, good_runs = readlines(path_to_file), []
+    for i in eachindex(runs)
+        if runs[i][1:3] != "NS_"
+            push!(good_runs, runs[i])
+        end
+    end
+    return good_runs
 end
 
-function get_path_to_results(experiment)
+function get_path_to_results_or_runs(experiment, dir)
     exp_path = pwd() * "/output/" * experiment
     elements = readdir(exp_path)
-    if "results" in elements
-        return exp_path * "/results/"
+    if dir in elements
+        return exp_path * "/$(dir)/"
     else
         return exp_path
     end 
@@ -37,7 +165,7 @@ function is_ensemble(exp)
     elems = readdir(pwd() * "/output/" * exp * "/")
     if "pacco.nc" in elems
         is_ens = false
-        new_elems = elems
+        new_new_elems = elems
     else
         is_ens = true
 

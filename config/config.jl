@@ -21,7 +21,8 @@ else
     display("** Adding dependencies ... **")
     packages = ["NCDatasets", "DataStructures", "Insolation", "ProgressBars",
                 "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
-                "StatsBase", "Interpolations", "LatinHypercubeSampling"]
+                "StatsBase", "Interpolations", "LatinHypercubeSampling",
+                "Images"]
     for i in packages
         Pkg.add(i)
     end

@@ -22,32 +22,220 @@ function collect_variable(str::String)
 end
 
 """
-    fast_plot(runss; var2plot="H_n", cmap=:heat)
-this function assumes we want a no so fancy plot so it just plots variable `var2plot` of good runs stored in `good_runs.txt` with a gradation of colors
+    plot_std(experiment, filename)
 
 """
-function fast_plot(experiment; var2plot="H_n", cmap=:batlow)
-    path_to_results = get_path_to_results(experiment)
-    runs = get_good_runs_from_file(path_to_results)
+function plot_std(experiment; var2plot="H_n", cmap=:darktest)
+    path_to_results = get_path_to_results_or_runs(experiment, "runs")
+    runs = path_to_results .* "/" .* readdir(path_to_results) .* "/pacco.nc"
     labels = get_exp_labels(runs)
-    
+    if length(runs) > 1000
+        error("Too much runs to plot ... (> 1000)")
+    end
+
     fig = Figure()
-    ax = Axis(fig[1, 1], ylabel=var2plot, xlabel="Time")
+    ax = Axis(fig[1, 1], ylabel="std $(var2plot)")
     color_list = collect(cgrad(cmap, length(runs), categorical=true))
     palettes, k = (color=color_list,)[1], 1
     for run in runs
         df = NCDataset(run, "r")
-        x, t = df[var2plot], df["time"]
-        lines!(ax, t, x, color=palettes[k])
+        x = df[var2plot][:]
+
+        scatter!(ax, k, std(x), color=palettes[k], markersize=30)
+
         k += 1
     end
-    ticks_selected = 1:Int(round(length(runs)/10)):length(runs)
+
+    step = length(runs) / 20
+    if step < 1
+        step = 1
+    else
+        step = Int(ceil(step))
+    end
+
+    ticks_selected = 1:step:length(runs)
     new_labels = labels[ticks_selected]
-    Colorbar(fig[1, 2], height=Relative(1/2), colormap=cmap,
-        colorrange = (1, length(runs)),
-        ticks = (ticks_selected, new_labels),    
+
+    ax.xticks = (ticks_selected, new_labels)
+    Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
+        limits=(1, length(runs)),
+        ticks=(ticks_selected, new_labels),
+        label="runs"
     )
-    save(path_to_results * "/fast_plot.png", fig)
+    save(get_path_to_results_or_runs(experiment, "results") * "/ensemble_std.png", fig)
+end
+
+
+"""
+    fast_histogram(experiment, filename)
+this function assumes we want a no so fancy plot so it just plots the histogram of an ensembleof good runs stored in `good_runs.txt`
+
+"""
+function fast_histogram(experiment, filename; all_runs=true)
+    path_to_results = get_path_to_results_or_runs(experiment, "results")
+
+    if all_runs
+        runs = readlines(path_to_results * "/$(filename)") .* "/pacco.nc"
+    else
+        runs = get_good_runs_from_file(path_to_results * "/$(filename)") .* "/pacco.nc"
+    end
+    labels = get_exp_labels(runs)
+
+    aux_runs_vector = readlines(path_to_results * "/$(filename)")
+    par_names, parameters = get_parameters_from_runs(experiment, filename, all_runs=all_runs)
+
+    color_list = collect(cgrad(:darktest, length(runs), categorical=true))
+    palettes = (color=color_list,)[1]
+    fig = Figure(resolution=(500 * length(par_names), 500))
+
+    for i in eachindex(par_names)
+        if i == 1
+            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", ylabel="Amount of runs")
+        else
+            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values")
+        end
+        ax2 = Axis(fig[1, i], yaxisposition=:right, ygridstyle=:dash, ygridcolor=(:red, 0.4), rightspinecolor=:red, yticklabelcolor=:red)
+
+        data = [parameters[j][i] for j in 1:length(parameters)]
+
+        color = 1:length(data)
+        if all_runs == true
+            color = 1:length(aux_runs_vector)
+            for d in eachindex(data)
+                if aux_runs_vector[d][1:3] == "NS_"
+                    data[d] = NaN64
+                end
+            end
+        end
+
+        ocurrences = counter(data)
+        display(ocurrences)
+        kys, vls = collect(keys(ocurrences)), collect(values(ocurrences))
+
+        barplot!(ax, kys, vls, color=(:black, 0.5))
+        scatter!(ax2, data, 1:length(data), colormap=:darktest, color=color)
+
+        step = maximum(vls) / 20
+        if step < 1
+            step = 1
+        else
+            step = Int(ceil(step))
+        end
+
+        ticks_selected = 0:step:maximum(vls)
+        ax2.yticks = ticks_selected
+
+        step = length(runs) / 20
+        if step < 1
+            step = 1
+        else
+            step = Int(ceil(step))
+        end
+
+        ticks_selected = 1:step:length(runs)
+        new_labels = labels[ticks_selected]
+
+        ax.xticks, ax2.xticks = kys, kys
+        ax2.yticks = (ticks_selected, new_labels)
+        ylims!(ax, (0, length(runs) + 5))
+        ylims!(ax2, (0, length(runs) + 5))
+        linkxaxes!(ax, ax2)
+
+        if i != length(par_names)
+            hideydecorations!(ax2, grid=false)
+        end
+        if i != 1
+            hideydecorations!(ax, grid=false)
+        end
+
+    end
+
+    save(path_to_results * "/fast_histogram.png", fig)
+end
+
+
+"""
+    fast_plot(experiment, filename; var2plot="H_n", cmap=:heat)
+this function assumes we want a no so fancy plot so it just plots variable `var2plot` of good runs stored in `good_runs.txt` with a gradation of colors
+
+"""
+function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_runs=true, plot_PSD=false)
+    path_to_results = get_path_to_results_or_runs(experiment, "results")
+
+    if all_runs
+        runs = readlines(path_to_results * "/$(filename)") .* "/pacco.nc"
+    else
+        runs = get_good_runs_from_file(path_to_results * "/$(filename)") .* "/pacco.nc"
+    end
+    labels = get_exp_labels(runs)
+
+    if length(runs) > 1000
+        error("Too much runs to plot ... (> 1000)")
+    end
+
+    fig = Figure()
+    (plot_PSD) ? (xlabel = "Period (kyr)") : (xlabel = "Time (kyr)")
+    ax = Axis(fig[1, 1], ylabel=var2plot, xlabel=xlabel)
+    color_list = collect(cgrad(cmap, length(runs), categorical=true))
+    palettes, k = (color=color_list,)[1], 1
+    t, periods = [], []
+    for run in runs
+        if run[1:3] == "NS_"
+            k += 1
+            continue
+        end
+
+        df = NCDataset(run, "r")
+        x, t = df[var2plot][:], df["time"][:]
+
+        if plot_PSD == true
+            G, f = calc_spectrum(x, 1 / (t[2] - t[1]))
+            time2cut = t[Int(ceil(length(t) / 2))]
+            G, f = G[f.>-1/time2cut], f[f.>-1/time2cut]   # filtering
+            G = G ./ sum(G)
+            periods = 1 ./ f
+            scatterlines!(ax, periods ./ 1000, G, color=palettes[k], markersize=3, linewidth=0.5)
+        else
+            scatterlines!(ax, t ./ 1000, x, color=palettes[k], markersize=3, linewidth=0.5)
+        end
+        k += 1
+    end
+
+    if plot_PSD == false
+        xlims!(ax, (t[1] / 1000, t[end] / 1000))
+        if (t[end] - t[1]) > 2.0e3
+            tstep = 300
+        elseif (t[end] - t[1]) > 800
+            tstep = 200
+        else
+            tstep = 100
+        end
+        ax.xticks = -5e3:tstep:5e3
+        ax.xtickformat = k -> string.(Int.(k))
+    else
+        ax.xticks = 0:20:500
+    end
+
+    step = length(runs) / 20
+    if step < 1
+        step = 1
+    else
+        step = Int(ceil(step))
+    end
+
+    ticks_selected = 1:step:length(runs)
+    new_labels = labels[ticks_selected]
+
+    Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
+        limits=(1, length(runs)),
+        ticks=(ticks_selected, new_labels),
+        label="runs"
+    )
+    if plot_PSD
+        save(path_to_results * "/$(var2plot)_fast_PSD.png", fig)
+    else
+        save(path_to_results * "/$(var2plot)_fast_plot.png", fig)
+    end
 end
 
 @doc """
@@ -72,7 +260,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
     isensemble, data_to_load = is_experiment_or_experiments(experiment, experiments)
 
     colors = [:black, :royalblue4, :red4, :olive, :steelblue4]
-    if length(vars2plot) == 1 
+    if length(vars2plot) == 1
         palettes = [[colors[1]]]
     else
         color_list = collect(cgrad(colors, length(vars2plot), categorical=true))
@@ -82,7 +270,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
     if length(data_to_load) == 1
         colors_2 = [:black]
     else
-        colors_2 = cgrad(:darktest, length(data_to_load), categorical = true, rev = true)
+        colors_2 = cgrad(:darktest, length(data_to_load), categorical=true)
     end
 
     # 2. Load data
@@ -223,7 +411,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
             ax_PSD.xtickformat = k -> string.(Int.(ceil.(k / 1000)))
         end
 
-        if (experiments != []) && (v == 1) 
+        if (experiments != []) && (v == 1)
             fig[1, ncols+1] = Legend(fig, lins, experiments, framevisible=false, labelsize=0.6 * fntsz)
         end
 
@@ -240,6 +428,22 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
 
     if experiments == []
         if isensemble
+            step = length(data_to_load) / 20
+            if step < 1
+                step = 1
+            else
+                step = Int(ceil(step))
+            end
+
+            labels = get_exp_labels(data_to_load)
+            ticks_selected = 1:step:length(data_to_load)
+            new_labels = labels[ticks_selected]
+
+            Colorbar(fig[1:end, end+1], height=Relative(1), colormap=:darktest,
+                limits=(1, length(data_to_load)),
+                ticks=(ticks_selected, new_labels),
+            )
+
             save(pacco_path * "/output/" * experiment * "/results/" * "pacco_results.png", fig)
         else
             save(pacco_path * "/output/" * experiment * "/" * "pacco_results.png", fig)
@@ -260,7 +464,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ## Compute Wavelets
     Wnorm, freqs = calc_wavelet(data, fs; sigma=sigma)
     periods = 1 ./ freqs
-    t_coi, p_coi = calc_coi(time, freqs, 2*pi / sigma)  # convert rad/s to Hz (for cf)
+    t_coi, p_coi = calc_coi(time, freqs, 2 * pi / sigma)  # convert rad/s to Hz (for cf)
     p_coi = log10.(p_coi ./ 1e3)
 
     ## Plot
@@ -268,7 +472,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
 
     ax = Axis(fig[1, 1], titlesize=0.8 * fntsz,
         xlabelsize=fntsz, ylabelsize=fntsz, xlabel="Time (kyr)", ylabel="Period (kyr)")
-    ax2 = Axis(fig[1, 1], ylabelsize=fntsz, yaxisposition = :right)
+    ax2 = Axis(fig[1, 1], ylabelsize=fntsz, yaxisposition=:right)
 
     cmap = :cividis
     minW, maxW = minimum(Wnorm), maximum(Wnorm)
@@ -281,8 +485,8 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     c.extendhigh = :auto
     Colorbar(fig[1, 2], c, height=Relative(1 / 3), width=20, label="Normalized PSD", ticklabelsize=fntsz)
 
-    t1, p1 = t_coi[1:Int(length(p_coi)/2)], p_coi[1:Int(length(p_coi)/2)]
-    t2, p2 = t_coi[Int(length(p_coi)/2)+1:end], p_coi[Int(length(p_coi)/2)+1:end]
+    t1, p1 = t_coi[1:Int(length(p_coi) / 2)], p_coi[1:Int(length(p_coi) / 2)]
+    t2, p2 = t_coi[Int(length(p_coi) / 2)+1:end], p_coi[Int(length(p_coi) / 2)+1:end]
 
     lines!(ax, t1, p1, color=:red, linestyle=:dash)
     lines!(ax, t2, p2, color=:red, linestyle=:dash)
@@ -309,7 +513,7 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ax2.ytickformat = k -> string.(Int.(ceil.(k ./ 100) .* 100)) .* " $(df[var2plot].attrib["units"])"
     ax2.yticks = range(minimum(data), stop=maximum(data), length=3)
     ylims!(ax, (1, maximum(p_coi)))
-    ylims!(ax2, (minimum(data), 8*maximum(data)))
+    ylims!(ax2, (minimum(data), 8 * maximum(data)))
 
     hidespines!(ax2)
     hidexdecorations!(ax2)
