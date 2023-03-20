@@ -29,9 +29,9 @@ function plot_std(experiment; var2plot="H_n", cmap=:darktest)
     path_to_results = get_path_to_results_or_runs(experiment, "runs")
     runs = path_to_results .* "/" .* readdir(path_to_results) .* "/pacco.nc"
     labels = get_exp_labels(runs)
-    if length(runs) > 1000
-        error("Too much runs to plot ... (> 1000)")
-    end
+    # if length(runs) > 1000
+    #     error("Too much runs to plot ... (> 1000)")
+    # end
 
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="std $(var2plot)")
@@ -169,9 +169,9 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
     end
     labels = get_exp_labels(runs)
 
-    if length(runs) > 1000
-        error("Too much runs to plot ... (> 1000)")
-    end
+    # if length(runs) > 1000
+    #     error("Too much runs to plot ... (> 1000)")
+    # end
 
     fig = Figure()
     (plot_PSD) ? (xlabel = "Period (kyr)") : (xlabel = "Time (kyr)")
