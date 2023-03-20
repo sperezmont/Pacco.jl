@@ -115,7 +115,7 @@ Note: I use `fast_histogram()` in order to see the parameters values that have a
 ```julia
 plot_std(experiment; var2plot="H_n", cmap=:darktest)
 ```
-This function plots the standard deviation of each run in the **entire ensemble**.  
+This function plots the standard deviation of each run in the **entire ensemble**. Note: Useful to see how the clouster of permutations increases or decreases the variability in the run.  
 
 Note: `plot_pacco()` can also be employed, but **this function does not apply any filter**, so it will plot every run in the ensemble.
 
