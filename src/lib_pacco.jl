@@ -633,22 +633,24 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=true)
         # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
 
-        expname = "test4_csi_ki_ka_lambda_2"  # Version 2 de la anterior, mirar el lunes!!
+        expname = "test4_csi_ki_ka_lambda_2"
         pars2perm = OrderedDict(
-            "Acc_ref_n" => 0.2:0.01:0.4,
-            "csi" => 0.3:0.01:0.5,
-            "ki" => 0.04:0.0025:0.06,
-            "ka" => 0.001:0.00025:0.009,
-            "lambda" => 0.04:0.0025:0.15)
+            "div_weight" => [0.0, 0.5, 1.0],
+            "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+            "csi" => 0.35:0.05:0.6,
+            "ki" => 0.04:0.001:0.05,
+            "ka" => [0.008, 0.01, 0.08], #[0.001, 0.005],
+            "lambda" => [0.01, 0.05, 0.08, 0.1])#, 0.06, 0.07])
         run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
         analyze_runs(experiment=expname, rule=1)
         analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
         analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
         analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
-        fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=false)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=false)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=true)
         plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=true)
+        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=false)
+        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=true)
+
 
         # expname = "test4_full_2"
         # par2change = Dict(
