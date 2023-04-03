@@ -71,7 +71,7 @@ end
 this function assumes we want a no so fancy plot so it just plots the histogram of an ensembleof good runs stored in `good_runs.txt`
 
 """
-function fast_histogram(experiment, filename; all_runs=true)
+function fast_histogram(experiment, filename; all_runs=true, plot_name="fast_histogram.png")
     path_to_results = get_path_to_results_or_runs(experiment, "results")
 
     if all_runs
@@ -90,11 +90,11 @@ function fast_histogram(experiment, filename; all_runs=true)
 
     for i in eachindex(par_names)
         if i == 1
-            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", ylabel="Amount of runs")
+            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", ylabel="Amount of runs", xticklabelrotation=pi / 2)
         else
-            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values")
+            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", xticklabelrotation=pi / 2)
         end
-        ax2 = Axis(fig[1, i], yaxisposition=:right, ygridstyle=:dash, ygridcolor=(:red, 0.4), rightspinecolor=:red, yticklabelcolor=:red)
+        ax2 = Axis(fig[1, i], yaxisposition=:right, ygridstyle=:dash, ygridcolor=(:red, 0.4), rightspinecolor=:red, yticklabelcolor=:red, xticklabelrotation=pi / 2)
 
         data = [parameters[j][i] for j in 1:length(parameters)]
 
@@ -150,7 +150,7 @@ function fast_histogram(experiment, filename; all_runs=true)
 
     end
 
-    save(path_to_results * "/fast_histogram.png", fig)
+    save(path_to_results * "/$(plot_name)", fig)
 end
 
 
@@ -159,7 +159,7 @@ end
 this function assumes we want a no so fancy plot so it just plots variable `var2plot` of good runs stored in `good_runs.txt` with a gradation of colors
 
 """
-function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_runs=true, plot_PSD=false)
+function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_runs=true, plot_PSD=false, plot_name="fast_plot.png")
     path_to_results = get_path_to_results_or_runs(experiment, "results")
 
     if all_runs
@@ -173,7 +173,7 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
     #     error("Too much runs to plot ... (> 1000)")
     # end
 
-    fig = Figure()
+    fig = Figure(resolution=(2000, 600))
     (plot_PSD) ? (xlabel = "Period (kyr)") : (xlabel = "Time (kyr)")
     ax = Axis(fig[1, 1], ylabel=var2plot, xlabel=xlabel)
     color_list = collect(cgrad(cmap, length(runs), categorical=true))
@@ -232,9 +232,9 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
         label="runs"
     )
     if plot_PSD
-        save(path_to_results * "/$(var2plot)_fast_PSD.png", fig)
+        save(path_to_results * "/$(var2plot)_PSD_$(plot_name)", fig)
     else
-        save(path_to_results * "/$(var2plot)_fast_plot.png", fig)
+        save(path_to_results * "/$(var2plot)_$(plot_name)", fig)
     end
 end
 
@@ -442,6 +442,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
             Colorbar(fig[1:end, end+1], height=Relative(1), colormap=:darktest,
                 limits=(1, length(data_to_load)),
                 ticks=(ticks_selected, new_labels),
+                ticklabelsize=0.7 * fntsz
             )
 
             save(pacco_path * "/output/" * experiment * "/results/" * "pacco_results.png", fig)
@@ -510,10 +511,10 @@ function plot_wavelet(; experiment="test_default", var2plot="H_n", fs=1 / 1000, 
     ax.ytickformat = k -> string.(Int.(ceil.(10 .^ k)))
     ax.yticks = log10.([19, 23, 41, 100])
 
-    ax2.ytickformat = k -> string.(Int.(ceil.(k ./ 100) .* 100)) .* " $(df[var2plot].attrib["units"])"
+    ax2.ytickformat = k -> string.(Int.(ceil.(k))) .* " $(df[var2plot].attrib["units"])"
     ax2.yticks = range(minimum(data), stop=maximum(data), length=3)
     ylims!(ax, (1, maximum(p_coi)))
-    ylims!(ax2, (minimum(data), 8 * maximum(data)))
+    ylims!(ax2, (minimum(data), 3 * maximum(data)))
 
     hidespines!(ax2)
     hidexdecorations!(ax2)

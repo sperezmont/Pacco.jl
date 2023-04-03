@@ -107,16 +107,14 @@ function calc_M(now::OrderedDict, par::OrderedDict)
         elseif par["sm_case"] == "ITM"
 
             if now["SMB_"*hm] <= 0
-                # I have to test this without >0 condition -- spm 2022.12.19
                 albedo_to_use = now["albedo_"*hm]
             else
-                # I have to test this without >0 condition -- spm 2022.12.19
                 albedo_to_use = par["albedo_newice"]
             end
 
             now["M_"*hm] = (par["km"]
-                              + par["ki"] * max((1 - albedo_to_use) * now["ins_anom_"*hm], 0.0)
-                              + par["lambda"] * max(temp - par["T_threshold"], 0.0))
+                            + par["ki"] * max((1 - albedo_to_use) * now["ins_anom_"*hm], 0.0)
+                            + par["lambda"] * max(temp - par["T_threshold"], 0.0))
 
         else
             error("ERROR, surface melt option not recognized")
@@ -189,10 +187,10 @@ function calc_Qdif(now::OrderedDict, par::OrderedDict)
         else
             # -- update ice-air diffusion -- CHECK units!! spm 2022.12.07
             now["Q_difup_"*hm] = -2 * ((now["T_ice_"*hm] - now["T_surf_"*hm]) / (now["H_"*hm]^2)) *
-                                   (kt_ann / (par["c"] * rhoi))
+                                 (kt_ann / (par["c"] * rhoi))
             # -- update ice-mantle diffusion
             now["Q_difdown_"*hm] = -2 * ((now["T_ice_"*hm] - par["T_mantle_"*hm]) / (par["H_mantle_"*hm]^2)) *
-                                     (kt_ann / (par["c"] * rhoi))
+                                   (kt_ann / (par["c"] * rhoi))
             # -- update diffusion from geothermal flux
 
             # -- total

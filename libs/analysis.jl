@@ -172,7 +172,7 @@ sentence_rule0 = "considers all runs"
     rule0(runs)
 $(sentence_rule0)
 """
-function rule0(runs; sentence=sentence_rule1)
+function rule0(runs; sentence=sentence_rule0)
     mask = []
     for run in runs
         push!(mask, true)

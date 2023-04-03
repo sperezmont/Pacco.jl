@@ -269,12 +269,16 @@ function run_pacco_ensemble(par2per::OrderedDict; experiment::String="test_defau
     mkdir(pacco_path * "/output/" * experiment * "/runs/")
     mkdir(pacco_path * "/output/" * experiment * "/results")
 
+    # Save combinations and names in permutations.txt
+    file_perm = open(pacco_path * "/output/" * experiment * "/results/permutations.txt", "w")
+
     # Third, run each permutation
     printstyled("Running $(experiment): $(nperms) runs\n", color=:green)
     ndigits = Int(round(log10(nperms)) + 1)
     for i in 1:nperms
         experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
         line2print = "s" * repeat("0", ndigits - length(digits(i))) * "$i $(perm[i])"
+        write(file_perm, "$(line2print) \n")
 
         if i == 1
             time1run = @elapsed run_pacco(experiment=experiment * experimenti, par_file=par_file, par2change=perm[i])
@@ -292,7 +296,7 @@ function run_pacco_ensemble(par2per::OrderedDict; experiment::String="test_defau
         end
         println(line2print)
     end
-
+    close(file_perm)
     # Done!
 end
 
@@ -450,13 +454,13 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
 
     # Test 2. Just climate
     if test2
-        expname = "tests/test2_clim_def"
-        pars = Dict("time_init" => -5e5, "time_end" => 1e6,
+        expname = "tests/test2_clim"
+        pars = Dict("time_init" => -5e5, "time_end" => 0,
             "height_temp" => "useZ",
             "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
             "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
             "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
+            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
             "lambda" => 0.01, "Acc_ref_n" => 0.1)
         run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
         plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
@@ -471,7 +475,7 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
         #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
         #     "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "melt_offset" => -5.0,
+        #     "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
         #     "lambda" => 0.01, "Acc_ref_n" => 0.1)
         # pars = Dict("time_init" => -8e5, "time_end" => 2e5,
         #     "height_temp" => "useZ",
@@ -633,50 +637,270 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=false, plot_PSD=true)
         # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
 
-        expname = "test4_csi_ki_ka_lambda_2"
-        pars2perm = OrderedDict(
-            "div_weight" => [0.0, 0.5, 1.0],
-            "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
-            "csi" => 0.35:0.05:0.6,
-            "ki" => 0.04:0.001:0.05,
-            "ka" => [0.008, 0.01, 0.08], #[0.001, 0.005],
-            "lambda" => [0.01, 0.05, 0.08, 0.1])#, 0.06, 0.07])
-        run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
-        analyze_runs(experiment=expname, rule=1)
-        analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
-        analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
-        analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
-        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
-        fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=true)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=false)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=true)
+        # expname = "test4_csi_ki_ka_lambda_2"
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [0.0, 0.5, 1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => 0.35:0.05:0.6,
+        #     "ki" => 0.04:0.001:0.05,
+        #     "ka" => [0.008, 0.01, 0.08], #[0.001, 0.005],
+        #     "lambda" => [0.01, 0.05, 0.08, 0.1])#, 0.06, 0.07])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=true)
+        # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=false)
+        # fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=true)
 
-        expname = "test4_csi_ki_ka_lambda_3"
+        # expname = "test4_csi_ki_ka_lambda_3"
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.35, 0.6],
+        #     "ki" => [0.04, 0.05],    # no hay mucho cambio en el rango 0.04:0.001:0.05
+        #     "ka" => 0.008:0.001:0.01, #[0.008, 0.01, 0.08], #[0.001, 0.005],
+        #     "lambda" => [0.05, 0.08, 0.1])#, 0.06, 0.07])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # filename = "good_runs_r1r2r3.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+        # fast_plot(expname, filename, all_runs=true, plot_PSD=false)
+        # fast_plot(expname, filename, all_runs=true, plot_PSD=true)
+
+        # expname = "test4_csi_ki_ka_lambda_4"
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.09, 0.1, 0.15, 0.2, 0.25, 0.35, 0.5, 0.6], 
+        #     "ki" => [0.009, 0.04, 0.05],    # no hay mucho cambio en el rango 0.04:0.001:0.05
+        #     "ka" => [0.008], #[0.008, 0.01, 0.08], #[0.001, 0.005],
+        #     "lambda" => [0.05, 0.08, 0.1])#, 0.06, 0.07])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # filename = "good_runs_r1r2r3r6.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+
+        # expname = "test4_csi_ki_ka_lambda_5"    # Resultados interesantes, moverse en torno a estos valores
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.35], 
+        #     "ki" => [0.055],    
+        #     "ka" => [0.008], #[0.008, 0.01, 0.08], #[0.001, 0.005],
+        #     "lambda" => 0.05:0.001:0.1) # no hay mucho cambio en el rango 0.05:0.001:0.1
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # filename = "good_runs_r1r2r3r6.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+
+        # expname = "test4_csi_ki_ka_lambda_5a"    
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.35], 
+        #     "ki" => 0.05:0.001:0.06,    
+        #     "ka" => [0.008], #[0.008, 0.01, 0.08], #[0.001, 0.005],
+        #     "lambda" => 0.05:0.001:0.1) # no hay mucho cambio en el rango 0.05:0.001:0.1
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # filename = "good_runs_r1r2r3r6.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+
+        # expname = "test4_csi_ki_ka_lambda_5b"    
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.1, 0.2, 0.35], 
+        #     "ki" => 0.05:0.001:0.06,    
+        #     "ka" => [0.008, 0.01, 0.08, 0.1], #[0.001, 0.005],
+        #     "lambda" => [0.08]) # no hay mucho cambio en el rango 0.05:0.001:0.1
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=1)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
+        # analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
+        # filename = "good_runs_r1r2r3r6.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+
+        # expname = "test4_csi_ki_ka_lambda_5c"   
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [0.0, 1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.09], #[(0.34+0.4)/2],#[0.35], # si csi > 0.1, la amplitud de T_n se hace muy grande, mayor que los proxy
+        #     "ki" => 0.007:0.001:0.01, #[(0.05 + 0.06)/2],    
+        #     "ka" => 0.008:0.00025:0.009,#[(0.008 + 0.01)/2], #[0.001, 0.005],
+        #     "lambda" => 0.05:0.01:0.08) # no hay mucho cambio en el rango 0.05:0.001:0.1 
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=2)
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n"], plot_PSD=true)
+        # filename = "good_runs_r2.txt"
+        # fast_histogram(expname, filename, all_runs=true)
+        # fast_plot("test4_csi_ki_ka_lambda_5c", "good_runs_r2.txt", all_runs=true, plot_PSD=false, plot_name="r2.png")
+        # fast_plot("test4_csi_ki_ka_lambda_5c", "good_runs_r2.txt", all_runs=true, plot_PSD=true, plot_name="r2.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5d"   
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => vcat(0.01:0.01:0.1, 0.2:0.1:0.5), #
+        #     "ki" => 0.001:0.001:0.009, #[(0.05 + 0.06)/2],    
+        #     "ka" => 0.001:0.001:0.009,#[(0.008 + 0.01)/2], #[0.001, 0.005],
+        #     "lambda" => 0.01:0.01:0.1) # no hay mucho cambio en el rango 0.05:0.001:0.1 
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=false, plot_name="r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=true, plot_name="r2.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5e"
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.09],#vcat(0.01:0.01:0.1, 0.2:0.1:0.5), #
+        #     "ki" => 0.01:0.01:0.09, #[(0.05 + 0.06)/2],    
+        #     "ka" => 0.01:0.01:0.09,#[(0.008 + 0.01)/2], #[0.001, 0.005],
+        #     "lambda" => [0.07]) # no hay mucho cambio en el rango 0.05:0.001:0.1 
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=false, plot_name="r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=true, plot_name="r2.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5f"   # this is good, ki=0.03, ka=0.03
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.4],   # 0.4 da el valor de H necesario para tener velocidades altas
+        #     "csi" => [0.108],#vcat(0.01:0.01:0.1, 0.2:0.1:0.5), # the lower, the more tend to 20/40 kyr
+        #     "ki" => [0.003, 0.03, 0.1], #[(0.05 + 0.06)/2],    
+        #     "ka" => [0.003, 0.03, 0.1],#[(0.008 + 0.01)/2], #[0.001, 0.005], # no parece haber cgran cambio entre 0.03 y 0.04
+        #     "lambda" => [0.1]) # no hay mucho cambio en el rango 0.05:0.001:0.1 
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "U_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=false, plot_name="r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=true, plot_name="r2.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5g"   # this is good?, ki=0.03, ka=0.03 but we need a bigger ice sheet
+
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => 0.1:0.025:0.4,   # 0.4 da el valor de H necesario para tener velocidades altas?
+        #     "csi" => [0.07, 0.108], # the lower, the more it tends to 20/40 kyr
+        #     "ki" => [0.0094, 0.01, 0.05, 0.095],
+        #     "ka" => [0.0008, 0.001, 0.008],
+        #     "lambda" => [0.01, 0.05, 0.1])
+        # #s001 OrderedDict("div_weight" => 1.0, "Acc_ref_n" => 0.1, "csi" => 0.07, "ki" => 0.0094, "ka" => 0.008, "lambda" => 0.01) 
+        # #s024 OrderedDict("div_weight" => 1.0, "Acc_ref_n" => 0.4, "csi" => 0.07, "ki" => 0.095, "ka" => 0.0008, "lambda" => 0.1) 
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "U_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=false, plot_name="r2.png")
+        # fast_plot(expname, "good_runs_r0r2.txt", all_runs=true, plot_PSD=true, plot_name="r2.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5h"   # this is good?, ki=0.03, ka=0.03 but we need a bigger ice sheet
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => [0.2, 0.3, 0.35, 0.4],   # 0.4 da el valor de H necesario para tener velocidades altas?
+        #     "csi" => [0.07, 0.108], # the lower, the more it tends to 20/40 kyr
+        #     "ki" => [0.05, 0.095],
+        #     "ka" => [0.001, 0.008],
+        #     "lambda" => [0.01, 0.05, 0.1])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "U_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5i" # s05 y s06 parecen bien encaminadas!
+        # pars2perm = OrderedDict(
+        #     "div_weight" => [1.0],
+        #     "Acc_ref_n" => 0.25:0.01:0.4,#[0.26, 0.28, 0.3, 0.32, 0.35],
+        #     "csi" => [0.07],#[0.06, 0.065, 0.07, 0.075, 0.08],
+        #     "ki" => [0.05],#[0.04, 0.045, 0.05, 0.055, 0.06],
+        #     "ka" => [0.008],
+        #     "lambda" => [0.05])
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "U_n", "T_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
+
+        expname = "test4_csi_ki_ka_lambda_5j"
+        # en las combinaciones: 
+        #       0.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> 100 kyr
+        #       1.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> <<100 kyr
+        # falta ajustar bien la sensibilidad a la insolación para que los periodos se vean bien!
         pars2perm = OrderedDict(
-            "div_weight" => 0.0:0.01:1.0,
-            "Acc_ref_n" => 0.35:0.01:0.45,   # 0.4 da el valor de H necesario para tener velocidades altas
-            "csi" => 0.35:0.01:0.6,
-            "ki" => 0.04:0.001:0.05,
-            "ka" => vcat([0.008], 0.01:0.005:0.08), #[0.001, 0.005],
-            "lambda" => [0.01, 0.05, 0.08, 0.1])#, 0.06, 0.07])
+            "Hsed_init_n" => [0.0],
+            "Acc_ref_n" => [0.29], # 0.29 or 0.3 para H > 3000 m
+            "csi" => [0.07],# 0.07 (poco reactivo a cambios pequeños, afecta al forzamiento radiativo)
+            "csz" => [0.0065],
+            "ki" => [0.05],# 0.05 (afecta a la sensibilidad de la fusión a la anomalía de insolación)
+            "ka" => 0.005:0.0001:0.0099, # 0.008
+            "lambda" => [0.05]) # 0.05 (no altera los resultados significativamente, mirar sensibilidades mejor)
         run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
-        analyze_runs(experiment=expname, rule=1)
-        analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r1.txt")
-        analyze_runs(experiment=expname, rule=3, reanalyze="good_runs_r1r2.txt")
-        analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r1r2r3.txt")
-        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n"], plot_PSD=true)
-        fast_histogram(expname, "good_runs_r1r2r3r6.txt", all_runs=true)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=false)
-        fast_plot(expname, "good_runs_r1r2r3r6.txt", all_runs=true, plot_PSD=true)
+        analyze_runs(experiment=expname, rule=0)
+        analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
+        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "U_n"], plot_PSD=true)
+        fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")
+        fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
+        fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
 
         # expname = "test4_full_2"
         # par2change = Dict(
-        #     "Acc_ref_n" => 0.4,
-        #     "csi" => 0.4,
+        #     "Acc_ref_n" => 0.3,
+        #     "csi" => 0.07,
         #     "ki" => 0.05,
-        #     "ka" => 0.005,
-        #     "lambda" => 0.1)
+        #     "ka" => 0.008,
+        #     "lambda" => 0.05)
         # run_pacco(experiment=expname, par_file="test4_ice-clim_ensemble.jl", par2change=par2change)
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "U_n", "T_n"], plot_PSD=true)
+
 
         printstyled("test 4 $(expname) completed \n Note: Work in progress\n", color=:red)
     end
