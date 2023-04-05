@@ -51,7 +51,7 @@ ins_lat_n = 65.0                # [ºN] Latitude in which calculate the insolati
 ins_lat_s = -60.0               # [ºN] Latitude in which calculate the insolation in the southern hemisphere
 
 # -- Radiative forcing parameters   (northern hemisphere -> n) (southern hemisphere -> s)
-ins_const = 400.0               # [W/m²] Insolation value for constant insolation mode
+ins_const = 500.0               # [W/m²] Insolation value for constant insolation mode
 ins_min = 425.0                 # [W/m²] Insolation minimum value 
 ins_max = 565.0                 # [W/m²] Insolation maximum value
 

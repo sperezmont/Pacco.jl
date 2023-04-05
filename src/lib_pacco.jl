@@ -385,155 +385,93 @@ Shortcut to run some general tests (dev), all attributes are optional
 ## Return
 nothing
 """
-function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test3=false, test4=false, all_tests=false)
+function run_tests(; test1=false, test2=false, test3=false, test4=false, testx=false, all_tests=false)
+    isdir(pwd() * "/output/tests/") || mkdir(pwd() * "/output/tests/")
     if all_tests == true
-        test1a, test1b, test1c = true, true, true
+        test1 = true
         test2 = true
         test3 = true
         test4 = true
     end
 
-    # Test 1a. Just ice dynamics and artificial insolation
-    if test1a
-        expname = "tests/test1a_ice-artif_def"
-        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
-            "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "artificial", "ac_case" => "ins", "sm_case" => "PDD",
-            "A_t" => 20.0,
-            "f_1" => 1.5e-8,
-            "pr_ref" => 0.7, "lambda" => 0.07)
-        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
-        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
+    # Test 1. Just ice dynamics and artificial insolation
+    if test1
+        expname = "tests/test1_ice-artif"
+        parfile = "test_par_files/test_ice-artif.jl"
+        run_pacco(experiment=expname, par_file=parfile)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n", "B_n"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        printstyled("test 1a $(expname) completed\n", color=:green)
+        printstyled("test 1 $(expname) completed, needs further improvement in calibration\n", color=:green)
     end
 
-    # Test 1b. Just ice dynamics, artificial insolation and linear Clausius-clapeyron
-    if test1b
-        # -- only paleo
-        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
-            "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "artificial", "ac_case" => "linear", "sm_case" => "PDD",
-            "A_t" => 20.0,
-            "f_1" => 0.3e-7,
-            "ka" => 0.008,
-            "lambda" => 0.07, "Acc_ref_n" => 0.4)
-        expname = "tests/test1b_ice-artif-lin_def"
-        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
-        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-
-        # -- no iso
-        pars["active_iso"] = false
-        expname2 = "tests/test1b_ice-artif-lin-noiso_def"
-        run_pacco(experiment=expname2, par_file="pacco_default.jl", par2change=pars)
-        plot_pacco(experiment=expname2, vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment=expname2, MPT=true, fs=1 / 1000, sigma=π)
-
-        plot_pacco(experiments=[expname, expname2], vars2plot=["ins_n", "H_n", "Hsed_n"], plot_MPT=true)
-
-        printstyled("test 1b $(expname) completed\n", color=:green)
-    end
-
-    # Test 1c. Just ice dynamics, laskar insolation and linear Clausius-clapeyron
-    if test1c
-        # -- only paleo
-        expname = "tests/test1c_ice_def"
-        pars = Dict("time_init" => -2e6, "time_end" => 2e6,
-            "active_iso" => true, "active_sed" => true, "active_climate" => false, "active_ice" => true,
-            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "PDD",
-            "A_t" => 35.0,
-            "f_1" => 0.3e-7,
-            "ka" => 0.003,
-            "lambda" => 0.1, "Acc_ref_n" => 0.4)
-        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
-        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "B_n", "Hsed_n"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        printstyled("test 1c $(expname) completed \n Note: not fully calibrated\n", color=:red)
-    end
-
-    # Test 2. Just climate
+    # Test 2. Just ice dynamics and real insolation
     if test2
-        expname = "tests/test2_clim"
-        pars = Dict("time_init" => -5e5, "time_end" => 0,
-            "height_temp" => "useZ",
-            "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => false,
-            "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-            "csi" => 0.07, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-            "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
-            "lambda" => 0.01, "Acc_ref_n" => 0.1)
-        run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
+        expname = "tests/test2_ice-real"
+        parfile = "test_par_files/test_ice-real.jl"
+        run_pacco(experiment=expname, par_file=parfile)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "Hsed_n", "B_n"], plot_MPT=true, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        printstyled("test 2 $(expname) completed, needs further improvement in calibration\n", color=:green)
+    end
+
+    # Test 3. Just climate
+    if test3
+        expname = "tests/test3_clim"
+        parfile = "test_par_files/test_clim.jl"
+        run_pacco(experiment=expname, par_file=parfile)
         plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
         plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
-        printstyled("test 2 $(expname) completed \n Note: needs further improvement in calibration\n", color=:green)
+        printstyled("test 3 $(expname) completed \n Note: needs further improvement in calibration\n", color=:green)
+
+        expname = "tests/test3_clim_2"  # this version includes some really good combinations with H > 2000 m
+        parfile = "test_par_files/test_clim.jl"
+        par2change = OrderedDict("Acc_ref_n" => [0.25, 0.3], "csi" => [0.1], "ki" => [0.009, 0.02], "ka" => [0.008, 0.01]) # 0.05 > ki > 0.01
+        run_pacco_ensemble(par2change, experiment=expname, par_file=parfile)
+        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        printstyled("test 3 $(expname) completed \n Note: needs further improvement in calibration\n", color=:green)
+
     end
 
-    if test3 # default mode, ice + coupled climate 
-        expname = "tests/test3_ice-clim_def"
-        # pars = Dict("time_init" => -5e5, "time_end" => 2e5,
-        #     "height_temp" => "useZ",
-        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
-        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        #     "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.008, "ki" => 0.0095, "ktco2" => 7.0, "t_threshold" => -5.0,
-        #     "lambda" => 0.01, "Acc_ref_n" => 0.1)
-        # pars = Dict("time_init" => -8e5, "time_end" => 2e5,
-        #     "height_temp" => "useZ",
-        #     "active_iso" => true, "active_sed" => false, "active_climate" => true, "active_ice" => true,
-        #     "ins_case" => "laskar", "ac_case" => "linear", "sm_case" => "ITM",
-        #     "csi" => 0.08, "cs" => 0.65, "csz" => 0.0065, "cco2" => 2.0,
-        #     "ka" => 0.008, "ki" => 0.1, "ktco2" => 7.0, "t_threshold" => -5.0,
-        #     "lambda" => 0.1, "Acc_ref_n" => 0.4,
-        #     "f_1" => 1e-6, "C_s" => 1e-7,
-        #     "fstream_min_n" => 0.4, "fstream_max_n" => 0.4)
-        # vrs2plt = ["ins_anom_n", "H_n", "T_ref_n", "M_n", "SMB_n", "U_n", "co2_n"]
+    if test4 # default mode, ice + coupled climate 
+        parfile = "test_par_files/test_ice-clim.jl"
+        pars2change = OrderedDict(
+            "active_sed" => false,
+            "f_1" => 1e-7,
+            "Acc_ref_n" => 0.3,
+            "csi" => 0.1,
+            "csz" => 0.0065,
+            "ki" => 0.025,
+            "ka" => 0.02,
+            "lambda" => 0.05)
 
-        # pars["Hsed_init_n"] = 0.0
-        # run_pacco(experiment=expname, par_file="pacco_default.jl", par2change=pars)
-        # plot_pacco(experiment=expname, vars2plot=vrs2plt, plot_MPT=true, plot_PSD=true)
-        # plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=3.45)
+        expname = "tests/test4_ice-clim_Hsed0"  # no sediments
+        pars2change["time_init"], pars2change["time_end"] = -1e6, 0.0
+        pars2change["active_sed"], pars2change["Hsed_init_n"] = false, 0.0
+        run_pacco(experiment=expname, par_file=parfile, par2change=pars2change)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        printstyled("test 4 $(expname) completed \n Note: Work in progress\n", color=:red)
 
-        # pars2perm =OrderedDict("Acc_ref_n" => [0.1, 0.2, 0.3, 0.4, 0.5],
-        #                         "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
-        #                         "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
-        #                         "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
-        #                         "lambda"=>[0.01, 0.05, 0.08, 0.1])
-        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble", par_file="test_climate_ensemble.jl")
+        expname = "tests/test4_ice-clim_Hsed1" # with sediments
+        pars2change["time_init"], pars2change["time_end"] = -2e6, -1e6
+        pars2change["active_sed"], pars2change["Hsed_init_n"] = false, 1.0
+        run_pacco(experiment=expname, par_file=parfile, par2change=pars2change)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        printstyled("test 4 $(expname) completed \n Note: Work in progress\n", color=:red)
 
-        # pars2perm =OrderedDict("Acc_ref_n" => [0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1.0],
-        # "csi"=>[0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15],
-        # "ki"=>[0.005, 0.008, 0.01, 0.05, 0.1],
-        # "ka"=>[0.005, 0.008, 0.01, 0.05, 0.08, 0.1],
-        # "lambda"=>[0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0])
-        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_2", par_file="test_climate_ensemble.jl")
+        expname = "tests/test4_ice-clim" # active sediments
+        pars2change["time_init"], pars2change["time_end"] = -2e6, 0.0
+        pars2change["active_sed"], pars2change["Hsed_init_n"] = true, 1.0
+        run_pacco(experiment=expname, par_file=parfile, par2change=pars2change)
+        plot_pacco(experiment=expname, vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true)
+        plot_wavelet(experiment=expname, MPT=true, fs=1 / 1000, sigma=π)
+        printstyled("test 4 $(expname) completed \n Note: Work in progress\n", color=:red)
 
-        # pars2perm =OrderedDict("Acc_ref_n" => [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 1.0, 5.0],
-        # "csi"=>[0.0, 0.001, 0.01, 0.07, 0.1, 0.5, 1.0],
-        # "ki"=>[0.0001, 0.0005, 0.0095, 0.05, 0.1, 1.0, 2.0],
-        # "ka"=>[0.0001, 0.0005, 0.008, 0.05, 0.1, 1.0, 2.0],
-        # "lambda"=>[0.0, 0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0, 5.0])
-        # run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_3", par_file="test_climate_ensemble.jl")
-
-        pars2perm = OrderedDict("Acc_ref_n" => [0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 1.0, 5.0],
-            "csi" => [0.1, 0.5, 1.0, 1.5, 2.0, 5.0],
-            "ki" => [0.1, 1.0, 2.0, 3.0, 5.0],
-            "ka" => [0.0001, 0.0005, 0.008, 0.05, 0.1, 1.0, 2.0],
-            "lambda" => [0.0, 0.001, 0.005, 0.01, 0.05, 0.08, 0.1, 0.5, 1.0, 5.0])
-        run_pacco_ensemble(pars2perm, experiment="test_climate_ensemble_4", par_file="test_climate_ensemble.jl")
-
-        # pars2perm = Dict("Acc_ref_n" => (0.1, 0.5),
-        #                  "csi"=>(0.01, 0.15),
-        #                  "ki"=>(0.005, 0.1),
-        #                  "ka"=>(0.005, 0.1),
-        #                  "lambda"=>(0.01,0.1))
-        # @time run_pacco_lhs(pars2perm, 6600, experiment="test_climate_lhs", par_file="test_climate_ensemble.jl")
-        # plot_pacco(experiment="test_climate_lhs", vars2plot=["H_n"])
-
-
-
-        printstyled("test 3 $(expname) completed \n Note: Work in progress\n", color=:red)
+        plot_pacco(experiments=["tests/test4_ice-clim", "tests/test4_ice-clim_Hsed1", "tests/test4_ice-clim_Hsed0"], vars2plot=["ins_n", "H_n", "T_n"], plot_PSD=true, plot_MPT=true)
     end
-    if test4
+
+    if testx
         # expname = "test4_div_weight"
         # pars2perm = OrderedDict("Acc_ref_n" => 0.1:0.1:0.4, "div_weight" => 0:0.1:1.0)
         # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
@@ -867,24 +805,67 @@ function run_tests(; test1a=false, test1b=false, test1c=false, test2=false, test
         # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
         # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
 
-        expname = "test4_csi_ki_ka_lambda_5j"
-        # en las combinaciones: 
-        #       0.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> 100 kyr
-        #       1.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> <<100 kyr
-        # falta ajustar bien la sensibilidad a la insolación para que los periodos se vean bien!
+        # expname = "test4_csi_ki_ka_lambda_5j"
+        # # en las combinaciones: 
+        # #       0.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> 100 kyr
+        # #       1.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> <<100 kyr
+        # # falta ajustar bien la sensibilidad a la insolación para que los periodos se vean bien!
+        # pars2perm = OrderedDict(
+        #     "Hsed_init_n" => [0.0],
+        #     "Acc_ref_n" => [0.29], # 0.29 or 0.3 para H > 3000 m
+        #     "csi" => [0.07],# 0.07 (poco reactivo a cambios pequeños, afecta al forzamiento radiativo)
+        #     "csz" => [0.0065],
+        #     "ki" => [0.05],# 0.05 (afecta a la sensibilidad de la fusión a la anomalía de insolación)
+        #     "ka" => 0.005:0.0001:0.0099, # 0.008
+        #     "lambda" => [0.05]) # 0.05 (no altera los resultados significativamente, mirar sensibilidades mejor)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "U_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
+
+        # expname = "test4_csi_ki_ka_lambda_5k"   # VOY a intentar sacar clim con 0.3 primero para entender cómo conseguir glaciaciones completas
+        # # en las combinaciones: 
+        # #       0.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> 100 kyr
+        # #       1.0, 0.3, 0.07, 0.05, 0.008, 0.05 --> <<100 kyr
+        # # falta ajustar bien la sensibilidad a la insolación para que los periodos se vean bien!
+        # pars2perm = OrderedDict(
+        #     "Hsed_init_n" => [0.0],
+        #     "Acc_ref_n" => [0.3], # 0.29 or 0.3 para H > 3000 m
+        #     "csi" => [0.07],# 0.059 or 0.07 (poco reactivo a cambios pequeños, afecta al forzamiento radiativo)
+        #     "ki" => [0.0095],# 0.05 (afecta a la sensibilidad de la fusión a la anomalía de insolación)
+        #     "ka" => [0.008], # 0.008
+        #     "csz" => [0.0065],
+        #     "lambda" => [0.01]) # 0.05 (no altera los resultados significativamente, mirar sensibilidades mejor)
+        # run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
+        # analyze_runs(experiment=expname, rule=0)
+        # analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
+        # analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
+        # plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "SMB_n"], plot_PSD=true)
+        # fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
+        # fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
+        # fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=false, plot_name="r2r6.png")
+        # fast_plot(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_PSD=true, plot_name="r2r6.png")
+
+        expname = "test4_6" # let's apply knowledge from test3_clim_2
         pars2perm = OrderedDict(
             "Hsed_init_n" => [0.0],
-            "Acc_ref_n" => [0.29], # 0.29 or 0.3 para H > 3000 m
-            "csi" => [0.07],# 0.07 (poco reactivo a cambios pequeños, afecta al forzamiento radiativo)
-            "csz" => [0.0065],
-            "ki" => [0.05],# 0.05 (afecta a la sensibilidad de la fusión a la anomalía de insolación)
-            "ka" => 0.005:0.0001:0.0099, # 0.008
-            "lambda" => [0.05]) # 0.05 (no altera los resultados significativamente, mirar sensibilidades mejor)
+            "Acc_ref_n" => [0.3],
+            "csi" => [0.1],
+            "ki" => [0.03],
+            "ka" => [0.02],
+            "lambda" => [0.01])
         run_pacco_ensemble(pars2perm, experiment=expname, par_file="test4_ice-clim_ensemble.jl")
         analyze_runs(experiment=expname, rule=0)
         analyze_runs(experiment=expname, rule=2, reanalyze="good_runs_r0.txt")
         analyze_runs(experiment=expname, rule=6, reanalyze="good_runs_r0r2.txt")
-        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "U_n"], plot_PSD=true)
+        plot_pacco(experiment=expname, vars2plot=["ins_anom_n", "H_n", "T_n", "SMB_n"], plot_PSD=true)
         fast_histogram(expname, "good_runs_r0.txt", all_runs=true, plot_name="hist_r0.png")
         fast_histogram(expname, "good_runs_r0r2.txt", all_runs=true, plot_name="hist_r0r2.png")
         fast_histogram(expname, "good_runs_r0r2r6.txt", all_runs=true, plot_name="hist_r0r2r6.png")

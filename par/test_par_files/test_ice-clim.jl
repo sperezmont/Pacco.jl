@@ -1,6 +1,6 @@
 ### Run Settings (CTL)
-time_init = -500000.0 # [yr] Starting time (model years)
-time_end = 1.0e6 # [yr] Ending time (model years)
+time_init = -1e6 # [yr] Starting time (model years)
+time_end = 0.0 # [yr] Ending time (model years)
 dt = 10.0                       # [yr] Loop timestep 
 dt_out = 1000.0                 # [yr] Frequency of writing
 hemisphere = ["n"]              # list with hemispheres to use: ["n"] for northern, ["s"] for southern or ["n", "s"] for both hemispheres
@@ -8,7 +8,7 @@ hemisphere = ["n"]              # list with hemispheres to use: ["n"] for northe
 ### Initial Conditions (INCOND) (northern hemisphere -> n) (southern hemisphere -> s)
 H_init_n = 0.0                  # [m] Initial condition for ice thickness 
 H_init_s = 0.0                  # 
-Hsed_init_n = 1.0               # [--] Initial condition for sediments thickness
+Hsed_init_n = 0.0 # [--] Initial condition for sediments thickness
 Hsed_init_s = 1.0               # 
 B_init_n = 500.0                  # [m] Initial condition for bedrock elevation
 B_init_s = 0.0                  # 
@@ -21,13 +21,14 @@ A_init = 1e-16                  # [Pa-3 a−1] Initial condition for the flow pa
 ### Run parameters (PAR)
 # -- dev par (this should be removed for official release)
 height_temp = "useZ" # height-temp feedback: "useH", "useZ"
+div_weight = 1.0        # ice divergence weight (Hdot = SMB - div_weight * U*H/L), for calibration purposes
 
 # -- Switches
 active_outout = false           # Switch: generate out.out?
 active_iso = true # Switch: include active isostatic rebound?
 active_sed = false # Switch: include interactive sediments?
 active_climate = true # Switch: include climate routines?
-active_ice = false # Switch: include ice sheet dynamics?
+active_ice = true # Switch: include ice sheet dynamics?
 
 # -- Cases
 ins_case = "laskar" # Insolation case: "constant", "artificial", "laskar"
@@ -78,7 +79,7 @@ albedo_slope = 5e-6             # [yr⁻¹] Slope of the albedo - ice age parame
 albedo_quad = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
 tau_albedo = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-csi = 0.07 # [K/Wm²] climate sensitivity to insolation
+csi = 0.08 # [K/Wm²] climate sensitivity to insolation
 cs = 0.65 # [K/Wm²] climate sensitivity to co2
 csz = 0.0065 # [K/m³] climate sensitivity to ice sheet elevation
 
@@ -131,7 +132,7 @@ km = 0.0                        # [m/yr] offset melting in ITM-like calculation
 ki = 0.0095 # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
 ka = 0.008 # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
-Acc_ref_n = 0.1 # [m/yr] Reference Accumulation for northern hemisphere
+Acc_ref_n = 0.4 # [m/yr] Reference Accumulation for northern hemisphere
 Acc_ref_s = 0.1                    # [m/yr] Reference Accumulation for southern hemisphere
 
 A_te_n = 20.0                    # [K] Thermal amplitude due to ice extent (Northern Hemisphere)

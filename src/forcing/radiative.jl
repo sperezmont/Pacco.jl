@@ -94,7 +94,6 @@ function calc_temp_and_tempref(now::OrderedDict, par::OrderedDict, hm)
         else
             printstyled("dev par must be removed!", color=:red)
         end
-
     else
         temp = now["T_surf_"*hm]  # if only dynamics, we take into account the lapse rate here
     end
@@ -144,10 +143,10 @@ function calc_Tdot(now, par)
         end
 
         now["Tdot_"*hm] = (now["T_ref_"*hm] - now["T_"*hm]
-                              +
-                              now["T_rf_"*hm]
-                              -
-                              par["csz"] * HTF) / par["tau_rf_"*hm]
+                           +
+                           now["T_rf_"*hm]
+                           -
+                           par["csz"] * HTF) / par["tau_rf_"*hm]
     end
     return now
 end

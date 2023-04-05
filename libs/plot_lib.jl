@@ -84,8 +84,6 @@ function fast_histogram(experiment, filename; all_runs=true, plot_name="fast_his
     aux_runs_vector = readlines(path_to_results * "/$(filename)")
     par_names, parameters = get_parameters_from_runs(experiment, filename, all_runs=all_runs)
 
-    color_list = collect(cgrad(:darktest, length(runs), categorical=true))
-    palettes = (color=color_list,)[1]
     fig = Figure(resolution=(500 * length(par_names), 500))
 
     for i in eachindex(par_names)
@@ -176,8 +174,12 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
     fig = Figure(resolution=(2000, 600))
     (plot_PSD) ? (xlabel = "Period (kyr)") : (xlabel = "Time (kyr)")
     ax = Axis(fig[1, 1], ylabel=var2plot, xlabel=xlabel)
-    color_list = collect(cgrad(cmap, length(runs), categorical=true))
-    palettes, k = (color=color_list,)[1], 1
+    if length(runs) > 1
+        color_list = collect(cgrad(cmap, length(runs), categorical=true))
+        palettes, k = (color=color_list,)[1], 1
+    else
+        palettes, k = :red, 1
+    end
     t, periods = [], []
     for run in runs
         if run[1:3] == "NS_"
@@ -188,15 +190,21 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
         df = NCDataset(run, "r")
         x, t = df[var2plot][:], df["time"][:]
 
+        if length(runs) > 1
+            color = palettes[k]
+        else
+            color = palettes
+        end
+
         if plot_PSD == true
             G, f = calc_spectrum(x, 1 / (t[2] - t[1]))
             time2cut = t[Int(ceil(length(t) / 2))]
             G, f = G[f.>-1/time2cut], f[f.>-1/time2cut]   # filtering
             G = G ./ sum(G)
             periods = 1 ./ f
-            scatterlines!(ax, periods ./ 1000, G, color=palettes[k], markersize=3, linewidth=0.5)
+            scatterlines!(ax, periods ./ 1000, G, color=color, markersize=3, linewidth=0.5)
         else
-            scatterlines!(ax, t ./ 1000, x, color=palettes[k], markersize=3, linewidth=0.5)
+            scatterlines!(ax, t ./ 1000, x, color=color, markersize=3, linewidth=0.5)
         end
         k += 1
     end
@@ -226,11 +234,13 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
     ticks_selected = 1:step:length(runs)
     new_labels = labels[ticks_selected]
 
-    Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
-        limits=(1, length(runs)),
-        ticks=(ticks_selected, new_labels),
-        label="runs"
-    )
+    if length(runs) > 1
+        Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
+            limits=(1, length(runs)),
+            ticks=(ticks_selected, new_labels),
+            label="runs"
+        )
+    end
     if plot_PSD
         save(path_to_results * "/$(var2plot)_PSD_$(plot_name)", fig)
     else
@@ -276,26 +286,26 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
     # 2. Load data
     time, data, units = [], [], []          # data[variable][element][values]
     for v in vars2plot
-        datav = []
+        datav, timev = [], []
         for e in data_to_load
             if e == data_to_load[1]
-                if v == vars2plot[1]
-                    time = NCDataset(e, "r") do ds
-                        ds["time"][:]
-                    end # ds is closed
-                end
-
                 units_v = NCDataset(e, "r") do ds
                     ds[v].attrib["units"]
                 end # ds is closed
                 push!(units, units_v)
             end
 
+            t = NCDataset(e, "r") do ds
+                ds["time"][:]
+            end # ds is closed
+            push!(timev, t)
+
             data_ve = NCDataset(e, "r") do ds
                 ds[v][:]
             end # ds is closed
             push!(datav, data_ve)
         end
+        push!(time, timev)
         push!(data, datav)
     end
 
@@ -308,6 +318,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
     (isensemble) ? (linewidth = 2) : (linewidth = 4)
     for v in eachindex(vars2plot)
         data_v = data[v]
+        time_v = time[v]
         var_v = collect_variable(vars2plot[v])
 
         # -- 3.2 Create axis
@@ -335,7 +346,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         # -- 3.5 Plot MPT and main Milankovitch periods
         (plot_MPT) && (vspan!(ax, -1.25e6, -0.7e6, color=(:red, 0.2)))    # plot Mid-Pleistocene Transition
         (plot_PSD) && (vlines!(ax_PSD, [19e3, 23e3, 41e3, 100e3], linewidth=3, color=:red, linestyle=:dash))  # main Milankovitch periods
-        (time[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=3, color=(:red, 0.5)))
+        vlines!(ax, [time_anth], linewidth=3, color=(:red, 0.5))
 
 
         # -- 3.6 If desired, plot proxy files
@@ -356,7 +367,7 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
                     G, f = G[f.>1/150e3], f[f.>1/150e3]   # filtering
                     G = G ./ sum(G)
                     periods = 1 ./ f
-                    lines!(ax_PSD, periods, G, color=:black, linewidth=4)
+                    scatterlines!(ax_PSD, periods, G, color=:black, markersize=24, linewidth=4)
                 end
             end
         end
@@ -373,32 +384,34 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
                 lbl = "PACCO"
             else
                 lbl = experiments[e]
-                colors_experiments_mode = [:royalblue4, :red4, :olive, :purple]
-                color_to_use = colors_experiments_mode[e]
+                color_list = collect(cgrad(:darkrainbow, length(experiments), categorical=true))
+                color_to_use = (color=color_list,)[1][e]
             end
 
             if var_v == "T" # CHECK THIS, CUTRE
-                l = lines!(ax, time, data_v[e][:] .- 273.15, linewidth=linewidth, color=color_to_use)
+                l = scatterlines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=color_to_use)
             else
-                l = lines!(ax, time, data_v[e][:], linewidth=linewidth, color=color_to_use)
+                l = scatterlines!(ax, time_v[e][:], data_v[e][:], markersize=4 * linewidth, linewidth=linewidth, color=color_to_use)
             end
             push!(lins, l)
 
             if plot_PSD
-                G, f = calc_spectrum(data_v[e][:], 1 / (time[2] - time[1]))
+                G, f = calc_spectrum(data_v[e][:], 1 / (time_v[e][2] - time_v[e][1]))
                 G, f = G[f.>1/150e3], f[f.>1/150e3]   # filtering
                 G = G ./ sum(G)
                 periods = 1 ./ f
-                lines!(ax_PSD, periods, G, color=color_to_use, linewidth=linewidth)
+                scatterlines!(ax_PSD, periods, G, color=color_to_use, markersize=6 * linewidth, linewidth=linewidth)
             end
         end
 
         # -- 3.8 Formatting ...
-        xlims!(ax, (time[1], time[end]))
+        min_time = minimum([time_v[e][1] for e in eachindex(data_to_load)])
+        max_time = maximum([time_v[e][end] for e in eachindex(data_to_load)])
+        xlims!(ax, (min_time, max_time))
 
-        if (time[end] - time[1]) > 2.0e6
+        if (max_time - min_time) > 2.0e6
             tstep = 300e3
-        elseif (time[end] - time[1]) > 8e5
+        elseif (max_time - min_time) > 1.0e6
             tstep = 200e3
         else
             tstep = 100e3
@@ -439,11 +452,13 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
             ticks_selected = 1:step:length(data_to_load)
             new_labels = labels[ticks_selected]
 
-            Colorbar(fig[1:end, end+1], height=Relative(1), colormap=:darktest,
-                limits=(1, length(data_to_load)),
-                ticks=(ticks_selected, new_labels),
-                ticklabelsize=0.7 * fntsz
-            )
+            if length(data_to_load) > 1
+                Colorbar(fig[1:end, end+1], height=Relative(1), colormap=:darktest,
+                    limits=(1, length(data_to_load)),
+                    ticks=(ticks_selected, new_labels),
+                    ticklabelsize=0.7 * fntsz
+                )
+            end
 
             save(pacco_path * "/output/" * experiment * "/results/" * "pacco_results.png", fig)
         else
