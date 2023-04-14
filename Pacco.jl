@@ -41,6 +41,8 @@ include("./src/forcing/orbital.jl")
 include("./src/physics/diagnostic.jl")
 include("./src/physics/dynamics.jl")
 include("./src/physics/thermodynamics.jl")
+
+include("tests.jl")     # -- include tests.jl
 println("Done!")
 
 # PACCO header

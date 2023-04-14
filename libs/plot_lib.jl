@@ -247,6 +247,25 @@ function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_
         save(path_to_results * "/$(var2plot)_$(plot_name)", fig)
     end
 end
+"""
+    time        --> time vector
+    times2find  --> times to find in time vector (ONLY two elements)
+"""
+function get_index_from_time(time::Vector, times2find::Vector; tol = 1e-5)
+    idx1, idx2 = 1, 2
+
+    for i in eachindex(time)
+        error = abs.(time[i] .- times2find) ./ abs.(times2find .+ tol)  # to avoid 1/0
+
+        if error[1] < tol
+            idx1 = i
+        end
+        if error[2] < tol
+            idx2 = i
+        end
+    end
+    return (idx1, idx2)
+end
 
 @doc """
     plot_pacco: calculates spectrum and plots results from PACCO (given or not the variables to plot)
@@ -257,13 +276,25 @@ end
         plot_proxies    --> include proxy curves?
         proxy_files     --> dictionary with the names of the proxy files to use in T/, co2/ and V/
 """
-function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_PSD=true, time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins_n", "H_n", "T_n", "co2_n", "V_n"], plot_MPT=false, plot_MIS=false, plot_PSD=true, times=(), time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     out_path = pwd() * "/output/" * experiment * "/"
     proxy_path = pwd() .* "/data/"
 
+    MIS = Dict(
+    "2" => (-12, -115),
+    "6" => (-191, -130),
+    "8" => (-300, -243),
+    "10" => (-374, -337),
+    "12" => (-478, -424),
+    "14" => (-563, -533),
+    "16" => (-676, -621),
+    "18" => (-761, -712),
+    "20" => (-814, -790),
+    "22" => (-900, -866))
+
     if ~isdir(proxy_path)
-        (plot_proxies) && (printstyled("can't find proxy data directory \n", color=:red))
+        (plot_proxies) && (printstyled("I can't find proxy data directory \n", color=:red))
         plot_proxies = false
     end
 
@@ -298,12 +329,20 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
             t = NCDataset(e, "r") do ds
                 ds["time"][:]
             end # ds is closed
-            push!(timev, t)
+            
 
             data_ve = NCDataset(e, "r") do ds
                 ds[v][:]
             end # ds is closed
-            push!(datav, data_ve)
+
+            if times != ()
+                idx = get_index_from_time(t, [times[1], times[2]])
+                push!(timev, t[idx[1]:idx[2]])
+                push!(datav, data_ve[idx[1]:idx[2]])
+            else
+                push!(timev, t)
+                push!(datav, data_ve)
+            end
         end
         push!(time, timev)
         push!(data, datav)
@@ -331,9 +370,9 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         # -- 3.3 Create PSD axis if desired
         if plot_PSD
             if v == 1
-                ax_PSD = Axis(fig[v, 2], title="Normalized PSD", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
+                ax_PSD = Axis(fig[v, 2], title="Normalized PSD", titlesize=0.8 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz, xgridvisible = false)
             else
-                ax_PSD = Axis(fig[v, 2], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
+                ax_PSD = Axis(fig[v, 2], titlesize=0.7 * fntsz, xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz, xlabel="Period (kyr)", xgridcolor=:darkgrey, ygridcolor=:darkgrey, xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz, xgridvisible = false)
             end
         end
 
@@ -349,7 +388,13 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         vlines!(ax, [time_anth], linewidth=3, color=(:red, 0.5))
 
 
-        # -- 3.6 If desired, plot proxy files
+        # -- 3.6 If desired, plot MIS and proxy files
+        if plot_MIS
+            for m in keys(MIS)
+                vspan!(ax, MIS[m][1] * 1e3, MIS[m][2] * 1e3, color = (:lightblue, 0.2))
+            end
+        end
+
         if plot_proxies
             if var_v in collect(keys(proxy_files))
                 proxy_file_v = proxy_path * "/" * var_v * "/" * proxy_files[var_v]
@@ -405,9 +450,14 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         end
 
         # -- 3.8 Formatting ...
-        min_time = minimum([time_v[e][1] for e in eachindex(data_to_load)])
-        max_time = maximum([time_v[e][end] for e in eachindex(data_to_load)])
-        xlims!(ax, (min_time, max_time))
+        if times == ()
+            min_time = minimum([time_v[e][1] for e in eachindex(data_to_load)])
+            max_time = maximum([time_v[e][end] for e in eachindex(data_to_load)])
+            xlims!(ax, (min_time, max_time))
+        else
+            min_time, max_time = times
+            xlims!(ax, times)
+        end
 
         if (max_time - min_time) > 2.0e6
             tstep = 300e3
@@ -422,6 +472,9 @@ function plot_pacco(; experiment="test_default", experiments=[], vars2plot=["ins
         if plot_PSD
             ax_PSD.xticks = 0:20e3:150e3
             ax_PSD.xtickformat = k -> string.(Int.(ceil.(k / 1000)))
+
+            hideydecorations!(ax_PSD)
+            hidespines!(ax_PSD, :l, :r, :t)
         end
 
         if (experiments != []) && (v == 1)
