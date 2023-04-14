@@ -1,4 +1,4 @@
-## PACCO (Paleo Adimensional Cryosphere Climate mOdel)
+## PACCO (Paleo Adimensional Climate-Cryosphere mOdel)
 by Jorge Alvarez-Solas (AMOD, Fortran, 2017) and adapted to Julia by Sergio Pérez-Montero (2022)
 
 ![Model scheme](config/pacco_scheme.png?raw=true)
