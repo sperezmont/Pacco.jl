@@ -4,6 +4,49 @@
 #     Author: Sergio Pérez-Montero, 2023.01.26
 # =============================
 
+"""
+    calc_spectrum(d, fs)
+computes the power spectrum density of vector `d` using sample frequency `fs` and a Blackman window 
+"""
+function calc_spectrum(d::Vector, fs::Real)
+    # -- spectrum blackman tuckey
+    N = length(d)
+    P = periodogram(d, fs=fs, window=blackman(N))
+    G, freq = P.power, P.freq
+    return G, freq
+end
+
+"""
+    calc_wavelet(d, fs; sigma)
+generate an array with the values of the wavelet applied to `d`
+"""
+function calc_wavelet(d::Vector, fs::Real; sigma::Real=π)
+    wvt = ContinuousWavelets.wavelet(Morlet(sigma), s=8, boundary=ZPBoundary(), averagingType=NoAve(), β=1)
+    S = ContinuousWavelets.cwt(d, wvt)
+    freq = getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)
+    S = abs.(S) .^ 2
+    S = S ./ sum(S, dims=2)
+    return S, freq
+end
+
+"""
+    calc_coi(t, f, cf)
+calculates the cone of influence from a wavelet analysis
+adapted from Torrence and Compo, 1998, BAMS
+https://es.mathworks.com/help/wavelet/ug/boundary-effects-and-the-cone-of-influence.html
+"""
+function calc_coi(t::Vector, f::Vector, cf::Real)
+    predtimes = sqrt(2) .* cf ./ f
+    tmax, tmin = maximum(t), minimum(t)
+    t1 = tmin .+ predtimes
+    t2 = tmax .- predtimes
+    t_samples = vcat(t1, t2)
+    p_samples = vcat(1 ./ f, 1 ./ f)
+    return t_samples, p_samples
+end
+
+## OLD code
+
 function cut_time_series(d1::Dict, d2::Dict)
     elements_d1, elements_d2 = collect(keys(d1)), collect(keys(d2))
 
@@ -36,50 +79,6 @@ function cut_time_series(d1::Dict, d2::Dict)
         end
     end
     return d1, d2, new_t1, new_tend
-end
-
-
-@doc """
-
-
-"""
-function calc_spectrum(d, fs)
-    # -- spectrum blackman tuckey
-    N = length(d)
-    Nmax = Int(ceil(N / 2))
-    P = periodogram(d, fs=fs, window=blackman(N))
-    G, freq = P.power, P.freq
-    return G, freq
-end
-
-@doc """
-    calc_wavelet:
-        Generate an array with the values of the wavelet applied to d
-"""
-function calc_wavelet(d, fs; sigma=π)
-    wvt = ContinuousWavelets.wavelet(Morlet(sigma), s=8, boundary=ZPBoundary(), averagingType=NoAve(), β=1)
-    S = ContinuousWavelets.cwt(d, wvt)
-    freq = getMeanFreq(ContinuousWavelets.computeWavelets(length(d), wvt)[1], fs)
-    S = abs.(S) .^ 2
-    S = S ./ sum(S, dims=2)
-
-    return S, freq
-end
-
-@doc """
-    calc_coi:
-        calculates cone of influence from a wavelet analysis
-        adapted from Torrence and Compo, 1998, BAMS
-        https://es.mathworks.com/help/wavelet/ug/boundary-effects-and-the-cone-of-influence.html
-"""
-function calc_coi(t, f, cf)
-    predtimes = sqrt(2) .* cf ./ f
-    tmax, tmin = maximum(t), minimum(t)
-    t1 = tmin .+ predtimes
-    t2 = tmax .- predtimes
-    t_samples = vcat(t1, t2)
-    p_samples = vcat(1 ./ f, 1 ./ f)
-    return t_samples, p_samples
 end
 
 @doc """

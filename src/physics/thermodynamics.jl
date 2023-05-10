@@ -1,244 +1,111 @@
 # =============================
 #     Program: thermodynamics.jl
-#     Aim: This program contains functions to calculate thermodynamics
+#     Aim: This program contains functions to calculate ice-sheet thermodynamics
 # =============================
-"""
-    calc_P(now, par)
-calculates surface pressure
 
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
+########################
+# Prognostic variables 
+########################
 """
-function calc_P(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        now["P_"*hm] = P_sl * exp((-now["Z_"*hm] * g) / (Rd * now["T_surf_"*hm]))   # http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-1/
-    end
-    return now
+    calc_Ticedot(u)
+calculates ice temperature derivative through dTicedt = Qdif + Qdrag
+"""
+function calc_Ticedot(u::Vector)
+    return u[27] + u[28]
 end
 
+########################
+# Diagnostic variables 
+########################
 """
-    calc_T_surf(now, par)
-calculates air temperature at ice sheet surface level
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
-"""
-function calc_T_surf(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        if par["active_climate"]
-            refT = copy(now["T_"*hm])
-        else
-            refT = copy(now["T_sl_"*hm])
-        end
-
-        if par["tsurf_case"] == "linear"
-            now["T_surf_"*hm] = refT - grad * now["Z_"*hm]
-        else
-            error("ERROR, T_surf option not recognized")
-        end
-    end
-    return now
-end
-
-"""
-    calc_Acc(now, par)
+    calc_A!(u, p)
 calculates accumulation rate
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
 """
-function calc_Acc(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        if par["ac_case"] == "ins"
-            pr = par["pr_ref"] + par["A_pr"] * now["ins_norm_"*hm]
-            # Calculate the fraction of snow
-            if now["T_surf_"*hm] <= (par["T_snow"]) # if below t_snow, full snowfall
-                snf = pr
-            elseif now["T_surf_"*hm] >= (par["T_rain"]) # if above t_rain, full rain
-                snf = 0.0
-            else # smooth transition
-                f_snow = (now["T_surf_"*hm] - par["T_rain"]) / (par["T_snow"] - par["T_rain"])  # assume linear transition
-                snf = f_snow * pr
-            end
-            now["Acc_"*hm] = max(snf, 0.0)
-        elseif par["ac_case"] == "linear"
-            temp, now["T_ref_"*hm] = calc_temp_and_tempref(now, par, hm)
-            now["Acc_"*hm] = par["Acc_ref_"*hm] + par["ka"] * (temp - now["T_ref_"*hm])
-            now["Acc_"*hm] = max(now["Acc_"*hm], 0.0)
+function calc_A!(u::Vector, p::Params)
+    if p.A_case == "ins"
+        Inorm = 2.0 * (u[10] - p.I_min) / (p.I_max - p.I_min) - 1.0
+        pr = p.pr_ref + p.A_pr * Inorm
+
+        # Calculate the fraction of snow
+        if u[18] <= p.T_snow # if below t_snow, full snowfall
+            snf = pr
+        elseif u[18] >= p.T_rain # if above t_rain, full rain
+            snf = 0.0
+        else # smooth transition
+            f_snow = (u[18] - p.T_rain) / (p.T_snow - p.T_rain)  # assume linear transition
+            snf = f_snow * pr
+        end
+        u[19] = max(snf, 0.0)
+    elseif p.A_case == "linear"
+        if p.active_climate
+            u[19] = max(p.Aref + p.ka * (u[1] - u[13]), 0.0)   # Aref + ka * (T - Tref)
+        else
+            u[19] = max(p.Aref + p.ka * (u[18] - u[13]), 0.0)   # Aref + ka * (Tsurf - Tref)
         end
     end
-    return now
+    return nothing
 end
 
 """
-    calc_M(now, par)
-calculates surface melting rate
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
+    calc_M!(u, p)
+calculates melting rate
 """
-function calc_M(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        temp, now["T_ref_"*hm] = calc_temp_and_tempref(now, par, hm)
-        if par["sm_case"] == "PDD"    # positive degree day method, as in Robinson et al. 2010
-
-            if now["T_surf_"*hm] >= (par["T_threshold"])
-                now["M_"*hm] = par["lambda"] * (temp - par["T_threshold"])
+function calc_M!(u::Vector, p::Params)
+    if p.M_case == "PDD"    # positive degree day method, as in Robinson et al. 2010
+        if u[18] >= (p.Tthreshold)
+            if p.active_climate
+                u[20] = p.lambda * (u[1] - p.Tthreshold)   # λ(T - Tthreshold)
             else
-                now["M_"*hm] = 0.0
+                u[20] = p.lambda * (u[18] - p.Tthreshold)   # λ(Tsurf - Tthreshold)
             end
-
-        elseif par["sm_case"] == "ITM"
-
-            if now["SMB_"*hm] <= 0
-                albedo_to_use = now["albedo_"*hm]
-            else
-                albedo_to_use = par["albedo_newice"]
-            end
-
-            now["M_"*hm] = (par["km"]
-                            + par["ki"] * max((1 - albedo_to_use) * now["ins_anom_"*hm], 0.0)
-                            + par["lambda"] * max(temp - par["T_threshold"], 0.0))
-
         else
-            error("ERROR, surface melt option not recognized")
+            u[20] = 0.0
         end
-    end
-    return now
-end
-
-"""
-    calc_SMB(now, par)
-calculates surface mass balance
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
-"""
-function calc_SMB(now::OrderedDict, par::OrderedDict)
-    # First, calculates Accumulation
-    now = calc_Acc(now, par)
-
-    # Second, calculate Melting
-    now = calc_M(now, par)
-
-    # Third, return SMB
-    for hm in par["hemisphere"]
-        now["SMB_"*hm] = now["Acc_"*hm] - now["M_"*hm]
-    end
-    return now
-end
-
-"""
-    calc_TMB(now, par)
-calculates total mass balance
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
-"""
-function calc_TMB(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        now["TMB_"*hm] = now["SMB_"*hm] + 0.0   # for now, TMB = SMB -- 2022.11.17 spm
-    end
-    return now
-end
-
-"""
-    calc_Qdif(now, par)
-calculates diffusive heat
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
-"""
-function calc_Qdif(now::OrderedDict, par::OrderedDict)
-    kt_ann = par["kt"] * sec_year
-    #qgeo_ann = par["Q_geo"] * sec_year * 1e-3
-
-    for hm in par["hemisphere"]
-        if now["H_"*hm] < 10.0  # -- check if there is no ice
-            now["Q_dif_"*hm] = 0.0
+    elseif p.M_case == "ITM"
+        if (u[19] - u[20]) <= 0   # if MB = A - M <= 0, use α(t)
+            u[20] = p.km + p.ki * max((1 - u[4]) * (u[10] - p.I_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)    # α
         else
-            # -- update ice-air diffusion -- CHECK units!! spm 2022.12.07
-            now["Q_difup_"*hm] = -2 * ((now["T_ice_"*hm] - now["T_surf_"*hm]) / (now["H_"*hm]^2)) *
-                                 (kt_ann / (par["c"] * rhoi))
-            # -- update ice-mantle diffusion
-            now["Q_difdown_"*hm] = -2 * ((now["T_ice_"*hm] - par["T_mantle_"*hm]) / (par["H_mantle_"*hm]^2)) *
-                                   (kt_ann / (par["c"] * rhoi))
-            # -- update diffusion from geothermal flux
-
-            # -- total
-            now["Q_dif_"*hm] = now["Q_difup_"*hm] + now["Q_difdown_"*hm]
+            u[20] = p.km + p.ki * max((1 - p.alpha_newice) * (u[10] - p.I_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)   # αₙ
         end
+
+    else
+        error("ERROR, surface melting option not recognized")
     end
-    return now
+    return nothing
 end
 
 """
-    calc_Qdrag(now, par)
-calculates drag heat
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
+    calc_Qdif!(u, p)
+calculates diffusion heat between the ice sheet and the atmosphere
 """
-function calc_Qdrag(now::OrderedDict, par::OrderedDict)
-    for hm in par["hemisphere"]
-        if now["H_"*hm] < 10.0  # -- check if there is no ice
-            now["Q_drag_"*hm] = 0.0
-        else
-            now["Q_drag_"*hm] = now["fstream_"*hm] * now["tau_b_"*hm] * now["U_b_"*hm] / (par["c"] * rhoi) #/ par["L"] # -- spm 2022.11.24
-        end
+function calc_Qdif!(u::Vector, p::Params)
+    kt_ann = p.kt * p.sec_year
+    #qgeo_ann = p.Qgeo * p.sec_year * 1e-3
+
+    if u[5] < 10.0  # -- check if there is no ice
+        u[27] = 0.0
+    else
+        # -- update ice-air diffusion -- CHECK units!! spm 2022.12.07
+        Q_difup = -2 * ((u[8] - u[18]) / (u[5]^2)) * (kt_ann / (p.c * p.rhoi))
+        # -- update ice-mantle diffusion
+        Q_difdown = -2 * ((u[8] - p.Tmantle) / (p.Hmantle^2)) * (kt_ann / (p.c * p.rhoi))
+        # -- update diffusion from geothermal flux
+
+        # -- total
+        u[27] = Q_difup + Q_difdown
     end
-    return now
+    return nothing
 end
 
-#############################
-# Time derivatives
-#############################
 """
-    calc_T_icedot(now, par)
-calculates ice temperature derivative
-
-## Arguments
-* `now` Dictionary with values of the model variables at current timestep
-* `par` Dictionary with run parameters
-
-## Return
-updated `now` dictionary
+    calc_Qdrag!(u, p)
+calculates drag heating
 """
-function calc_T_icedot(now, par)
-    for hm in par["hemisphere"]
-        now["T_icedot_"*hm] = now["Q_dif_"*hm] + now["Q_drag_"*hm]
+function calc_Qdrag!(u::Vector, p::Params)
+    if u[5] < 10.0  # -- check if there is no ice
+        u[28] = 0.0
+    else
+        u[28] = u[9] * u[22] * u[24] / (p.c * p.rhoi) #/ p.L # -- spm 2022.11.24
     end
-    return now
+    return nothing
 end

@@ -19,7 +19,8 @@ else
 
     # Adding dependencies ... 
     display("** Adding dependencies ... **")
-    packages = ["NCDatasets", "DataStructures", "Insolation", "ProgressBars",
+    packages = ["OrdinaryDiffEq", "NaNMath", "JLD2",
+                "NCDatasets", "Insolation",
                 "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
                 "StatsBase", "Interpolations", "LatinHypercubeSampling",
                 "Images"]

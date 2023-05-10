@@ -2,32 +2,29 @@
 #     Program: orbital.jl
 #     Aim: This program contains functions to calculate orbital parameters
 # =============================
-@doc """
-    calc_artificial_insolation:
-        Compute daily average insolation through different parameterizations
+
 """
-function calc_artificial_insolation(now_o, par_o)
+    calc_artificial_insolation(p, t)
+Compute daily average insolation through different parameterizations
+"""
+function calc_artificial_insolation(p::Params, t::Real)
     # Calculate reference and amplitude
-    ins_ref = (par_o["ins_max"] + par_o["ins_min"]) / 2
-    A_ins = (par_o["ins_max"] - par_o["ins_min"]) / 2
+    I_ref = (p.I_max + p.I_min) / 2
+    A_ins = (p.I_max - p.I_min) / 2
 
     # Return artificial insolation -- I have to discuss this with jas
-    ins = ins_ref + A_ins * (
-        par_o["P_obl"] * cos(2.0 * pi * now_o["time"] / par_o["tau_obl"]) +
-        par_o["P_pre"] * cos(2.0 * pi * now_o["time"] / par_o["tau_pre"]) +
-        par_o["P_exc"] * cos(2.0 * pi * now_o["time"] / par_o["tau_exc"]))
-    for hm in hemisphere
-        now_o["ins_"*hm] = ins
-    end
-    return now_o
+    return I_ref + A_ins * (
+        p.P_obl * cos(2.0 * pi * t / p.tau_obl) +
+        p.P_pre * cos(2.0 * pi * t / p.tau_pre) +
+        p.P_exc * cos(2.0 * pi * t / p.tau_exc))
 end
 
-@doc """
-    calc_solar_longitude:
-        Compute solar longitude given day of the year and orbital parameters
-        Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
 """
-function calc_solar_longitude(day, long_peri, ecc; days_per_year=365.2422)
+    calc_solar_longitude(dat, long_peri, ecc)
+Compute solar longitude given day of the year and orbital parameters
+Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
+"""
+function calc_solar_longitude(day::Real, long_peri::Real, ecc::Real; days_per_year::Real=365.2422)
     long_peri_rad = deg2rad(long_peri)
     delta_omega = (day - 80.0) * 2 * pi / days_per_year
     beta = sqrt(1 - ecc^2)
@@ -42,12 +39,12 @@ function calc_solar_longitude(day, long_peri, ecc; days_per_year=365.2422)
     return omega_long
 end
 
-@doc """
-    calc_laskar_insolation: 
-        Compute daily average insolation given latitude and day of the year
-        Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
 """
-function calc_laskar_insolation(t; lat=65.0, day=170.0, S0=1365.2, day_type=1, days_per_year=365.2422)
+    calc_laskar_insolation(t)
+Compute daily average insolation given latitude and day of the year
+Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.github.io/ClimateLaboratoryBook/home.html)
+"""
+function calc_laskar_insolation(t::Real; lat::Real=65.0, day::Real=170.0, S0::Real=1365.2, day_type::Real=1, days_per_year::Real=365.2422)
     # First, calculate the orbital parameters at t (years) since J2000 epoch
     long_peri, obliquity, ecc = orbital_params(t) # -- using Insolation.jl (rad, rad, --)
     long_peri, obliquity = rad2deg(long_peri), rad2deg(obliquity)
@@ -82,29 +79,25 @@ function calc_laskar_insolation(t; lat=65.0, day=170.0, S0=1365.2, day_type=1, d
     return Fsw
 end
 
-@doc """
-    calc_insol_day:
-        Compute daily average insolation
 """
-function calc_ins(now_o, par_o)
-    if par_o["ins_case"] == "constant"
-        for hm in par_o["hemisphere"]
-            now_o["ins_"*hm] = copy(par_o["ins_const"])
-        end
-    elseif par_o["ins_case"] == "artificial"
-        now_o = calc_artificial_insolation(now_o, par_o)
-    elseif par_o["ins_case"] == "laskar"
-        for hm in par_o["hemisphere"]
-            now_o["ins_"*hm] = calc_laskar_insolation(now_o["time"],
-                lat=par_o["ins_lat_"*hm],
-                day=par_o["ins_day"],
-                S0=S_0,
-                day_type=1,
-                days_per_year=year_len)
-        end
+    calc_I!(u, p, t)
+Compute daily average insolation
+"""
+function calc_I!(u::Vector, p::Params, t::Real)
+    if p.I_case == "constant"
+        u[10] = p.I_const
+    elseif p.I_case == "artificial"
+        u[10] = calc_artificial_insolation(p, t)
+    elseif p.I_case == "laskar"
+        u[10] = calc_laskar_insolation(t,
+            lat=p.I_lat,
+            day=p.I_day,
+            S0=p.I0,
+            day_type=1,
+            days_per_year=p.year_len)
     else
         error("ERROR, insolation option not recognized")
     end
-    return now_o
+    return nothing
 end
 

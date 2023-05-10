@@ -8,31 +8,34 @@
 using NCDatasets
 using DataStructures
 
-function genout_nc(out::AbstractString, filename::AbstractString, d::OrderedDict, prec, attr::OrderedDict)
-    ds = NCDataset(out * filename, "c")
+function genout_nc(outputpath::AbstractString, filename::AbstractString, outvalues, parameters::Params, attr::Dict; prec=Float64)
+    # Note: here outvalues.u includes (u, v)
+    ds = NCDataset(outputpath * filename, "c")
+    lt = length(outvalues.t)
 
-    # define time dimension
-    defDim(ds, "time", Inf)
+    # Define time dimension
+    defDim(ds, "time", lt)
+    defVar(ds, "time", prec, ("time",))
+    ds["time"][:] = outvalues.t
 
-    # define groups # NOT IMPLEMENTED YET -- spm 2022.10.27
-    # for i in eachindex(out_groups)
-    #     defGroup(ds, out_groups[i], attrib = Dict("title" => out_groups[i]))
-    # end
-
-    # define the variables
-    for (key, val) in d
-        defVar(ds, key, prec, ("time",), attrib=attr[key])
+    # Define and assign the variables using global variables states_u, states_v and states_comp
+    new_out_matrix = reduce(hcat, outvalues.u)' # each column has the entire time series of each variable
+    for (index, variable) in enumerate(states_u)
+        defVar(ds, variable, prec, ("time",), attrib=attr[variable])
+        ds[variable][:] .= new_out_matrix[:, index]
     end
 
-    # assign values
-    for (key, val) in d
-        try # only assign value if it is defined in pacco_defs (out_attr)
-            ds[key][:] = d[key]
-        catch
-            continue
+    # -- composite variables
+    for variable in states_comp
+        defVar(ds, variable, prec, ("time",), attrib=attr[variable])
+        if variable == "Inorm"
+            ds[variable][:] .= 2.0 .* (new_out_matrix[:, 10] .- parameters.I_min) ./ (parameters.I_max - parameters.I_min) .- 1.0
+        elseif variable == "Ianom"
+            ds[variable][:] .= new_out_matrix[:, 10] .- parameters.I_ref
+        elseif variable == "MB"
+            ds[variable][:] .= new_out_matrix[:, 19] .- new_out_matrix[:, 20]
         end
     end
-
     close(ds)
 end
 

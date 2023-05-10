@@ -1,6 +1,6 @@
 # =============================
-#     Program: pacco.jl
-#     Aim: prepare Julia for simulations of PACCO
+#     Program: Pacco.jl
+#     Aim: prepare Julia for simulations of PACCO (default_params.jl)
 # =============================
 println("Getting Julia ready to run PACCO ...")
 using Pkg
@@ -12,7 +12,10 @@ global pacco_path = pwd()                    # -- determine pacco path. This lin
 using NCDatasets        # to make outputs and manage inputs (?)
 using DataStructures    # to create OrderedDict's 
 using Insolation        # to load orbital parameters
-using ProgressBars
+using OrdinaryDiffEq        # solver for ODEs
+using NaNMath               # adaptive timestepping needs this package
+using JLD2                  # to save Julia objects
+
 
 # ---- plotting
 using CairoMakie            # plotting interface
@@ -26,36 +29,40 @@ using LatinHypercubeSampling    # ""
 using Images: findlocalmaxima   # we only need findlocalmaxima() (IMPORTANT!!)
 
 # -- import model libraries and functions
-include("./libs/misc.jl")              # -- include libraries
+include("./par/default_params.jl")           # -- includes source parameter file 
+
+include("./libs/misc.jl")              # -- includes libraries
 include("./libs/nc.jl")
 include("./libs/plot_lib.jl")
 include("./libs/analysis.jl")
 
-include("./par/earth_const.jl")             # -- include earth constants
-
-include("./src/lib_pacco.jl")                # -- include pacco functions
+include("./src/lib_pacco.jl")                # -- includes pacco functions
 include("./src/pacco_defs.jl")
-include("./src/pacco_update.jl")
-include("./src/forcing/radiative.jl")
-include("./src/forcing/orbital.jl")
-include("./src/physics/diagnostic.jl")
-include("./src/physics/dynamics.jl")
-include("./src/physics/thermodynamics.jl")
+include("./src/forcing/orbital.jl")          # -- forcing functions
+include("./src/physics/climate.jl")          # -- climate functions         
+include("./src/physics/geometry.jl")         # -- cryosphere functions
+include("./src/physics/dynamics.jl")         # 
+include("./src/physics/thermodynamics.jl")   #
 
 include("tests.jl")     # -- include tests.jl
 println("Done!")
 
 # PACCO header
 printstyled("================================================================== \n", color=:light_blue)
-printstyled("| PACCO v0.4                                                     | \n", color=:bold)
+printstyled("| PACCO v0.5                                                     | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
-printstyled("|      --> run_pacco(;experiment, par_file, par2change)          | \n")
-printstyled("|      --> run_pacco_lhs(par2per, nsim; experiment, par_file)    | \n")
-printstyled("|      --> run_ensemble(par2per; experiment, par_file)           | \n")
+printstyled("|      --> run_pacco(experiment; p)                              | \n")
+printstyled("|      --> run_ensemble(experiment, params2per)                  | \n")
+printstyled("|      --> run_pacco_lhs(experiment, params2per, nsim)           | \n")
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
-printstyled("|      --> plot_pacco(;experiment/experiments, vars2plot)        | \n")
-printstyled("|      --> plot_wavelet(;experiment, var2plot)                   | \n")
+printstyled("|      --> plot_pacco(experiment; vars2plot)                     | \n")
+printstyled("|      --> plot_wavelet(experiment; vars2plot)                   | \n")
+printstyled("|                                                                | \n")
+printstyled("|    Shortcuts:                                                  | \n")
+printstyled("|      --> runplot_pacco(experiment; p)                          | \n")
+printstyled("|      --> runplot_pacco_ensemble(experiment, params2per)        | \n")
+printstyled("|      --> runplot_pacco_lhs(experiment, params2per, nsim)       | \n")
 printstyled("================================================================== \n", color=:light_blue)
 
