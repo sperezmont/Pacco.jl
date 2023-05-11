@@ -89,6 +89,14 @@ function calc_I!(u::Vector, p::Params, t::Real)
     elseif p.I_case == "artificial"
         u[10] = calc_artificial_insolation(p, t)
     elseif p.I_case == "laskar"
+        if (t == p.time_init) && (p.time_init < -5e6)
+            @warn "Initial time exceeds Laskar (2004) limits for orbital parameters"
+        elseif (t == p.time_init) && (p.time_init > 5e6)
+            @warn "Initial time exceeds Laskar (2004) limits for orbital parameters"
+        elseif (t == p.time_init) && (p.time_end > 5e6)
+            @warn "Ending time exceeds Laskar (2004) limits for orbital parameters"
+        end
+
         u[10] = calc_laskar_insolation(t,
             lat=p.I_lat,
             day=p.I_day,

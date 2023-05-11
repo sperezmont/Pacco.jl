@@ -38,14 +38,14 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
     # Test 3. Climate-Cryosphere coupled
     if testDynClim
         expname = "tests/test3_DynClim"
-        PaccoDynClimParams = Params(time_init = -8.0e5,
-                                 Hsed0 = 0.0,
-                                 active_sed = false, active_iso = true, active_climate = true, active_ice = true,
+        PaccoDynClimParams = Params(time_init = -2.0e6,
+                                 Hsed0 = 1.0,
+                                 active_sed = true, active_iso = true, active_climate = true, active_ice = true,
                                  I_case = "laskar", M_case = "ITM",
                                  ci = 0.1, cc = 0.65, cz = 0.00683,
                                  lambda = 0.064, ki = 0.025, ka = 0.02, Aref = 0.3)
         run_pacco(expname, p = PaccoDynClimParams)
-        plot_pacco(expname, vars2plot=["I", "H", "T"], plot_MPT=true, plot_PSD=true)
+        plot_pacco(expname, vars2plot=["I", "H", "Z", "B", "U", "Hsed", "T"], plot_MPT=true, plot_PSD=true)
         plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
         printstyled("test 3 $(expname) completed\n", color=:green)
     end

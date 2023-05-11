@@ -48,6 +48,9 @@ Include parameter file selected in Julia and assign values to model variables
 * `out_attr` Attributes of each output variable (netCDF file)
 """
 function load_defs(p)
+    # Check some parameters
+    (p.time_init > p.time_end) && (error("time_init is greater than time_end"))
+
     # Assign initial conditions
     u0 = vcat([p.T0, p.co2_ref, p.iceage0, p.alpha0, p.H0, p.Hsed0, p.B0, p.Tice0, p.fstream0], # prognostic states
         zeros(ldiag)) # diagnostic variables
