@@ -88,7 +88,7 @@ function plot_pacco(experiment; vars2plot=["I", "H", "T", "co2", "V"], plot_MPT=
     fgsz = (2000 * ncols, 600 * nrows)
     fntsz = 0.02 * sqrt(fgsz[1]^2 + fgsz[2]^2)
     fig = Figure(resolution=fgsz)
-    (length(data_to_load) > 1) ? (linewidth = 2) : (linewidth = 8)
+    (length(data_to_load) > 1) ? (linewidth = 4) : (linewidth = 8)
     k = 0
     for v in eachindex(vars2plot)
         data_v = copy(data[v])

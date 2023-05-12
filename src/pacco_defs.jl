@@ -17,7 +17,7 @@ global lsu = length(states_u)
 global lprog = length(prognostic)
 global ldiag = length(diagnostic)
 
-global states_comp = ["Inorm", "Ianom", "MB"]
+global states_comp = ["Inorm", "Ianom", "MB", "Rco2"]
 
 """
     display_pacco_variables()
@@ -63,7 +63,7 @@ function load_defs(p)
         "time" => Dict("units" => "yr", "longame" => "Simulation Time", "group" => "Time"),
         # -- Prognostic variables
         "T" => Dict("units" => "K", "longame" => "Regional Temperature", "group" => "Thermodynamics"),
-        "co2" => Dict("units" => "ppm", "longame" => "co2 Concentration", "group" => "Radiative"),
+        "co2" => Dict("units" => "ppm", "longame" => "co2 Concentration", "group" => "Climate"),
         "iceage" => Dict("units" => "yr", "longame" => "Ice Age", "group" => "Climate"),
         "alpha" => Dict("units" => "--", "longame" => "System albedo", "group" => "Climate"),
         "H" => Dict("units" => "m", "longame" => "Ice Thickness", "group" => "Dynamics"),
@@ -95,6 +95,7 @@ function load_defs(p)
         "Inorm" => Dict("units" => "W/m²", "longame" => "Normalized Insolation", "group" => "Forcing"),
         "Ianom" => Dict("units" => "W/m²", "longame" => "Insolation anomaly", "group" => "Forcing"),
         "MB" => Dict("units" => "m/a", "longame" => "Mass Balance", "group" => "Thermodynamics"),
+        "Rco2" => Dict("units" => "W/m²", "longame" => "co2 radiative effect", "group" => "Climate"),
     )
     return u0, out_attr
 end

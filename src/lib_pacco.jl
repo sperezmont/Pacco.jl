@@ -41,7 +41,7 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
         calc_Ub!(u, p)
         calc_fstream_ref!(u, p)
         u[26] = u[23] + u[9] * u[24]
-    
+
         # Compute Ice-Sheet thermodynamics
         calc_Qdif!(u, p)
         calc_Qdrag!(u, p)
@@ -99,20 +99,25 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     # Modify states to ensure physical meaning
     view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.alpha_land, 0.0, 0.0, -Inf, 0.0, 0.0])
     view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, 1.0, Inf, p.degK, Inf])
-    
+
     if u[5] == 0.0  # no ice
         u[3] = 0.0
         u[4] = p.alpha_land
     elseif u[3] < 10.0 # first ice
         u[4] = p.alpha_newice
     end
-    
+
     return nothing
 end
 
 """
     pacco(u0, p, tspan)
-takes initial conditions for `u0`, parameters in `p` and solves PACCO for timespan `tspan`
+takes initial conditions for `u0`, parameters in `p` and solves PACCO for timespan `tspan`. 
+This function uses `BS3()` algorithm to solve the problem and saves results each `p.dt_out` time step. 
+This option was selected because of the model's simplicity and the computational speed of the method as recomended by DifferentialEquations.jl documentation:
+"For fast solving at higher tolerances, we recommend BS3". This option uses the Bogacki-Shampine 3/2 method:
+* https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/ 
+* https://en.wikipedia.org/wiki/Bogacki%E2%80%93Shampine_method
 """
 function pacco(u0::Vector, p::Params, tspan::Tuple)
     # Define and solve the problem
@@ -187,8 +192,8 @@ function run_pacco_ensemble(experiment::String, params2per::Dict)
         line2print = "run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i $(perm[i])"
         write(file_perm, "$(line2print) \n")
 
-        new_pi = Params(; (Symbol(k) => v for (k,v) in perm[i])...)  
-        run_pacco(experiment * experimenti, p = new_pi)
+        new_pi = Params(; (Symbol(k) => v for (k, v) in perm[i])...)
+        run_pacco(experiment * experimenti, p=new_pi)
         println(line2print)
     end
     close(file_perm)
@@ -234,8 +239,8 @@ function run_pacco_lhs(experiment::String, params2per::Dict, nsim::Int)
         line2print = "s" * repeat("0", ndigits - length(digits(i))) * "$i $(permutations_dict[i])"
         line2print = "run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i $(permutations_dict[i])"
 
-        new_pi = Params(; (Symbol(k) => v for (k,v) in permutations_dict[i])...)  
-        run_pacco(experiment * experimenti, p = new_pi)
+        new_pi = Params(; (Symbol(k) => v for (k, v) in permutations_dict[i])...)
+        run_pacco(experiment * experimenti, p=new_pi)
         println(line2print)
     end
     # Done!
@@ -248,8 +253,8 @@ end
     runplot_pacco(experiment)
 runs and plot given `experiment` using parameters in `p`. Use `?run_pacco` for help.
 """
-function runplot_pacco(experiment::String; p::Params = Params())
-    run_pacco(experiment; p = p)
+function runplot_pacco(experiment::String; p::Params=Params())
+    run_pacco(experiment; p=p)
     plot_pacco(experiment)
 end
 
