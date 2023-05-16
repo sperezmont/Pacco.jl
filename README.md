@@ -15,9 +15,9 @@ git checkout -b new-branch    # for a new branch
 ```
 Go to the main `pacco` directory and configure the model
 ```bash
-julia config/config.jl
+julia config.jl
 ```
-This will create the directory `env` which is the virtual environment that includes the required Julia dependencies. Once it finishes you can run the model. Now download/create the directory for proxy data:
+This will configure the virtual environment of the model, It includes the required Julia dependencies. Once it finishes you can run the model. Now download/create the directory for proxy data:
 
 ```bash
 git clone https://github.com/sperezmont/Proxy.git
