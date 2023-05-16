@@ -46,7 +46,7 @@ Adapted from The Climate Laboratory of Brian E. J. Rose (https://brian-rose.gith
 """
 function calc_laskar_insolation(t::Real; lat::Real=65.0, day::Real=170.0, S0::Real=1365.2, day_type::Real=1, days_per_year::Real=365.2422)
     # First, calculate the orbital parameters at t (years) since J2000 epoch
-    long_peri, obliquity, ecc = orbital_params(t) # -- using Insolation.jl (rad, rad, --)
+    long_peri, obliquity, ecc = Insolation.orbital_params(OrbData, t) # -- using Insolation.jl (rad, rad, --)
     long_peri, obliquity = rad2deg(long_peri), rad2deg(obliquity)
     phi = deg2rad(lat)
 

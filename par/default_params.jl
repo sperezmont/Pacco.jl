@@ -133,3 +133,6 @@
 
     Ate::Real = 20.0                      # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
 end
+
+## Insolation (orbital) parameters
+global OrbData = Insolation.OrbitalData(Insolation.datadir())

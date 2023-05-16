@@ -6,7 +6,6 @@
 
 # Load dependencies
 using NCDatasets
-using DataStructures
 
 function genout_nc(outputpath::AbstractString, filename::AbstractString, outvalues, parameters::Params, attr::Dict; prec=Float64)
     # Note: here outvalues.u includes (u, v)

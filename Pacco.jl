@@ -4,13 +4,12 @@
 # =============================
 println("Getting Julia ready to run PACCO ...")
 using Pkg
-Pkg.activate("env")                         # -- activate pacco virtual environment
+Pkg.activate(".")                         # -- activate pacco virtual environment
 global pacco_path = pwd()                    # -- determine pacco path. This line assumes we are working from the main PACCO directory
 
 # -- import dependencies
 # ---- pacco
 using NCDatasets        # to make outputs and manage inputs (?)
-using DataStructures    # to create OrderedDict's 
 using Insolation        # to load orbital parameters
 using OrdinaryDiffEq        # solver for ODEs
 using NaNMath               # adaptive timestepping needs this package
@@ -44,7 +43,7 @@ include("./src/physics/geometry.jl")         # -- cryosphere functions
 include("./src/physics/dynamics.jl")         # 
 include("./src/physics/thermodynamics.jl")   #
 
-include("tests.jl")     # -- include tests.jl
+include("PaccoTests.jl")     # -- include tests.jl
 println("Done!")
 
 # PACCO header
