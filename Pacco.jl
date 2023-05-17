@@ -12,9 +12,7 @@ global pacco_path = pwd()                    # -- determine pacco path. This lin
 using NCDatasets        # to make outputs and manage inputs (?)
 using Insolation        # to load orbital parameters
 using OrdinaryDiffEq        # solver for ODEs
-using NaNMath               # adaptive timestepping needs this package
 using JLD2                  # to save Julia objects
-
 
 # ---- plotting
 using CairoMakie            # plotting interface

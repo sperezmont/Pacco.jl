@@ -62,28 +62,28 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
         # plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
         # printstyled("test 3 $(expname) completed\n", color=:green)
 
-        expname = "tests/test3_DynClim"
-        PaccoDynClimParams = Params(time_init=-2.0e6,
-            Hsed0=1.0,
-            active_sed=true, active_iso=true, active_climate=true, active_ice=true,
-            I_case="laskar", M_case="ITM",
-            ci=0.07, cc=0.65, cz=0.0065,
-            lambda=0.01, ki=0.05, ka=0.015, Aref=0.4)
-        run_pacco(expname, p=PaccoDynClimParams)
-        plot_pacco(expname, vars2plot=["Ianom", "Rco2", "H", "U", "Hsed", "iceage", "T", "co2"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
+        # expname = "tests/test3_DynClim"
+        # PaccoDynClimParams = Params(time_init=-2.0e6,
+        #     Hsed0=1.0,
+        #     active_sed=true, active_iso=true, active_climate=true, active_ice=true,
+        #     I_case="laskar", M_case="ITM",
+        #     ci=0.1, cc=0.65, cz=0.0065,
+        #     lambda=0.01, ki=0.05, ka=0.008, Aref=0.4)
+        # run_pacco(expname, p=PaccoDynClimParams)
+        # plot_pacco(expname, vars2plot=["Ianom", "A", "M", "U", "H", "Hsed", "T"], plot_MPT=true, plot_PSD=true)
+        # plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
         # printstyled("test 3 $(expname) completed\n", color=:green)
 
-        # expname = "tests/test3_DynClim_tests"
-        # PaccoDynClimParams = Dict("time_init" => [-2.0e6],
-        #     "Hsed0" => [1.0],
-        #     "active_sed" => [true], "active_iso" => [true], "active_climate" => [true], "active_ice" => [true],
-        #     "I_case" => ["laskar"], "M_case" => ["ITM"],
-        #     "alpha_slope" => 2e-6:0.1e-6:5e-6,
-        #     "ci" => [0.07], "cc" => [0.65], "cz" => [0.00685],
-        #     "lambda" => [0.064], "ki" => [0.025], "ka" => [0.02], "Aref" => [0.3])
-        # run_pacco_ensemble(expname, PaccoDynClimParams)
-        # plot_pacco(expname, vars2plot=["I", "H", "U", "Hsed", "alpha", "T", "co2"], plot_MPT=true, plot_PSD=true)
+        expname = "tests/test3_DynClim_tests"
+        PaccoDynClimParams = Dict("time_init" => [-2.0e6],
+            "Hsed0" => [1.0],
+            "active_sed" => [true], "active_iso" => [true], "active_climate" => [true], "active_ice" => [true],
+            "I_case" => ["laskar"], "M_case" => ["ITM"],
+            #"alpha_slope" => 2e-6:0.1e-6:5e-6,
+            "ci" => [0.1], "cc" => [0.65], "cz" => [0.0065],
+            "lambda" => [0.01], "ki" => [0.009, 0.025, 0.05], "ka" => [0.001, 0.005, 0.008], "Aref" => [0.4])
+        run_pacco_ensemble(expname, PaccoDynClimParams)
+        plot_pacco(expname, vars2plot=["Ianom", "A", "M", "U", "H", "Hsed", "T"], plot_MPT=true, plot_PSD=true)
     end
 
 

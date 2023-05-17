@@ -172,7 +172,7 @@ function calc_permutations(d::Dict)
     # create the list of dictionaries
     perm = []
     for i in 1:ncomb
-        push!(perm, OrderedDict(d_keys .=> list_of_perm[i]))
+        push!(perm, Dict(d_keys .=> list_of_perm[i]))
     end
     return perm
 end

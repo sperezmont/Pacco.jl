@@ -8,6 +8,7 @@ using Pkg
 
 # Check if Manifest.toml and Project.toml exist
 if isfile("Manifest.toml")
+    display("** Checking Manifest.toml ... **")
     Pkg.activate(".")
     Pkg.instantiate()
 else
@@ -17,7 +18,7 @@ else
 
     # Adding dependencies ... 
     display("** Adding dependencies ... **")
-    packages = ["OrdinaryDiffEq", "NaNMath", "JLD2",
+    packages = ["OrdinaryDiffEq", "JLD2",
                 "NCDatasets", "Insolation",
                 "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
                 "StatsBase", "Interpolations", "LatinHypercubeSampling",
