@@ -137,5 +137,5 @@ end
 calculates the radiative forcing due to co2 (in W/m²)
 """
 function calc_rad_co2(CO2::Real)
-    return 5.35 * log(CO2 / 280.0)
+    return 5.35 * NaNMath.log(CO2 / 280.0)
 end

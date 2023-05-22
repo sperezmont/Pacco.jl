@@ -129,7 +129,7 @@
     ki::Real = 0.025                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
     ka::Real = 0.02                       # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
-    Aref::Real = 0.3                      # [m/yr] Reference Accumulation for northern hemisphere
+    Aref::Real = 0.3                      # [m/yr] Reference Accumulation for northern hemisphere (Aref = Amean + ka * ΔTmean)
 
     Ate::Real = 20.0                      # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
 end

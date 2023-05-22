@@ -336,6 +336,105 @@ function plot_wavelet(experiment; var2plot="H", fs=1 / 1000, sigma=π, MPT=false
     save(pacco_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
 
+function plot_pacco_states(experiment)
+    prognostic = ["T", "co2", "iceage", "alpha", "H", "Hsed", "B", "Tice", "fstream"]
+    diagnostic = ["I", "R", "Tsl", "Tref",  # radiative forcing and climate response
+        "Z", "E", "V",  # ice geometry
+        "alpha_ref", "Tsurf",   # climate parameters
+        "A", "M",   # ice-sheet mass balance
+        "taud", "taub", "Ud", "Ub", "fstream_ref", "U", # ice dynamics
+        "Qdif", "Qdrag"]   # ice thermodynamics
+    pacco_states = vcat(prognostic, diagnostic)
+
+    path2data = pwd() * "/output/$(experiment)/pacco.nc"
+    data_frame = NCDataset(path2data, "r")
+    fig, k = Figure(resolution=(2000, 800)), 1
+    for i in 1:4, j in 1:7
+        ax = Axis(fig[i, j], ylabel=pacco_states[k])
+        lines!(ax, data_frame["time"] ./ 1e3, data_frame[pacco_states[k]])
+        k += 1
+    end
+
+    save(pwd()*"/output/"*experiment*"/pacco_states.png", fig)
+end
+
+function plot_pacco_comp_states(experiment::String)
+    path2data = pwd() * "/output/$(experiment)/pacco.nc"
+    parameters2use = JLD2.load_object(pwd() * "/output/$(experiment)/params.jld2")
+    data_frame = NCDataset(path2data, "r")
+
+    selected_alpha = Vector{Float32}(undef, length(data_frame["time"]))
+    for t in eachindex(data_frame["time"])
+        if data_frame["MB"][t] <= 0
+            selected_alpha[t] = data_frame["alpha"][t]
+        else
+            selected_alpha[t] = parameters2use.alpha_newice
+        end
+    end
+    
+    # Temperature evolution
+    fig = Figure()
+    ax = Axis(fig[1, 1], ylabel="Temperature evolution")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="Insolation forcing")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="CO2 feedback")
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="Cooling effect")
+    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
+    fig[1, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="Temperature")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["T"], color=:grey20, label="T")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["Tref"], color=:grey, label="Tref")
+    fig[2, 2] = Legend(fig, ax, framevisible=false)
+    save(pwd()*"/output/"*experiment*"/pacco_comp_states_T.png", fig)
+
+    # Ice evolution
+    fig = Figure()
+    ax = Axis(fig[1, 1], ylabel="Ice evolution")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"], label="A")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["M"], label="M")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["U"] .* data_frame["H"] ./ parameters2use.L, label="U⋅H/L", color=:green)
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"] .- data_frame["M"] .- data_frame["U"] .* data_frame["H"] ./ parameters2use.L, label="dH/dt", color=:grey20)
+    fig[1, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="Size (m)")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:grey20, label="H")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["Z"], color=:royalblue4, label="Z")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["B"], color=:violet, label="B")
+    fig[2, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="Ice velocity", yaxisposition=:right, yticklabelcolor=:green, ygridvisible=false, ylabelcolor=:green)
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["U"], color=:green)
+    save(pwd()*"/output/"*experiment*"/pacco_comp_states_H.png", fig)
+
+    # Melting terms
+    fig = Figure()
+    ax = Axis(fig[1, 1], ylabel="Melting terms")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ki .* (1 .- data_frame["alpha"]) .* data_frame["Ianom"], label="Insolation term, MB ≤ 0")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ki .* (1 .- parameters2use.alpha_newice) .* data_frame["Ianom"], label="Insolation term, MB > 0")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], label="Insolation term, α selected")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), label="Temperature term")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"], label="A", color="navy")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["M"], label="M", color="red")
+    fig[1, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="Mass balance")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey20)
+    save(pwd()*"/output/"*experiment*"/pacco_comp_states_MB.png", fig)
+
+    # Albedo
+    fig = Figure(resolution=(1000, 500))
+    ax = Axis(fig[1, 1], ylabel="Albedo", yticklabelcolor=:green, ylabelcolor=:green)
+    scatter!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="α", color=:olive, markersize=5)
+    scatter!(ax, data_frame["time"] ./ 1e3, selected_alpha, label="α selected", color=:green, markersize=5)
+    fig[1, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[1, 1], ylabel="MB", yaxisposition=:right)
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey)
+    if minimum(data_frame["MB"]) != -minimum(data_frame["MB"])
+        ylims!(ax, minimum(data_frame["MB"]), -minimum(data_frame["MB"]))
+    end
+    ax = Axis(fig[1, 1], ylabel="H", yaxisposition=:right, ylabelcolor=:royalblue4, yticklabelcolor=:royalblue4)
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:royalblue4)
+    ylims!(ax, -maximum(data_frame["H"]), maximum(data_frame["H"]))
+    save(pwd()*"/output/"*experiment*"/pacco_comp_states_alpha.png", fig)
+end
+
+
 # OLD CODE, do not use these functions!
 
 function collect_variable(str::String)

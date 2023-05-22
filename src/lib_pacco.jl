@@ -256,6 +256,8 @@ runs and plot given `experiment` using parameters in `p`. Use `?run_pacco` for h
 function runplot_pacco(experiment::String; p::Params=Params())
     run_pacco(experiment; p=p)
     plot_pacco(experiment)
+    plot_pacco_states(experiment)
+    plot_pacco_comp_states(experiment)
 end
 
 """

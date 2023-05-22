@@ -13,6 +13,7 @@ using NCDatasets        # to make outputs and manage inputs (?)
 using Insolation        # to load orbital parameters
 using OrdinaryDiffEq        # solver for ODEs
 using JLD2                  # to save Julia objects
+using NaNMath
 
 # ---- plotting
 using CairoMakie            # plotting interface
@@ -55,6 +56,8 @@ printstyled("|      --> run_pacco_lhs(experiment, params2per, nsim)           | 
 printstyled("|                                                                | \n")
 printstyled("|    To plot results:                                            | \n")
 printstyled("|      --> plot_pacco(experiment; vars2plot)                     | \n")
+printstyled("|      --> plot_pacco_states(experiment)                         | \n")
+printstyled("|      --> plot_pacco_comp_states(experiment)                    | \n")
 printstyled("|      --> plot_wavelet(experiment; vars2plot)                   | \n")
 printstyled("|                                                                | \n")
 printstyled("|    Shortcuts:                                                  | \n")

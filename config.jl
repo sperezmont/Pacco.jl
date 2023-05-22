@@ -10,15 +10,15 @@ using Pkg
 if isfile("Manifest.toml")
     display("** Checking Manifest.toml ... **")
     Pkg.activate(".")
+    Pkg.resolve()
     Pkg.instantiate()
 else
     # Environment generation
-    Pkg.generate(env_name)
-    Pkg.activate(env_name)
+    Pkg.activate(".")
 
     # Adding dependencies ... 
     display("** Adding dependencies ... **")
-    packages = ["OrdinaryDiffEq", "JLD2",
+    packages = ["OrdinaryDiffEq", "NaNMath", "JLD2",
                 "NCDatasets", "Insolation",
                 "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
                 "StatsBase", "Interpolations", "LatinHypercubeSampling",
