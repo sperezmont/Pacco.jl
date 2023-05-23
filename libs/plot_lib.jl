@@ -8,15 +8,20 @@
     plot_pacco(experiment; vars2plot, plot_MPT, plot_MIS, plot_PSD, times, time_anth, plot_proxies, proxy_files)
 calculates spectrum and plots results from PACCO (given or not the variables to plot)
 
-## Attributes
-* `experiment`      --> experiment/experiments name/names
-* `vars2plot`       --> vector of variables to plot
-* `plot_MPT`        --> plot MPT?   (Mid-Pleistocene Transition)
-* `plot_PSD`        --> calculate and plot PSD? (Power Spectrum Density)
-* `plot_proxies`    --> include proxy curves?
-* `proxy_files`     --> dictionary with the names of the proxy files to use in T/, co2/ and V/
+### Arguments
+* `experiment` experiment/experiments name/names (`string` or `vector of strings`)
+
+### Optional arguments
+* `vars2plot::Vector = ["I", "H", "T", "co2", "V"]` vector of variables to plot
+* `plot_MPT::Bool = false` plot Mid-Pleistocene Transition?
+* `plot_MIS::Bool = false` plot Marine Isotope Stages?
+* `plot_PSD::Bool = true` calculate and plot Power Spectrum Density?
+* `times::Tuple = ()` start and end years (in years)
+* `time_anth::Real = 2000.0` when does Anthropocene start?
+* `plot_proxies::Bool = true` include proxy curves?
+* `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, co2/ and V/
 """
-function plot_pacco(experiment; vars2plot=["I", "H", "T", "co2", "V"], plot_MPT=false, plot_MIS=false, plot_PSD=true, times=(), time_anth=2000.0, plot_proxies=true, proxy_files=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     proxy_path = pwd() .* "/data/"
 
@@ -37,7 +42,7 @@ function plot_pacco(experiment; vars2plot=["I", "H", "T", "co2", "V"], plot_MPT=
         plot_proxies = false
     end
 
-    data_to_load, data_labels = get_runs(experiment)
+    data_to_load, data_labels, experiment = get_runs(experiment)
     multi_colormap = :darkrainbow
 
     if length(data_to_load) > 1
@@ -245,8 +250,18 @@ end
 """
     plot_wavelet(experiment; var2plot, fs, sigma, MPT, time_anth)
 plots the wavelet map of `experiment`
+
+### Arguments
+* `experiment::String` experiment name
+
+### Optional arguments
+* `var2plot::String = "H"` variable to plot
+* `fs::Real = 1 / 1000` sampling frequency
+* `sigma::Real = π` value of central frequency
+* `plot_MPT::Bool = false` plot Mid-Pleistocene Transition?
+* `time_anth::Real = 2000.0` when does Anthropocene start?
 """
-function plot_wavelet(experiment; var2plot="H", fs=1 / 1000, sigma=π, MPT=false, time_anth=2000.0)
+function plot_wavelet(experiment::String; var2plot::String="H", fs::Real=1 / 1000, sigma::Real=π, plot_MPT::Bool=false, time_anth::Real=2000.0)
     ## 1. Load output data 
     path2data = pwd() * "/output/$(experiment)/pacco.nc"
     t = NCDataset(path2data, "r") do ds
@@ -284,9 +299,9 @@ function plot_wavelet(experiment; var2plot="H", fs=1 / 1000, sigma=π, MPT=false
     c = contourf!(ax2, t, log10.(periods ./ 1e3), Wnorm, colormap=cmap, levels=minW:stepW:maxW)
 
     # 3.4 Plot if desired MPT and Anthropocene
-    (MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
+    (plot_MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
     (t[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=1, color=:black, linestyle=:dash))
-    (MPT) && (vlines!(ax2, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
+    (plot_MPT) && (vlines!(ax2, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
     (t[end] > time_anth) && (vlines!(ax2, [time_anth], linewidth=1, color=:black, linestyle=:dash))
 
     # 3.5 Plot main Milankovitch periodicities
@@ -336,6 +351,13 @@ function plot_wavelet(experiment; var2plot="H", fs=1 / 1000, sigma=π, MPT=false
     save(pacco_path * "/output/" * experiment * "/" * var2plot * "_wavelet.png", fig)
 end
 
+"""
+    plot_states(experiment)
+plots all the states of PACCO `experiment`
+
+### Arguments
+* `experiment::String` experiment name
+"""
 function plot_pacco_states(experiment)
     prognostic = ["T", "co2", "iceage", "alpha", "H", "Hsed", "B", "Tice", "fstream"]
     diagnostic = ["I", "R", "Tsl", "Tref",  # radiative forcing and climate response
@@ -358,6 +380,13 @@ function plot_pacco_states(experiment)
     save(pwd()*"/output/"*experiment*"/pacco_states.png", fig)
 end
 
+"""
+    plot_states(experiment)
+makes some composite plots of PACCO `experiment`
+
+### Arguments
+* `experiment::String` experiment name
+"""
 function plot_pacco_comp_states(experiment::String)
     path2data = pwd() * "/output/$(experiment)/pacco.nc"
     parameters2use = JLD2.load_object(pwd() * "/output/$(experiment)/params.jld2")
@@ -432,250 +461,5 @@ function plot_pacco_comp_states(experiment::String)
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:royalblue4)
     ylims!(ax, -maximum(data_frame["H"]), maximum(data_frame["H"]))
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_alpha.png", fig)
-end
-
-
-# OLD CODE, do not use these functions!
-
-function collect_variable(str::String)
-    if str[1:end-2] in ["T_surf", "T_ice", "T_rf", "T_ref"]
-        return str[1:end-2]
-    else
-        idx = 1
-        for i in eachindex(str)
-            if str[i] == '_'
-                idx = i
-                break
-            end
-        end
-        return str[1:idx-1]
-    end
-end
-
-"""
-    plot_std(experiment, filename)
-
-"""
-function plot_std(experiment; var2plot="H_n", cmap=:darktest)
-    path_to_results = get_path_to_results_or_runs(experiment, "runs")
-    runs = path_to_results .* "/" .* readdir(path_to_results) .* "/pacco.nc"
-    labels = get_exp_labels(runs)
-    # if length(runs) > 1000
-    #     error("Too much runs to plot ... (> 1000)")
-    # end
-
-    fig = Figure()
-    ax = Axis(fig[1, 1], ylabel="std $(var2plot)")
-    color_list = collect(cgrad(cmap, length(runs), categorical=true))
-    palettes, k = (color=color_list,)[1], 1
-    for run in runs
-        df = NCDataset(run, "r")
-        x = df[var2plot][:]
-
-        scatter!(ax, k, std(x), color=palettes[k], markersize=30)
-
-        k += 1
-    end
-
-    step = length(runs) / 20
-    if step < 1
-        step = 1
-    else
-        step = Int(ceil(step))
-    end
-
-    ticks_selected = 1:step:length(runs)
-    new_labels = labels[ticks_selected]
-
-    ax.xticks = (ticks_selected, new_labels)
-    Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
-        limits=(1, length(runs)),
-        ticks=(ticks_selected, new_labels),
-        label="runs"
-    )
-    save(get_path_to_results_or_runs(experiment, "results") * "/ensemble_std.png", fig)
-end
-
-
-"""
-    fast_histogram(experiment, filename)
-this function assumes we want a no so fancy plot so it just plots the histogram of an ensembleof good runs stored in `good_runs.txt`
-
-"""
-function fast_histogram(experiment, filename; all_runs=true, plot_name="fast_histogram.png")
-    path_to_results = get_path_to_results_or_runs(experiment, "results")
-
-    if all_runs
-        runs = readlines(path_to_results * "/$(filename)") .* "/pacco.nc"
-    else
-        runs = get_good_runs_from_file(path_to_results * "/$(filename)") .* "/pacco.nc"
-    end
-    labels = get_exp_labels(runs)
-
-    aux_runs_vector = readlines(path_to_results * "/$(filename)")
-    par_names, parameters = get_parameters_from_runs(experiment, filename, all_runs=all_runs)
-
-    fig = Figure(resolution=(500 * length(par_names), 500))
-
-    for i in eachindex(par_names)
-        if i == 1
-            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", ylabel="Amount of runs", xticklabelrotation=pi / 2)
-        else
-            ax = Axis(fig[1, i], title=par_names[i], xlabel="Values", xticklabelrotation=pi / 2)
-        end
-        ax2 = Axis(fig[1, i], yaxisposition=:right, ygridstyle=:dash, ygridcolor=(:red, 0.4), rightspinecolor=:red, yticklabelcolor=:red, xticklabelrotation=pi / 2)
-
-        data = [parameters[j][i] for j in 1:length(parameters)]
-
-        color = 1:length(data)
-        if all_runs == true
-            color = 1:length(aux_runs_vector)
-            for d in eachindex(data)
-                if aux_runs_vector[d][1:3] == "NS_"
-                    data[d] = NaN64
-                end
-            end
-        end
-
-        ocurrences = counter(data)
-        display(ocurrences)
-        kys, vls = collect(keys(ocurrences)), collect(values(ocurrences))
-
-        barplot!(ax, kys, vls, color=(:black, 0.5))
-        scatter!(ax2, data, 1:length(data), colormap=:darktest, color=color)
-
-        step = maximum(vls) / 20
-        if step < 1
-            step = 1
-        else
-            step = Int(ceil(step))
-        end
-
-        ticks_selected = 0:step:maximum(vls)
-        ax2.yticks = ticks_selected
-
-        step = length(runs) / 20
-        if step < 1
-            step = 1
-        else
-            step = Int(ceil(step))
-        end
-
-        ticks_selected = 1:step:length(runs)
-        new_labels = labels[ticks_selected]
-
-        ax.xticks, ax2.xticks = kys, kys
-        ax2.yticks = (ticks_selected, new_labels)
-        ylims!(ax, (0, length(runs) + 5))
-        ylims!(ax2, (0, length(runs) + 5))
-        linkxaxes!(ax, ax2)
-
-        if i != length(par_names)
-            hideydecorations!(ax2, grid=false)
-        end
-        if i != 1
-            hideydecorations!(ax, grid=false)
-        end
-
-    end
-
-    save(path_to_results * "/$(plot_name)", fig)
-end
-
-
-"""
-    fast_plot(experiment, filename; var2plot="H_n", cmap=:heat)
-this function assumes we want a no so fancy plot so it just plots variable `var2plot` of good runs stored in `good_runs.txt` with a gradation of colors
-
-"""
-function fast_plot(experiment, filename; var2plot="H_n", cmap=:darkrainbow, all_runs=true, plot_PSD=false, plot_name="fast_plot.png")
-    path_to_results = get_path_to_results_or_runs(experiment, "results")
-
-    if all_runs
-        runs = readlines(path_to_results * "/$(filename)") .* "/pacco.nc"
-    else
-        runs = get_good_runs_from_file(path_to_results * "/$(filename)") .* "/pacco.nc"
-    end
-    labels = get_exp_labels(runs)
-
-    # if length(runs) > 1000
-    #     error("Too much runs to plot ... (> 1000)")
-    # end
-
-    fig = Figure(resolution=(2000, 600))
-    (plot_PSD) ? (xlabel = "Period (kyr)") : (xlabel = "Time (kyr)")
-    ax = Axis(fig[1, 1], ylabel=var2plot, xlabel=xlabel)
-    if length(runs) > 1
-        color_list = collect(cgrad(cmap, length(runs), categorical=true))
-        palettes, k = (color=color_list,)[1], 1
-    else
-        palettes, k = :red, 1
-    end
-    t, periods = [], []
-    for run in runs
-        if run[1:3] == "NS_"
-            k += 1
-            continue
-        end
-
-        df = NCDataset(run, "r")
-        x, t = df[var2plot][:], df["time"][:]
-
-        if length(runs) > 1
-            color = palettes[k]
-        else
-            color = palettes
-        end
-
-        if plot_PSD == true
-            G, f = calc_spectrum(x, 1 / (t[2] - t[1]))
-            time2cut = t[Int(ceil(length(t) / 2))]
-            G, f = G[f.>-1/time2cut], f[f.>-1/time2cut]   # filtering
-            G = G ./ sum(G)
-            periods = 1 ./ f
-            scatterlines!(ax, periods ./ 1000, G, color=color, markersize=3, linewidth=0.5)
-        else
-            scatterlines!(ax, t ./ 1000, x, color=color, markersize=3, linewidth=0.5)
-        end
-        k += 1
-    end
-
-    if plot_PSD == false
-        xlims!(ax, (t[1] / 1000, t[end] / 1000))
-        if (t[end] - t[1]) > 2.0e3
-            tstep = 300
-        elseif (t[end] - t[1]) > 800
-            tstep = 200
-        else
-            tstep = 100
-        end
-        ax.xticks = -5e3:tstep:5e3
-        ax.xtickformat = k -> string.(Int.(k))
-    else
-        ax.xticks = 0:20:500
-    end
-
-    step = length(runs) / 20
-    if step < 1
-        step = 1
-    else
-        step = Int(ceil(step))
-    end
-
-    ticks_selected = 1:step:length(runs)
-    new_labels = labels[ticks_selected]
-
-    if length(runs) > 1
-        Colorbar(fig[1, 2], height=Relative(1), colormap=cmap,
-            limits=(1, length(runs)),
-            ticks=(ticks_selected, new_labels),
-            label="runs"
-        )
-    end
-    if plot_PSD
-        save(path_to_results * "/$(var2plot)_PSD_$(plot_name)", fig)
-    else
-        save(path_to_results * "/$(var2plot)_$(plot_name)", fig)
-    end
 end
 

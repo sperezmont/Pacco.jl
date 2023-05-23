@@ -51,9 +51,15 @@ end
 gets the experiment or experiments given a string or a vector of strings
 """
 function get_runs(experiment)
-    out_path = pwd() .* "/output/" .* experiment .* "/"
-    
     if typeof(experiment) == String
+        if split(experiment, "/")[1] == "output"
+            out_path = pwd() * "/" * experiment * "/"
+            new_experiment = join(split(experiment, "/")[2:end], "/")
+        else
+            out_path = pwd() * "/output/" * experiment * "/"
+            new_experiment = experiment
+        end
+
         if isfile(out_path * "/pacco.nc")   # one run
             labels = [split(out_path, "/")[2]]
             desired_runs = out_path .* ["/pacco.nc"]
@@ -63,10 +69,12 @@ function get_runs(experiment)
             labels = [split.(desired_runs[i], "/")[end-1] for i in eachindex(desired_runs)]
         end
     elseif typeof(experiment) == Vector{String}
+        out_path = pwd() .* "/output/" .* experiment .* "/"
         labels = experiment
         desired_runs = out_path .* "/pacco.nc"
+        new_experiment = experiment
     end
-    return desired_runs, labels
+    return desired_runs, labels, new_experiment
 end
 
 @doc """

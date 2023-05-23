@@ -17,11 +17,13 @@ julia config.jl
 ```
 This will configure the virtual environment of the model, It includes the required Julia dependencies. Once it finishes you can run the model. Now download/create the directory for proxy data:
 
+Download from github:
 ```bash
 git clone https://github.com/sperezmont/Proxy.git
-mv Proxy data
+mv Proxy data 		# plot functions need data as the directory's name
 ```
 
+Create a virtual link from your local directory to the folder `data` in `pacco` directory
 ```bash
 ln -s path/to/proxy/directory/ data/
 ```

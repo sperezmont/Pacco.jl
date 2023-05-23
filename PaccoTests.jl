@@ -15,7 +15,7 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
             lambda=0.05, ka=0.008, Aref=0.4)
         run_pacco(expname, p=PaccoDynParams)
         plot_pacco(expname, vars2plot=["I", "H", "B", "Hsed", "U"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
+        plot_wavelet(expname, plot_MPT=true, fs=1 / 1000, sigma=π)
         printstyled("test 1 $(expname) completed\n", color=:green)
     end
 
@@ -65,7 +65,7 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
         plot_pacco_states(expname)
         plot_pacco_comp_states(expname)
         plot_pacco(expname, vars2plot=["I", "H", "T", "co2"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
+        plot_wavelet(expname, plot_MPT=true, fs=1 / 1000, sigma=π)
         printstyled("test 2 $(expname) completed\n", color=:green)
 
     end
@@ -117,7 +117,7 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
         plot_pacco_states(expname)
         plot_pacco_comp_states(expname)
         plot_pacco(expname, vars2plot=["I", "H", "Hsed", "T", "co2", "V"], plot_MPT=true, plot_PSD=true)
-        plot_wavelet(expname, MPT=true, fs=1 / 1000, sigma=π)
+        plot_wavelet(expname, plot_MPT=true, fs=1 / 1000, sigma=π)
         printstyled("test 3 $(expname) completed\n", color=:green)
 
         # expname = "tests/test3_DynClim_last800kyr"
