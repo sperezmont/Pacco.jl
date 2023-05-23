@@ -45,6 +45,19 @@ function calc_coi(t::Vector, f::Vector, cf::Real)
     return t_samples, p_samples
 end
 
+"""
+    filt_ensemble(experiment, rule)
+filters an ensemble `experiment` using `rule`. Output directory is `experiment_r{rule number}` 
+
+### Attributes
+* `experiment::String`
+* `rule::Function`
+"""
+function filt_ensemble(experiment::String, rule::Function)
+
+
+end
+
 ## OLD code
 
 function cut_time_series(d1::Dict, d2::Dict)

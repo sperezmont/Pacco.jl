@@ -153,6 +153,7 @@ function run_pacco(experiment::String; p::Params=Params())
     ## Run pacco()
     u0, out_attr = load_defs(p)
     out = pacco(u0, p, (p.time_init, p.time_end))
+    JLD2.save_object(output_path * "/pacco.jld2", out)
 
     ## Create output nc file
     # if outfile exists remove it
