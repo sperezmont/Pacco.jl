@@ -404,9 +404,9 @@ function plot_pacco_comp_states(experiment::String)
     # Temperature evolution
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="Temperature evolution")
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="Insolation forcing")
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="CO2 feedback")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="Cooling effect")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(co2/280)")
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z")
     lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[2, 1], ylabel="Temperature")
@@ -436,10 +436,10 @@ function plot_pacco_comp_states(experiment::String)
     fig = Figure(resolution=(1000, 500))
     ax = Axis(fig[1, 1], ylabel="Melting terms")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey, label="MB")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], 0.0), label="Insolation term, α selected", color=:orange)
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), 0.0), label="Temperature term", color=:maroon)
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"], label="A", color="blue")
     lines!(ax, data_frame["time"] ./ 1e3, -1 .* data_frame["M"], label="M", color="red")
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], 0.0), label="-kᵢ⋅(1-α)⋅Ianom", color=:orange)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), 0.0), label="-λ⋅(T-Tref)", color=:maroon)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_MB.png", fig)
 
@@ -461,23 +461,30 @@ function plot_pacco_comp_states(experiment::String)
 end
 
 """
-    fastplot_pacco(experiment, y; x = "time")
+    fastplot(experiment, y; x = "time")
 makes some composite plots of PACCO `experiment`
 
 ### Arguments
 * `experiment` experiment/experiments name/names (`string` or `vector of strings`)
 * `y::String` variable to plot in y axis
 * `x::String = "time"` variable to plot in x axis
+* `use_colormap::Bool = false` use colormap? (use only if one simulation)
+* `plot_function::Function = lines!` CairoMakie function to use when plotting (lines!, scatter!) 
 """
-function fastplot_pacco(experiment, y::String; x::String="time")
+function fastplot(experiment, y::String; x::String="time", use_colormap::Bool=false, plot_function::Function=lines!)
     data_to_load, data_labels, experiment = get_runs(experiment)
 
     fig = Figure()
     ax = Axis(fig[1, 1])
-
+    times = []
     for i in eachindex(data_to_load)
         df = NCDataset(data_to_load[i])
-        lines!(ax, df[x], df[y], label = data_labels[i])
+        if use_colormap
+            times = df["time"]
+            plot_function(ax, df[x], df[y], label = data_labels[i], color=df["time"], colormap=:blues)
+        else
+            plot_function(ax, df[x], df[y], label = data_labels[i])
+        end
         if i == 1
             if x == "time"
                 ax.xlabel = "Time (yr)"
@@ -490,13 +497,17 @@ function fastplot_pacco(experiment, y::String; x::String="time")
     
     fig[1, 2] = Legend(fig, ax, framevisible=false)
 
+    if use_colormap
+        Colorbar(fig[2, 1], colormap=:blues, limits = (times[1], times[end]), vertical=false, label = "Time (yr)")
+    end
+
     if typeof(experiment) == String
         if length(data_to_load) > 1
-            save(pacco_path * "/output/" * experiment * "/results/" * "pacco_fastplot.png", fig)
+            save(pacco_path * "/output/" * experiment * "/results/" * "pacco_fastplot_$(y)vs$(x).png", fig)
         else
-            save(pacco_path * "/output/" * experiment * "/" * "pacco_fastplot.png", fig)
+            save(pacco_path * "/output/" * experiment * "/" * "pacco_fastplot_$(y)vs$(x).png", fig)
         end
     else
-        save(pacco_path * "/output/" * experiment[1] * "/" * "pacco_nruns_fastplot.png", fig)
+        save(pacco_path * "/output/" * experiment[1] * "/" * "pacco_nruns_fastplot_$(y)vs$(x).png", fig)
     end
 end

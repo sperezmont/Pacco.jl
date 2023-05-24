@@ -2,6 +2,8 @@
 #     Program: Pacco.jl
 #     Aim: prepare Julia for simulations of PACCO (default_params.jl)
 # =============================
+source_parameter_file = "default_params.jl" # Params struct to use
+
 println("Getting Julia ready to run PACCO ...")
 using Pkg
 Pkg.activate(".")                         # -- activate pacco virtual environment
@@ -27,7 +29,7 @@ using LatinHypercubeSampling    # ""
 using Images: findlocalmaxima   # we only need findlocalmaxima() (IMPORTANT!!)
 
 # -- import model libraries and functions
-include("./par/default_params.jl")           # -- includes source parameter file 
+include("./par/$(source_parameter_file)")           # -- includes source parameter file 
 
 include("./libs/misc.jl")              # -- includes libraries
 include("./libs/nc.jl")

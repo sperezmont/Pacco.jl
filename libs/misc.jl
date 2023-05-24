@@ -63,7 +63,6 @@ function get_runs(experiment)
         if isfile(out_path * "/pacco.nc")   # one run
             labels = [new_experiment]
             desired_runs = out_path .* ["/pacco.nc"]
-            display(labels)
         else    # ensemble of runs
             elements = readdir(out_path .* "/runs/")
             desired_runs = out_path .* "/runs/" .* elements .* "/pacco.nc"
