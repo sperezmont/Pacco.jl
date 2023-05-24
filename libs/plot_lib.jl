@@ -460,3 +460,43 @@ function plot_pacco_comp_states(experiment::String)
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_alpha.png", fig)
 end
 
+"""
+    fastplot_pacco(experiment, y; x = "time")
+makes some composite plots of PACCO `experiment`
+
+### Arguments
+* `experiment` experiment/experiments name/names (`string` or `vector of strings`)
+* `y::String` variable to plot in y axis
+* `x::String = "time"` variable to plot in x axis
+"""
+function fastplot_pacco(experiment, y::String; x::String="time")
+    data_to_load, data_labels, experiment = get_runs(experiment)
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+
+    for i in eachindex(data_to_load)
+        df = NCDataset(data_to_load[i])
+        lines!(ax, df[x], df[y], label = data_labels[i])
+        if i == 1
+            if x == "time"
+                ax.xlabel = "Time (yr)"
+            else
+                ax.xlabel = "$(x) ($(df[x].attrib["units"]))"
+            end
+            ax.ylabel = "$(y) ($(df[y].attrib["units"]))"
+        end
+    end
+    
+    fig[1, 2] = Legend(fig, ax, framevisible=false)
+
+    if typeof(experiment) == String
+        if length(data_to_load) > 1
+            save(pacco_path * "/output/" * experiment * "/results/" * "pacco_fastplot.png", fig)
+        else
+            save(pacco_path * "/output/" * experiment * "/" * "pacco_fastplot.png", fig)
+        end
+    else
+        save(pacco_path * "/output/" * experiment[1] * "/" * "pacco_nruns_fastplot.png", fig)
+    end
+end
