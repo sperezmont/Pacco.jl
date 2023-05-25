@@ -163,7 +163,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
                 label = label * ", $(data_labels[e])"
             end
 
-            if vars2plot[v] == "T"
+            if vars2plot[v] in ["T", "Tsurf"]
                 lines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
             else
                 lines!(ax, time_v[e][:], data_v[e][:], markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
@@ -404,15 +404,13 @@ function plot_pacco_comp_states(experiment::String)
     # Temperature evolution
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="Temperature evolution")
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom")
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(co2/280)")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z")
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom", color=:orange)
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(co2/280)", color=:maroon)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z", color=:royalblue4)
     lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
-    ax = Axis(fig[2, 1], ylabel="Temperature")
-    lines!(ax, data_frame["time"] ./ 1e3, data_frame["T"], color=:grey20, label="T")
-    lines!(ax, data_frame["time"] ./ 1e3, data_frame["Tref"], color=:grey, label="Tref")
-    fig[2, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="T")
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["T"] .- data_frame["Tref"], color=:grey20, label="T")
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_T.png", fig)
 
     # Ice evolution
@@ -423,13 +421,13 @@ function plot_pacco_comp_states(experiment::String)
     lines!(ax, data_frame["time"] ./ 1e3, -1 .* data_frame["U"] .* data_frame["H"] ./ parameters2use.L, label="U⋅H/L", color=:green)
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"] .- data_frame["M"] .- data_frame["U"] .* data_frame["H"] ./ parameters2use.L, label="dH/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
+    ax = Axis(fig[2, 1], ylabel="Ice velocity", yaxisposition=:right, yticklabelcolor=:green, ygridvisible=false, ylabelcolor=:green)
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["U"], color=:green)
     ax = Axis(fig[2, 1], ylabel="Size (m)")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:grey20, label="H")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["Z"], color=:royalblue4, label="Z")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["B"], color=:violet, label="B")
     fig[2, 2] = Legend(fig, ax, framevisible=false)
-    ax = Axis(fig[2, 1], ylabel="Ice velocity", yaxisposition=:right, yticklabelcolor=:green, ygridvisible=false, ylabelcolor=:green)
-    lines!(ax, data_frame["time"] ./ 1e3, data_frame["U"], color=:green)
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_H.png", fig)
 
     # Melting terms
@@ -446,22 +444,16 @@ function plot_pacco_comp_states(experiment::String)
     # Albedo
     fig = Figure(resolution=(1000, 500))
     ax = Axis(fig[1, 1], ylabel="Albedo", yticklabelcolor=:green, ylabelcolor=:green)
-    scatter!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="α", color=:olive, markersize=5)
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="α", color=:olive, markersize=5)
     scatter!(ax, data_frame["time"] ./ 1e3, selected_alpha, label="α selected", color=:green, markersize=5)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
-    ax = Axis(fig[1, 1], ylabel="MB", yaxisposition=:right)
-    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey)
-    if minimum(data_frame["MB"]) != -minimum(data_frame["MB"])
-        ylims!(ax, minimum(data_frame["MB"]), -minimum(data_frame["MB"]))
-    end
-    ax = Axis(fig[1, 1], ylabel="H", yaxisposition=:right, ylabelcolor=:royalblue4, yticklabelcolor=:royalblue4)
-    lines!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:royalblue4)
-    ylims!(ax, -maximum(data_frame["H"]), maximum(data_frame["H"]))
+    ax = Axis(fig[1, 1], ylabel="iceage", yaxisposition=:right, ylabelcolor=:grey20)
+    lines!(ax, data_frame["time"] ./ 1e3, data_frame["iceage"], color=:grey20)
     save(pwd()*"/output/"*experiment*"/pacco_comp_states_alpha.png", fig)
 end
 
 """
-    fastplot(experiment, y; x = "time")
+    fastplot(experiment, y; x="time", use_colormap=false, plot_function=lines!)
 makes some composite plots of PACCO `experiment`
 
 ### Arguments

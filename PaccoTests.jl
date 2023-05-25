@@ -43,11 +43,13 @@ function run_tests(; testDyn=false, testClim=false, testDynClim=false)
                                  active_sed = true, active_iso = true, active_climate = true, active_ice = true,
                                  I_case = "laskar", M_case = "ITM",
                                  alpha_slope=5e-6, ktco2=10.0,
-                                 ci = 0.08, cc = 0.65, cz = 0.0065,
+                                 ci = 0.08, cc = 0.65
+                                 , cz = 0.005,
                                  lambda = 0.1, ki = 0.025, ka = 0.02, Aref = 0.3)
         run_pacco(expname, p = PaccoDynClimParams)
         plot_pacco(expname, vars2plot=["I", "H", "T", "co2", "V", "Hsed"], times=(-8e5,0), plot_MPT=true, plot_PSD=true)
         plot_wavelet(expname, plot_MPT=true, fs=1 / 1000, sigma=π)
+        plot_pacco_comp_states("tests/test3_DynClim")
         printstyled("test 3 $(expname) completed\n", color=:green)
     end
 end

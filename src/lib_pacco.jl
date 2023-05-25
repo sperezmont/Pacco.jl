@@ -261,7 +261,7 @@ function runplot_pacco(experiment::String; p::Params=Params())
 end
 
 """
-    runplot_pacco_ensemble(experiment)
+    runplot_pacco_ensemble(experiment, params2per)
 runs and plot given an ensemble named `experiment` using parameters in `p`. Use `?run_pacco` for help.
 """
 function runplot_pacco_ensemble(experiment::String, params2per::Dict)
@@ -270,10 +270,22 @@ function runplot_pacco_ensemble(experiment::String, params2per::Dict)
 end
 
 """
-    runplot_pacco_lhs(experiment)
+    runplot_pacco_lhs(experiment, params2per, nsim)
 runs and plot given an ensemble named `experiment` using parameters in `p` (Latin Hypercube Sampling mode). Use `?run_pacco` for help.
 """
 function runplot_pacco_lhs(experiment::String, params2per::Dict, nsim::Int)
     run_pacco_lhs(experiment, params2per, nsim)
     plot_pacco(experiment)
+end
+
+function display_shortcuts()
+    printstyled("Some available shortcuts: \n", color=:blue)
+    println("* runplot_pacco(experiment)")
+    println("* runplot_pacco_ensemble(experiment, params2per)")
+    println("* runplot_pacco_lhs(experiment, params2per, nsim)")
+    println("* fastplot(experiment, y; x, use_colormap, plot_function)")
+    println("* plot_pacco_states(experiment)")
+    println("* plot_pacco_comp_states(experiment)")
+    println("")
+    println("Note: Use ?function in REPL for more info about the arguments")
 end
