@@ -19,7 +19,7 @@ This will configure the virtual environment of the model, It includes the requir
 
 Download from github:
 ```bash
-git clone https://github.com/sperezmont/Proxy.git
+git clone https://github.com/sperezmont/dataForPACCO.git
 mv dataForPACCO data 		# plot functions need data as the directory's name
 ```
 
