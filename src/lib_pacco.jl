@@ -74,16 +74,22 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
 
         # -- albedo
         dudt[4] = calc_alphadot(u, p)
+    else
+        dudt[1:4] .= 0.0
     end
 
     # -- ice thickness
     dudt[5] = calc_Hdot(u, p)
 
     # -- sediments layer thickness
-    (p.active_sed) && (dudt[6] = calc_Hseddot(u, p))
-
+    if t < p.time_init
+        dudt[6] = 0.0
+    else
+        (p.active_sed) ? (dudt[6] = calc_Hseddot(u, p)) : (dudt[6] = 0.0)
+    end
+    
     # -- bed elevation
-    (p.active_iso) && (dudt[7] = calc_Bdot(u, p))
+    (p.active_iso) ? (dudt[7] = calc_Bdot(u, p)) : (dudt[7] = 0.0)
 
     if p.active_ice
         # -- ice temperature
@@ -91,6 +97,8 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
 
         # -- streaming fraction
         (p.active_ice) && (dudt[9] = calc_fstreamdot(u, p))
+    else
+        dudt[8:9] .= 0.0
     end
 
     # -- diagnostic derivatives
@@ -122,8 +130,14 @@ This option was selected because of the model's simplicity and the computational
 function pacco(u0::Vector, p::Params, tspan::Tuple)
     # Define and solve the problem
     prob = ODEProblem(dudt!, u0, tspan, p)
-    solution = solve(prob, BS3(), saveat=p.dt_out)
-    return solution
+
+    if (p.dt_case == "fixed") || (p.I_case == "input")
+        return solve(prob, Euler(), saveat=p.dt_out, dt=p.dt)
+    elseif p.dt_case == "adaptive"
+        return solve(prob, BS3(), saveat=p.dt_out)
+    else
+        error("`dt_case = $(p.dt_case)` option not recognized")
+    end
 end
 
 """
@@ -143,16 +157,22 @@ Runs experiment `test1` using the default values of `p` located in `par/default_
         run_pacco("test1", p = JLD2.load_object("path/to/julia/object/params.jld2"))
 Runs experiment `test1` and uses as parameters the ones stored in `"path/to/julia/object/params.jld2"`
 """
-function run_pacco(experiment::String; p::Params=Params())
+function run_pacco(experiment::String; p::Params=Params(), returnsol=true)
     ## Now, load arguments
     output_path = pwd() * "/output/" * experiment * "/"
     isdir(output_path) || mkdir(output_path)
     write_run_info(output_path, experiment, p)
     JLD2.save_object(output_path * "/params.jld2", p)
+    timespan = (p.time_init - p.time_spinup, p.time_end)
+
+    ## Load input if desired
+    if p.I_case == "input"
+        global InsolationData = read_insolation_from_file(p.I_input, timespan)    # defined as global in order to be accesible from the entire model
+    end
 
     ## Run pacco()
     u0, out_attr = load_defs(p)
-    out = pacco(u0, p, (p.time_init, p.time_end))
+    out = pacco(u0, p, timespan)
 
     ## Create output nc file
     # if outfile exists remove it
@@ -194,7 +214,7 @@ function run_pacco_ensemble(experiment::String, params2per::Dict)
 
         new_pi = Params(; (Symbol(k) => v for (k, v) in perm[i])...)
         run_pacco(experiment * experimenti, p=new_pi)
-        println(line2print)
+        println("run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i")
     end
     close(file_perm)
 
@@ -215,6 +235,9 @@ function run_pacco_lhs(experiment::String, params2per::Dict, nsim::Int)
     end
     mkdir(pwd() * "/output/" * experiment)
     mkdir(pwd() * "/output/" * experiment * "/runs/")
+
+    # Save combinations and names in permutations.txt
+    file_perm = open(pwd() * "/output/" * experiment * "/results/permutations.txt", "w")
 
     # Plot (if possible) the LHS
     mkdir(pwd() * "/output/" * experiment * "/results")
@@ -238,12 +261,47 @@ function run_pacco_lhs(experiment::String, params2per::Dict, nsim::Int)
         experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
         line2print = "s" * repeat("0", ndigits - length(digits(i))) * "$i $(permutations_dict[i])"
         line2print = "run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i $(permutations_dict[i])"
+        write(file_perm, "$(line2print) \n")
 
         new_pi = Params(; (Symbol(k) => v for (k, v) in permutations_dict[i])...)
         run_pacco(experiment * experimenti, p=new_pi)
-        println(line2print)
+        println("run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i")
     end
     # Done!
+end
+
+"""
+    run_fixed_ensemble(experiment, vop)
+creates the ensemble `experiment` given a vector of parameter structs (vector of Params())
+"""
+function run_fixed_ensemble(experiment::String, vop::Vector)
+    # First, obtain simulations
+    perm = vop
+    nperms = length(vop)
+
+    # Now, create ensemble directory
+    if isdir(pwd() * "/output/" * experiment)
+        rm(pwd() * "/output/" * experiment, recursive=true)
+    end
+    mkdir(pwd() * "/output/" * experiment)
+    mkdir(pwd() * "/output/" * experiment * "/runs/")
+    mkdir(pwd() * "/output/" * experiment * "/results")
+
+    # Save combinations and names in permutations.txt
+    file_perm = open(pwd() * "/output/" * experiment * "/results/permutations.txt", "w")
+
+    # Third, run each permutation
+    printstyled("Running $(experiment): $(nperms) runs\n", color=:green)
+    ndigits = Int(round(log10(nperms)) + 1)
+    for i in 1:nperms
+        experimenti = "/runs/s" * repeat("0", ndigits - length(digits(i))) * "$i/"
+        line2print = "run $(i)/$(nperms) s$(repeat("0", ndigits - length(digits(i))))$i"
+        write(file_perm, "$(line2print) \n")
+
+        run_pacco(experiment * experimenti, p=perm[i])
+        println(line2print)
+    end
+    close(file_perm)
 end
 
 ############
@@ -278,8 +336,11 @@ function runplot_pacco_lhs(experiment::String, params2per::Dict, nsim::Int)
     plot_pacco(experiment)
 end
 
+
+
 function display_shortcuts()
     printstyled("Some available shortcuts: \n", color=:blue)
+    println("* run_fixed_ensemble(experiment, vop)")
     println("* runplot_pacco(experiment)")
     println("* runplot_pacco_ensemble(experiment, params2per)")
     println("* runplot_pacco_lhs(experiment, params2per, nsim)")

@@ -46,6 +46,19 @@ function calc_coi(t::Vector, f::Vector, cf::Real)
 end
 
 """
+    calc_recurrence(u; tol)
+calculates the recurrence matrix of the vector `u` that represents 
+the time series of the state of a dynamic process (1D system)
+"""
+function calc_recurrence(u::Vector; tol::Real=0.01)
+    R = Matrix{Any}(undef, length(u), length(u))
+    for i in eachindex(u), j in eachindex(u)
+        (abs(norm(u[i] - u[j]) / u[i]) <= tol) ? (R[i, j] = 1.0) : (R[i, j] = 0.0) 
+    end
+    return R
+end
+
+"""
     filt_ensemble(experiment, rule)
 filters an ensemble `experiment` using `rule`. Output directory is `experiment_r{rule number}` 
 

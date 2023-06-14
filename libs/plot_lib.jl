@@ -404,9 +404,10 @@ function plot_pacco_comp_states(experiment::String)
     # Temperature evolution
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="Temperature evolution")
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z/τ", color=:royalblue4)
+    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .- data_frame["T"])./ parameters2use.tau_T, color=:olive, label="(Tref-T)/τ")
     lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom", color=:orange)
     lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(co2/280)", color=:maroon)
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z", color=:royalblue4)
     lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[2, 1], ylabel="T")
@@ -502,4 +503,8 @@ function fastplot(experiment, y::String; x::String="time", use_colormap::Bool=fa
     else
         save(pacco_path * "/output/" * experiment[1] * "/" * "pacco_nruns_fastplot_$(y)vs$(x).png", fig)
     end
+end
+
+function plot_recurrence(experiment; var2plot::String="H")
+
 end

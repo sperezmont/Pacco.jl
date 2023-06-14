@@ -55,7 +55,7 @@ function load_defs(p)
     u0 = vcat([p.T0, p.co2_ref, p.iceage0, p.alpha0, p.H0, p.Hsed0, p.B0, p.Tice0, p.fstream0], # prognostic states
         zeros(ldiag)) # diagnostic variables
 
-    calc_diagnostic_variables!(u0, p, p.time_init)
+    calc_diagnostic_variables!(u0, p, p.time_init - p.time_spinup)
 
     # Output file settings
     out_attr = Dict(

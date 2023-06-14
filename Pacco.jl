@@ -23,6 +23,7 @@ using DSP                   # spectral analysis
 using Wavelets              # wavelet analysis
 using ContinuousWavelets    # ""
 using Statistics            # to make some minor calculations
+using RecurrenceAnalysis    # ""
 using StatsBase             # ""
 using Interpolations        # ""
 using LatinHypercubeSampling    # ""
@@ -44,7 +45,6 @@ include("./src/physics/geometry.jl")         # -- cryosphere functions
 include("./src/physics/dynamics.jl")         # 
 include("./src/physics/thermodynamics.jl")   #
 
-include("PaccoTests.jl")     # -- include tests.jl
 println("Done!")
 
 # PACCO header

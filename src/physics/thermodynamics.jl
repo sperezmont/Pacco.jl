@@ -27,13 +27,13 @@ function calc_A!(u::Vector, p::Params)
         pr = p.pr_ref + p.A_pr * Inorm
 
         # Calculate the fraction of snow
-        if u[18] <= p.T_snow # if below t_snow, full snowfall
+        if u[18] <= p.Tsnow # if below t_snow, full snowfall
             snf = pr
-        elseif u[18] >= p.T_rain # if above t_rain, full rain
+        elseif u[18] >= p.Train # if above t_rain, full rain
             snf = 0.0
         else # smooth transition
-            f_snow = (u[18] - p.T_rain) / (p.T_snow - p.T_rain)  # assume linear transition
-            snf = f_snow * pr
+            fsnow = (u[18] - p.Train) / (p.Tsnow - p.Train)  # assume linear transition
+            snf = fsnow * pr
         end
         u[19] = max(snf, 0.0)
     elseif p.A_case == "linear"

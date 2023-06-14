@@ -1,10 +1,8 @@
-@Base.kwdef struct Params
+Base.@kwdef struct Params
     ### Run Settings
-    time_init::Real = -1.5e6           # [yr] Starting time (model years)
-    time_end::Real = 0.0               # [yr] Ending time (model years)
-    dt::Real = 10.0                    # [yr] Time step if fixed time step is activated
-    dt_out::Real = 1000.0              # [yr] Frequency of writing
-    time_spinup::Real = 5e5            # [yr] Time length employed to spinup the model
+    time_init::Real = -2.0e6          # [yr] Starting time (model years)
+    time_end::Real = 0.0              # [yr] Ending time (model years)
+    dt_out::Real = 1000.0             # [yr] Frequency of writing
 
     ### Earth constants
     year_len::Real = 365.2422          # year length in days
@@ -29,7 +27,7 @@
     iceage0::Real = 0.0                # [a] Initial condition for ice age
     alpha0::Real = 0.2                 # [--] Initial condition for model's albedo
     H0::Real = 0.0                     # [m] Initial condition for ice thickness
-    Hsed0::Real = 0.0                  # [m] Initial condition for sediments thickness (0-1)
+    Hsed0::Real = 1.0                  # [m] Initial condition for sediments thickness (0-1)
     B0::Real = 500.0                   # [m] Inital condition for bed elevation
     Tice0::Real = -20.0 + degK         # [K] Initial condition for ice temperature 
     fstream0::Real = 0.4               # [--] Initial condition for streaming fraction
@@ -37,17 +35,16 @@
     ### Run parameters 
     # -- Switches
     active_iso::Bool = true               # Switch: include active isostatic rebound?
-    active_sed::Bool = false              # Switch: include interactive sediments?
-    active_climate::Bool = true           # Switch: include climate routines?
+    active_sed::Bool = true               # Switch: include interactive sediments?
+    active_climate::Bool = false          # Switch: include climate routines?
     active_ice::Bool = true               # Switch: include ice sheet dynamics?
 
     # -- Cases
-    dt_case::String = "adaptive"            # Time step mode: "adaptive", "fixed"
-    I_case::String = "laskar"               # Insolation case: "constant", "artificial", "laskar", "summer", "caloric", "input"
+    I_case::String = "artificial"           # Insolation case: "constant", "artificial", "laskar"
     dyn_case::String = "SIA"                # Ice flow approximation: "sia"
     basal_case::String = "weertmanq"        # parameterization of basal velocity: "weertman"
     A_case::String = "linear"               # Clausius-Clapeyron approximation: "ins", "linear"
-    M_case::String = "ITM"                  # Surface melting case: "PDD", "ITM"
+    M_case::String = "PDD"                  # Surface melting case: "PDD", "ITM"
 
     # -- Orbital forcing parameters 
     P_obl::Real = 0.9                     # Power of obliquity (normalised to At)
@@ -61,11 +58,9 @@
     I_lat::Real = 65.0                    # [ºN] Latitude in which calculate the insolation in the northern hemisphere 
 
     # -- Radiative forcing parameters   
-    I_input::String = "data/insolation/solstice_insolation_65N170_10yr_5MyrBP-0.jld2"    # File to read as input if I_case = "input"
     I_const::Real = 400.0               # [W/m²] Insolation value for constant insolation mode
     I_min::Real = 425.0                 # [W/m²] Insolation minimum value 
     I_max::Real = 565.0                 # [W/m²] Insolation maximum value
-    Ithreshold = 300.0                  # [W/m²] Insolation threshold value for integrated summer insolation, Huybers (2006) used 275 W/m²
 
     I_ref::Real = 480.0                   # [W/m²] Present reference value for insolation 
     co2_ref::Real = 280.0                 # [ppm] Reference value for co2dot
@@ -73,7 +68,7 @@
     cco2::Real = 2.0                      # [K] sensitivity of reference temperature to co2 Concentration
     ktco2::Real = 7.0                     # [ppm/K] Proportionality between temperature and co2 forcing
 
-    At::Real = 35.0                      # [ºC or K] Amplitude of temperature forcing (surface temperatures)
+    At::Real = 25.0                       # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
     time_anth::Real = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
     co2_anth::Real = 3000.0               # [Gt] Anthropogenic amount of co2 produced
@@ -113,7 +108,7 @@
     glen_n::Real = 3.0                    # [--] Glen's flow law exponent
     v_kin::Real = 1000.0                  # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (Payne 2004)
     tau_kin::Real = L / v_kin             # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)
-    f1::Real = 1.0e-7                     # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
+    f1::Real = 5.0e-8                     # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
     f2::Real = 1.0e-6                     # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
     fstream_min::Real = 0.4               # [--] Mininimal Fraction of the ice sheet considered streaming
     fstream_max::Real = 0.4               # [--] Maximal Fraction of the ice sheet considered streaming
@@ -126,18 +121,18 @@
     A_pr::Real = 0.5                      # Amplitude of the cosinus for M (surface mass balance) # 0.1 default -- jas
     Tsnow::Real = -11.6 + degK            # [K] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
     Train::Real = 7.4 + degK              # [K] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
-    lambda::Real = 0.064                   # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt
+    lambda::Real = 0.05                   # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt
     Tthreshold::Real = -5.0 + degK        # [K] Temperature threshold that allows melting (default::Real = -5.0ºC)
     c::Real = 2009.0                      # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
 
     km::Real = 0.0                        # [m/yr] offset melting in ITM-like calculation
     ki::Real = 0.025                      # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
-    ka::Real = 0.02                       # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+    ka::Real = 0.008                      # [m/yr/K] sensitivity parameter of accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
-    Aref::Real = 0.3                      # [m/yr] Reference Accumulation for northern hemisphere (Aref = Amean + ka * ΔTmean)
+    Aref::Real = 0.4                      # [m/yr] Reference Accumulation for northern hemisphere (Aref = Amean + ka * ΔTmean)
 
     Ate::Real = 20.0                      # [K] Thermal amplitude due to ice extent (Northern Hemisphere)
 end
 
 ## Insolation (orbital) parameters
-global OrbData = Insolation.OrbitalData()   # This global variable stores the Orbital Parameters of Insolation.jl
+global OrbData = Insolation.OrbitalData(Insolation.datadir())

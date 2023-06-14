@@ -21,7 +21,8 @@ else
     packages = ["OrdinaryDiffEq", "NaNMath", "JLD2",
                 "NCDatasets", "Insolation",
                 "CairoMakie", "DSP", "Wavelets", "ContinuousWavelets", "Statistics",
-                "StatsBase", "Interpolations", "LatinHypercubeSampling",
+                "StatsBase", "RecurrenceAnalysis", 
+                "Interpolations", "LatinHypercubeSampling",
                 "Images"]
     for i in packages
         Pkg.add(i)

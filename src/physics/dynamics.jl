@@ -23,11 +23,7 @@ end
 calculates sediment layer thickness derivative through dHseddt = -f1 * U + f2 * M
 """
 function calc_Hseddot(u::Vector, p::Params)
-    if p.active_sed
-        return -p.f1 * u[26] + p.f2 * u[20] # Hseddot = -f1 * U + f2 * M
-    else
-        return 0.0
-    end
+    return -p.f1 * u[26] + p.f2 * u[20] # Hseddot = -f1 * U + f2 * M
 end
 
 """

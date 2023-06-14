@@ -66,7 +66,7 @@ end
 calculates radiative forcing
 """
 function calc_R!(u::Vector, p::Params)
-    u[11] = p.ci * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2])
+    u[11] = p.ci * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
     return nothing
 end
 
@@ -111,6 +111,7 @@ function calc_alpha_ref!(u::Vector, p::Params)
         u[17] = p.alpha_land  # alpha_ref is alpha_land
     else
         n = 1 # exponent number in albedo-age parameterisation
+        #alphaslope = (1+ (10-1)*u[6]) * p.alpha_slope
         u[17] = max(p.alpha_newice - p.alpha_slope * u[3]^n, p.alpha_oldice) # αₙ - αₛ * t
     end
     return nothing
@@ -134,8 +135,8 @@ end
 ########################
 """
     calc_rad_co2(CO2)
-calculates the radiative forcing due to co2 (in W/m²)
+calculates the radiative forcing due to co2 (in W/m²), Myhre et al. (1998)
 """
-function calc_rad_co2(CO2::Real)
-    return 5.35 * NaNMath.log(CO2 / 280.0)
+function calc_rad_co2(CO2::Real, p)
+    return 5.35 * NaNMath.log(CO2 / p.co2_ref)
 end
