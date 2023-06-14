@@ -20,7 +20,7 @@ This will configure the virtual environment of the model, It includes the requir
 Download from github:
 ```bash
 git clone https://github.com/sperezmont/Proxy.git
-mv Proxy data 		# plot functions need data as the directory's name
+mv dataForPACCO data 		# plot functions need data as the directory's name
 ```
 
 Create a virtual link from your local directory to the folder `data` in `pacco` directory
