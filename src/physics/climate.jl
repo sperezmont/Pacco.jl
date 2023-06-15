@@ -66,7 +66,13 @@ end
 calculates radiative forcing
 """
 function calc_R!(u::Vector, p::Params)
-    u[11] = p.ci * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
+    if p.I_case == "ISI"
+        u[11] = p.cisi * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
+    elseif p.I_case == "caloric"
+        u[11] = p.ccal * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
+    else
+        u[11] = p.ci * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
+    end
     return nothing
 end
 

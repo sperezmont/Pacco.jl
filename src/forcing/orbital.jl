@@ -80,13 +80,13 @@ function calc_laskar_insolation(t::Real; lat::Real=65.0, day::Real=170.0, S0::Re
 end
 
 """
-    calc_summer_insolation(t, τ; lat=65.0, S0=1365.2, days_per_year=365.2422)
+    calc_ISI_insolation(t, τ; lat=65.0, S0=1365.2, days_per_year=365.2422)
 calculates the integrated summer insolation (ISI) as defined in Leloup and Paillard (2022) after Huybers (2006)
                     ISI(τ) = sum(βi .* (Wi * 86400))
 where τ is an insolation threshold that defines the summer days. It is selected as 275 W/m² in Huybers (2006) in order to produce an analogue of PDD for insolation,
 T must be ≥ 0 or it does not account, so in insolation, between 40º and 70ºN T == 0ºC if insolation = [250, 300] W/m². In Leloup and Paillard (2022) 300 and 400 W/m² are analyzed.
 """
-function calc_summer_insolation(t::Real, τ::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422)
+function calc_ISI_insolation(t::Real, τ::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422)
     ISI, days_above_τ = 0.0, 0
     for i in 1:1:365
         Wi = calc_laskar_insolation(t, lat=lat, day=i, S0=S0, day_type=1, days_per_year=days_per_year)
@@ -138,6 +138,13 @@ end
 """
     calc_I!(u, p, t)
 Compute daily average insolation
+`p.I_case`:
+* `"constant"` constant value of insolation
+* `"artificial"` artificial signal of insolation
+* `"laskar"` insolation for given time and latitude
+* `"ISI"` insolation for Integrated Summer Insolation for threshold `p.Ithreshold` at `p.I_lat`
+* `"caloric"` insolation for caloric season at `p.I_lat`
+* `"input"` reads insolation for a given `.jld2` file
 """
 function calc_I!(u::Vector, p::Params, t::Real)
     if p.I_case == "constant"
@@ -151,8 +158,8 @@ function calc_I!(u::Vector, p::Params, t::Real)
             S0=p.I0,
             day_type=1,
             days_per_year=p.year_len)
-    elseif p.I_case == "summer"
-        u[10] = calc_summer_insolation(t, p.Ithreshold,
+    elseif p.I_case == "ISI"
+        u[10] = calc_ISI_insolation(t, p.Ithreshold,
         lat=p.I_lat,
         S0=p.I0,
         days_per_year=p.year_len)

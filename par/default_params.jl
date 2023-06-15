@@ -43,7 +43,7 @@
 
     # -- Cases
     dt_case::String = "adaptive"            # Time step mode: "adaptive", "fixed"
-    I_case::String = "laskar"               # Insolation case: "constant", "artificial", "laskar", "summer", "caloric", "input"
+    I_case::String = "laskar"               # Insolation case: "constant", "artificial", "laskar", "ISI", "caloric", "input"
     dyn_case::String = "SIA"                # Ice flow approximation: "sia"
     basal_case::String = "weertmanq"        # parameterization of basal velocity: "weertman"
     A_case::String = "linear"               # Clausius-Clapeyron approximation: "ins", "linear"
@@ -88,7 +88,10 @@
     alpha_quad::Real = 1e-10             # [yr⁻²] Sensitivity of the albedo - ice age quadratic parameterization (1 per 100 kyrs)        
     tau_alpha::Real = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
-    ci::Real = 0.1                       # [K/Wm²] climate sensitivity to insolation
+    ci::Real = 0.1                       # [K/Wm²] climate sensitivity to insolation (laskar method)
+    cisi::Real = 0.1                     # [K/Wm²] climate sensitivity to Integrated Summer Insolation 
+    ccal::Real =  0.1                    # [K/Wm²] climate sensitivity to Caloric season insolation
+
     cc::Real = 0.65                      # [K/Wm²] climate sensitivity to co2
     cz::Real = 0.00685                   # [K/m³] climate sensitivity to ice sheet elevation
 
