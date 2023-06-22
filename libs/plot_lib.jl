@@ -12,30 +12,30 @@ calculates spectrum and plots results from PACCO (given or not the variables to 
 * `experiment` experiment/experiments name/names (`string` or `vector of strings`)
 
 ### Optional arguments
-* `vars2plot::Vector = ["I", "H", "T", "co2", "V"]` vector of variables to plot
+* `vars2plot::Vector = ["I", "H", "T", "pCO2", "V"]` vector of variables to plot
 * `plot_MPT::Bool = false` plot Mid-Pleistocene Transition?
 * `plot_MIS::Bool = false` plot Marine Isotope Stages?
 * `plot_PSD::Bool = true` calculate and plot Power Spectrum Density?
 * `times::Tuple = ()` start and end years (in years)
 * `time_anth::Real = 2000.0` when does Anthropocene start?
 * `plot_proxies::Bool = true` include proxy curves?
-* `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, co2/ and V/
+* `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "pCO2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, pCO2/ and V/
 """
-function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "co2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "pCO2", "V"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "pCO2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     proxy_path = pwd() .* "/data/"
 
     MIS = Dict(
-    "2" => (-12, -115),
-    "6" => (-191, -130),
-    "8" => (-300, -243),
-    "10" => (-374, -337),
-    "12" => (-478, -424),
-    "14" => (-563, -533),
-    "16" => (-676, -621),
-    "18" => (-761, -712),
-    "20" => (-814, -790),
-    "22" => (-900, -866))
+        "2" => (-12, -115),
+        "6" => (-191, -130),
+        "8" => (-300, -243),
+        "10" => (-374, -337),
+        "12" => (-478, -424),
+        "14" => (-563, -533),
+        "16" => (-676, -621),
+        "18" => (-761, -712),
+        "20" => (-814, -790),
+        "22" => (-900, -866))
 
     if ~isdir(proxy_path)
         (plot_proxies) && (printstyled("I can't find proxy data directory \n", color=:red))
@@ -63,11 +63,11 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
             units_ve = NCDataset(e, "r") do ds
                 ds[v].attrib["units"]
             end # ds is closed
-                
+
             t = NCDataset(e, "r") do ds
                 ds["time"][:]
             end # ds is closed
-            
+
             data_ve = NCDataset(e, "r") do ds
                 ds[v][:]
             end # ds is closed
@@ -90,7 +90,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
     # 3. Plot
     # -- 3.1 Create figure
     nrows, ncols = length(vars2plot), Int(plot_PSD) + 1
-    fgsz = (2000 * ncols, 600 * nrows)
+    fgsz = (600 * nrows * 1.5, 600 * nrows)
     fntsz = 0.02 * sqrt(fgsz[1]^2 + fgsz[2]^2)
     fig = Figure(resolution=fgsz)
     (length(data_to_load) > 1) ? (linewidth = 4) : (linewidth = 8)
@@ -101,16 +101,16 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
 
         # -- 3.2 Create axis
         ax = Axis(fig[v, 1], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz,
-                  xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v][1]))",
-                  xgridcolor=:darkgrey, ygridcolor=:darkgrey,
-                  xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
+            xlabel="Time (kyr)", ylabel=vars2plot[v] * " ($(units[v][1]))",
+            xgridcolor=:darkgrey, ygridcolor=:darkgrey,
+            xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz)
 
         # -- 3.3 Create PSD axis if desired
         if plot_PSD
             ax_PSD = Axis(fig[v, 2], xlabelsize=0.8 * fntsz, ylabelsize=0.8 * fntsz,
-                          xlabel="Period (kyr)",
-                          xgridcolor=:darkgrey, ygridcolor=:darkgrey,
-                          xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz, xgridvisible = false)
+                xlabel="Period (kyr)",
+                xgridcolor=:darkgrey, ygridcolor=:darkgrey,
+                xticklabelsize=0.6 * fntsz, yticklabelsize=0.7 * fntsz, xgridvisible=false)
         end
 
         # -- 3.4 Remove some decorations
@@ -128,7 +128,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
         # -- 3.6 If desired, plot MIS and proxy files
         if plot_MIS
             for m in keys(MIS)
-                vspan!(ax, MIS[m][1] * 1e3, MIS[m][2] * 1e3, color = (:lightblue, 0.2))
+                vspan!(ax, MIS[m][1] * 1e3, MIS[m][2] * 1e3, color=(:lightblue, 0.2))
             end
         end
 
@@ -141,7 +141,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
                     band!(ax, proxy_ds["time"], proxy_ds[vars2plot[v]*"_lo"], proxy_ds[vars2plot[v]*"_up"], color=(proxy_colors[k], 0.4))
                 end
                 scatter!(ax, proxy_ds["time"], proxy_ds[vars2plot[v]], label=proxy_files[vars2plot[v]][1:end-3], color=proxy_colors[k], width=6)
-                
+
                 if plot_PSD
                     d_nomiss = collect(skipmissing(proxy_ds[vars2plot[v]]))
                     t_nomiss = proxy_ds["time"][broadcast(!, ismissing.(proxy_ds[vars2plot[v]]))]
@@ -159,7 +159,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "co2", "V"], p
         # -- 3.7 Plot each simulation (and PSD if desired)
         for e in eachindex(data_to_load)
             label = "PACCO"
-            if length(data_to_load) > 1 
+            if length(data_to_load) > 1
                 label = label * ", $(data_labels[e])"
             end
 
@@ -267,7 +267,7 @@ function plot_wavelet(experiment::String; var2plot::String="H", fs::Real=1 / 100
     t = NCDataset(path2data, "r") do ds
         ds["time"][:]
     end # ds is closed
-    
+
     data = NCDataset(path2data, "r") do ds
         ds[var2plot][:]
     end # ds is closed
@@ -299,9 +299,9 @@ function plot_wavelet(experiment::String; var2plot::String="H", fs::Real=1 / 100
     c = contourf!(ax2, t, log10.(periods ./ 1e3), Wnorm, colormap=cmap, levels=minW:stepW:maxW)
 
     # 3.4 Plot if desired MPT and Anthropocene
-    (plot_MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
+    (plot_MPT) && (vlines!(ax, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash))
     (t[end] > time_anth) && (vlines!(ax, [time_anth], linewidth=1, color=:black, linestyle=:dash))
-    (plot_MPT) && (vlines!(ax2, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash)) 
+    (plot_MPT) && (vlines!(ax2, [-1.25e6, -0.7e6], linewidth=1, color=:black, linestyle=:dash))
     (t[end] > time_anth) && (vlines!(ax2, [time_anth], linewidth=1, color=:black, linestyle=:dash))
 
     # 3.5 Plot main Milankovitch periodicities
@@ -335,7 +335,7 @@ function plot_wavelet(experiment::String; var2plot::String="H", fs::Real=1 / 100
     ax.xtickformat = k -> string.(Int.(k / 1000))
     ax2.xticks = -5e6:tstep:5e6
     ax2.xtickformat = k -> string.(Int.(k / 1000))
-    
+
     xlims!(ax, (minimum(t), maximum(t)))
     xlims!(ax2, (minimum(t), maximum(t)))
 
@@ -359,7 +359,7 @@ plots all the states of PACCO `experiment`
 * `experiment::String` experiment name
 """
 function plot_pacco_states(experiment)
-    prognostic = ["T", "co2", "iceage", "alpha", "H", "Hsed", "B", "Tice", "fstream"]
+    prognostic = ["T", "pCO2", "iceage", "alpha", "H", "Hsed", "zb", "Tice", "fstream"]
     diagnostic = ["I", "R", "Tsl", "Tref",  # radiative forcing and climate response
         "Z", "E", "V",  # ice geometry
         "alpha_ref", "Tsurf",   # climate parameters
@@ -377,7 +377,7 @@ function plot_pacco_states(experiment)
         k += 1
     end
 
-    save(pwd()*"/output/"*experiment*"/pacco_states.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_states.png", fig)
 end
 
 """
@@ -400,19 +400,19 @@ function plot_pacco_comp_states(experiment::String)
             selected_alpha[t] = parameters2use.alpha_newice
         end
     end
-    
+
     # Temperature evolution
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="Temperature evolution")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z/τ", color=:royalblue4)
-    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .- data_frame["T"])./ parameters2use.tau_T, color=:olive, label="(Tref-T)/τ")
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z/tau", color=:royalblue4)
+    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .- data_frame["T"]) ./ parameters2use.tau_T, color=:olive, label="(Tref-T)/tau")
     lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom", color=:orange)
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(co2/280)", color=:maroon)
-    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["co2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["pCO2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(pCO2/280)", color=:maroon)
+    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["pCO2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[2, 1], ylabel="T")
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["T"] .- data_frame["Tref"], color=:grey20, label="T")
-    save(pwd()*"/output/"*experiment*"/pacco_comp_states_T.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_comp_states_T.png", fig)
 
     # Ice evolution
     fig = Figure()
@@ -427,9 +427,9 @@ function plot_pacco_comp_states(experiment::String)
     ax = Axis(fig[2, 1], ylabel="Size (m)")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:grey20, label="H")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["Z"], color=:royalblue4, label="Z")
-    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["B"], color=:violet, label="B")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["zb"], color=:violet, label="zb")
     fig[2, 2] = Legend(fig, ax, framevisible=false)
-    save(pwd()*"/output/"*experiment*"/pacco_comp_states_H.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_comp_states_H.png", fig)
 
     # Melting terms
     fig = Figure(resolution=(1000, 500))
@@ -437,20 +437,20 @@ function plot_pacco_comp_states(experiment::String)
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey, label="MB")
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"], label="A", color="blue")
     lines!(ax, data_frame["time"] ./ 1e3, -1 .* data_frame["M"], label="M", color="red")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], 0.0), label="-kᵢ⋅(1-α)⋅Ianom", color=:orange)
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), 0.0), label="-λ⋅(T-Tref)", color=:maroon)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], 0.0), label="-kᵢ⋅(1-alpha)⋅Ianom", color=:orange)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), 0.0), label="-lambda⋅(T-Tref)", color=:maroon)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
-    save(pwd()*"/output/"*experiment*"/pacco_comp_states_MB.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_comp_states_MB.png", fig)
 
     # Albedo
     fig = Figure(resolution=(1000, 500))
     ax = Axis(fig[1, 1], ylabel="Albedo", yticklabelcolor=:green, ylabelcolor=:green)
-    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="α", color=:olive, markersize=5)
-    scatter!(ax, data_frame["time"] ./ 1e3, selected_alpha, label="α selected", color=:green, markersize=5)
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="alpha", color=:olive, markersize=5)
+    scatter!(ax, data_frame["time"] ./ 1e3, selected_alpha, label="alpha selected", color=:green, markersize=5)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[1, 1], ylabel="iceage", yaxisposition=:right, ylabelcolor=:grey20)
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["iceage"], color=:grey20)
-    save(pwd()*"/output/"*experiment*"/pacco_comp_states_alpha.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_comp_states_alpha.png", fig)
 end
 
 """
@@ -474,9 +474,9 @@ function fastplot(experiment, y::String; x::String="time", use_colormap::Bool=fa
         df = NCDataset(data_to_load[i])
         if use_colormap
             times = df["time"]
-            plot_function(ax, df[x], df[y], label = data_labels[i], color=df["time"], colormap=:blues)
+            plot_function(ax, df[x], df[y], label=data_labels[i], color=df["time"], colormap=:blues)
         else
-            plot_function(ax, df[x], df[y], label = data_labels[i])
+            plot_function(ax, df[x], df[y], label=data_labels[i])
         end
         if i == 1
             if x == "time"
@@ -487,11 +487,11 @@ function fastplot(experiment, y::String; x::String="time", use_colormap::Bool=fa
             ax.ylabel = "$(y) ($(df[y].attrib["units"]))"
         end
     end
-    
+
     fig[1, 2] = Legend(fig, ax, framevisible=false)
 
     if use_colormap
-        Colorbar(fig[2, 1], colormap=:blues, limits = (times[1], times[end]), vertical=false, label = "Time (yr)")
+        Colorbar(fig[2, 1], colormap=:blues, limits=(times[1], times[end]), vertical=false, label="Time (yr)")
     end
 
     if typeof(experiment) == String

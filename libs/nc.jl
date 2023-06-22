@@ -28,12 +28,12 @@ function genout_nc(outputpath::AbstractString, filename::AbstractString, outvalu
     for variable in states_comp
         defVar(ds, variable, prec, ("time",), attrib=attr[variable])
         if variable == "Inorm"
-            ds[variable][:] .= 2.0 .* (new_out_matrix[:, 10] .- parameters.I_min) ./ (parameters.I_max - parameters.I_min) .- 1.0
+            ds[variable][:] .= 2.0 .* (new_out_matrix[:, 10] .- parameters.Imin) ./ (parameters.Imax - parameters.Imin) .- 1.0
         elseif variable == "Ianom"
-            ds[variable][:] .= new_out_matrix[:, 10] .- parameters.I_ref
-        elseif variable == "MB"
-            ds[variable][:] .= new_out_matrix[:, 19] .- new_out_matrix[:, 20]
-        elseif variable == "Rco2"
+            ds[variable][:] .= new_out_matrix[:, 10] .- parameters.Iref
+        elseif variable == "m"
+            ds[variable][:] .= new_out_matrix[:, 18] .- new_out_matrix[:, 19]
+        elseif variable == "RCO2"
             ds[variable][:] .= 5.35 .* log.(new_out_matrix[:, 2] ./ 280.0)
         end
     end

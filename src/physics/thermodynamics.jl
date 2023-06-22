@@ -11,61 +11,61 @@
 calculates ice temperature derivative through dTicedt = Qdif + Qdrag
 """
 function calc_Ticedot(u::Vector)
-    return u[27] + u[28]
+    return u[26] + u[27]
 end
 
 ########################
 # Diagnostic variables 
 ########################
 """
-    calc_A!(u, p)
-calculates accumulation rate
+    calc_s!(u, p)
+calculates snowfall accumulation rate
 """
-function calc_A!(u::Vector, p::Params)
-    if p.A_case == "ins"
-        Inorm = 2.0 * (u[10] - p.I_min) / (p.I_max - p.I_min) - 1.0
-        pr = p.pr_ref + p.A_pr * Inorm
+function calc_s!(u::Vector, p::Params)
+    if p.s_case == "ins"
+        Inorm = 2.0 * (u[10] - p.Imin) / (p.Imax - p.Imin) - 1.0
+        pr = p.pr_ref + p.Apr * Inorm
 
         # Calculate the fraction of snow
-        if u[18] <= p.Tsnow # if below t_snow, full snowfall
+        if u[17] <= p.Tsnow # if below t_snow, full snowfall
             snf = pr
-        elseif u[18] >= p.Train # if above t_rain, full rain
+        elseif u[17] >= p.Train # if above t_rain, full rain
             snf = 0.0
         else # smooth transition
-            fsnow = (u[18] - p.Train) / (p.Tsnow - p.Train)  # assume linear transition
+            fsnow = (u[17] - p.Train) / (p.Tsnow - p.Train)  # assume linear transition
             snf = fsnow * pr
         end
-        u[19] = max(snf, 0.0)
-    elseif p.A_case == "linear"
+        u[18] = max(snf, 0.0)
+    elseif p.s_case == "linear"
         if p.active_climate
-            u[19] = max(p.Aref + p.ka * (u[1] - u[13]), 0.0)   # Aref + ka * (T - Tref)
+            u[18] = max(p.Aref + p.ks * (u[1] - u[12]), 0.0)   # Aref + ks * (T - Tref)
         else
-            u[19] = max(p.Aref + p.ka * (u[18] - u[13]), 0.0)   # Aref + ka * (Tsurf - Tref)
+            u[18] = max(p.Aref + p.ks * (u[17] - u[12]), 0.0)   # Aref + ks * (Tsurf - Tref)
         end
     end
     return nothing
 end
 
 """
-    calc_M!(u, p)
-calculates melting rate
+    calc_a!(u, p)
+calculates ablation rate
 """
-function calc_M!(u::Vector, p::Params)
-    if p.M_case == "PDD"    # positive degree day method, as in Robinson et al. 2010
-        if u[18] >= (p.Tthreshold)
+function calc_a!(u::Vector, p::Params)
+    if p.a_case == "PDD"    # positive degree day method, as in Robinson et al. 2010
+        if u[17] >= (p.Tthreshold)
             if p.active_climate
-                u[20] = p.lambda * (u[1] - p.Tthreshold)   # λ(T - Tthreshold)
+                u[19] = p.lambda * (u[1] - p.Tthreshold)   # lambda(T - Tthreshold)
             else
-                u[20] = p.lambda * (u[18] - p.Tthreshold)   # λ(Tsurf - Tthreshold)
+                u[19] = p.lambda * (u[17] - p.Tthreshold)   # lambda(Tsurf - Tthreshold)
             end
         else
-            u[20] = 0.0
+            u[19] = 0.0
         end
-    elseif p.M_case == "ITM"
-        if (u[19] - u[20]) <= 0   # if MB = A - M <= 0, use α(t)
-            u[20] = p.km + p.ki * max((1 - u[4]) * (u[10] - p.I_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)    # α
+    elseif p.a_case == "ITM"
+        if (u[18] - u[19]) <= 0   # if m = s - a <= 0, use alpha(t)
+            u[19] = p.km + p.ki * max((1 - u[4]) * (u[10] - p.Iref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)    # alpha
         else
-            u[20] = p.km + p.ki * max((1 - p.alpha_newice) * (u[10] - p.I_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)   # αₙ
+            u[19] = p.km + p.ki * max((1 - p.alphanewice) * (u[10] - p.Iref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)   # alphaₙ
         end
 
     else
@@ -83,16 +83,16 @@ function calc_Qdif!(u::Vector, p::Params)
     #qgeo_ann = p.Qgeo * p.sec_year * 1e-3
 
     if u[5] < 10.0  # -- check if there is no ice
-        u[27] = 0.0
+        u[26] = 0.0
     else
         # -- update ice-air diffusion -- CHECK units!! spm 2022.12.07
-        Q_difup = -2 * ((u[8] - u[18]) / (u[5]^2)) * (kt_ann / (p.c * p.rhoi))
+        Q_difup = -2 * ((u[8] - u[17]) / (u[5]^2)) * (kt_ann / (p.c * p.rhoi))
         # -- update ice-mantle diffusion
-        Q_difdown = -2 * ((u[8] - p.Tmantle) / (p.Hmantle^2)) * (kt_ann / (p.c * p.rhoi))
+        Q_difdown = -2 * ((u[8] - p.Tmantle) / (p.Hmantle^2)) * (kt_ann / (p.c * p.rhom))
         # -- update diffusion from geothermal flux
 
         # -- total
-        u[27] = Q_difup + Q_difdown
+        u[26] = Q_difup + Q_difdown
     end
     return nothing
 end
@@ -103,9 +103,9 @@ calculates drag heating
 """
 function calc_Qdrag!(u::Vector, p::Params)
     if u[5] < 10.0  # -- check if there is no ice
-        u[28] = 0.0
+        u[27] = 0.0
     else
-        u[28] = u[9] * u[22] * u[24] / (p.c * p.rhoi) #/ p.L # -- spm 2022.11.24
+        u[27] = u[9] * u[21] * u[23] / (p.c * p.rhoi) #/ p.L # -- spm 2022.11.24
     end
     return nothing
 end

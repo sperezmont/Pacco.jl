@@ -23,7 +23,7 @@ Base.@kwdef struct Params
 
     ### Initial Conditions
     T0::Real = 0.0 + degK              # [K] Initial condition for regional temperature 
-    co20::Real = 280.0                 # [ppm] Initial condition for co2
+    pCO20::Real = 280.0                 # [ppm] Initial condition for pCO2
     iceage0::Real = 0.0                # [a] Initial condition for ice age
     alpha0::Real = 0.2                 # [--] Initial condition for model's albedo
     H0::Real = 0.0                     # [m] Initial condition for ice thickness
@@ -63,15 +63,15 @@ Base.@kwdef struct Params
     I_max::Real = 565.0                 # [W/m²] Insolation maximum value
 
     I_ref::Real = 480.0                   # [W/m²] Present reference value for insolation 
-    co2_ref::Real = 280.0                 # [ppm] Reference value for co2dot
-    tau_co2::Real = 10.0                  # [yr] Characteristic time for co2 evolution
-    cco2::Real = 2.0                      # [K] sensitivity of reference temperature to co2 Concentration
-    ktco2::Real = 7.0                     # [ppm/K] Proportionality between temperature and co2 forcing
+    pCO2_ref::Real = 280.0                 # [ppm] Reference value for pCO2dot
+    tau_pCO2::Real = 10.0                  # [yr] Characteristic time for pCO2 evolution
+    cpCO2::Real = 2.0                      # [K] sensitivity of reference temperature to pCO2 Concentration
+    ktpCO2::Real = 7.0                     # [ppm/K] Proportionality between temperature and pCO2 forcing
 
     At::Real = 25.0                       # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
     time_anth::Real = 2000.0              # [yr] Year in which we take into account the anthropogenic forcing
-    co2_anth::Real = 3000.0               # [Gt] Anthropogenic amount of co2 produced
+    pCO2_anth::Real = 3000.0               # [Gt] Anthropogenic amount of pCO2 produced
     At_anth::Real = 55.0                  # [ºC or K] Amplitude of anthropogenic temperature forcing (sea level temperatures)
     Ac_anth::Real = 20.0                  # [ppm] Amplitude of anthropogenic radiative forcing
     tau_anth::Real = 200e3                # [yr] Relaxation time for anthropogenic forcing
@@ -84,7 +84,7 @@ Base.@kwdef struct Params
     tau_alpha::Real = 1e3                # [yr] Characteristic time of albedo evolution w.r.t reference value
 
     ci::Real = 0.1                       # [K/Wm²] climate sensitivity to insolation
-    cc::Real = 0.65                      # [K/Wm²] climate sensitivity to co2
+    cc::Real = 0.65                      # [K/Wm²] climate sensitivity to pCO2
     cz::Real = 0.00685                   # [K/m³] climate sensitivity to ice sheet elevation
 
     Tref0::Real = 0.0 + degK            # [K] Reference climatic temperature 

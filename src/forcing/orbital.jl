@@ -9,14 +9,14 @@ Compute daily average insolation through different parameterizations
 """
 function calc_artificial_insolation(p::Params, t::Real)
     # Calculate reference and amplitude
-    I_ref = (p.I_max + p.I_min) / 2
-    A_ins = (p.I_max - p.I_min) / 2
+    Iref = (p.Imax + p.Imin) / 2
+    Ains = (p.Imax - p.Imin) / 2
 
     # Return artificial insolation -- I have to discuss this with jas
-    return I_ref + A_ins * (
-        p.P_obl * cos(2.0 * pi * t / p.tau_obl) +
-        p.P_pre * cos(2.0 * pi * t / p.tau_pre) +
-        p.P_exc * cos(2.0 * pi * t / p.tau_exc))
+    return Iref + Ains * (
+        p.Pobl * cos(2.0 * pi * t / p.tauobl) +
+        p.Ppre * cos(2.0 * pi * t / p.taupre) +
+        p.Pexc * cos(2.0 * pi * t / p.tauexc))
 end
 
 """
@@ -79,41 +79,64 @@ function calc_laskar_insolation(t::Real; lat::Real=65.0, day::Real=170.0, S0::Re
     return Fsw
 end
 
+function calc_annual_insolation(t::Real; lat::Real=65.0, S0::Real=1365.2, day_type::Real=1, days_per_year::Real=365.2422, return_energy=false)
+    timestep = days_per_year / 365.0
+    days = 1:timestep:days_per_year
+    I = [calc_laskar_insolation(t, lat=lat, day=days[i], S0=S0, day_type=day_type, days_per_year=days_per_year) for i in eachindex(days)]
+    if return_energy == false
+        return sum(I) / length(days)
+    else
+        return sum(I) * 86400
+    end
+end
+
 """
-    calc_ISI_insolation(t, τ; lat=65.0, S0=1365.2, days_per_year=365.2422)
+    calc_ISI_insolation(t, tau; lat=65.0, S0=1365.2, days_per_year=365.2422)
 calculates the integrated summer insolation (ISI) as defined in Leloup and Paillard (2022) after Huybers (2006)
-                    ISI(τ) = sum(βi .* (Wi * 86400))
-where τ is an insolation threshold that defines the summer days. It is selected as 275 W/m² in Huybers (2006) in order to produce an analogue of PDD for insolation,
+                    J(tau) = sum(βi .* (Wi * 86400))
+where tau is an insolation threshold that defines the summer days. It is selected as 275 W/m² in Huybers (2006) in order to produce an analogue of PDD for insolation,
 T must be ≥ 0 or it does not account, so in insolation, between 40º and 70ºN T == 0ºC if insolation = [250, 300] W/m². In Leloup and Paillard (2022) 300 and 400 W/m² are analyzed.
 """
-function calc_ISI_insolation(t::Real, τ::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422)
-    ISI, days_above_τ = 0.0, 0
-    for i in 1:1:365
-        Wi = calc_laskar_insolation(t, lat=lat, day=i, S0=S0, day_type=1, days_per_year=days_per_year)
-        if Wi > τ
-            βi = 1.0
-            days_above_τ += 1
-        else
-            βi = 0.0
-        end
-        ISI += βi * (Wi * 86400) # J/m²
+function calc_ISI_insolation(t::Real, tau::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422, return_energy=false)
+    timestep = days_per_year / 365.0
+    days = 1:timestep:days_per_year
+
+    W = [calc_laskar_insolation(t, lat=lat, day=days[i], S0=S0, day_type=1, days_per_year=days_per_year) for i in eachindex(days)]
+    W[W.<tau] .= 0.0
+    days_above_tau = count(!=(0.0), W)
+
+    J = sum(W) * 86400
+    if days_above_tau == 0.0
+        days_above_tau = 1.0
+        J = 0.0
     end
 
-    return ISI / (days_above_τ * 86400) # redimensionalization to W/m²
+    if return_energy == false
+        return J / (days_above_tau * 86400) # redimensionalization to W/m² per day
+    else
+        return J
+    end
 end
 
 """
     calc_caloric_insolation(t, lat=65.0, S0=1365.2, days_per_year=365.2422)
 calculates the caloric seasons insolation following  Tzedakis et al. (2017) and Milankovitch (1941)
 """
-function calc_caloric_insolation(t::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422)
+function calc_caloric_insolation(t::Real; lat::Real=65.0, S0::Real=1365.2, days_per_year::Real=365.2422, return_energy=false)
     insolations = Vector{Any}(undef, 365)
     half_year = Int(ceil(days_per_year / 2))
-    for i in 1:1:365
-        insolations[i] = calc_laskar_insolation(t, lat=lat, day=i, S0=S0, day_type=1, days_per_year=days_per_year)
+    timestep = days_per_year / 365.0
+    days = 1:timestep:days_per_year
+
+    for i in eachindex(days)
+        insolations[i] = calc_laskar_insolation(t, lat=lat, day=days[i], S0=S0, day_type=1, days_per_year=days_per_year)
     end
     sort!(insolations, rev=true)
-    return sum(insolations[1:half_year]) / half_year # we only integrate over the half of the days with the higher values
+    if return_energy == false
+        return sum(insolations[1:half_year]) / half_year # we only integrate over the half of the days with the higher values
+    else
+        return sum(insolations[1:half_year]) * 86400
+    end
 end
 
 """
@@ -129,7 +152,7 @@ function read_insolation_from_file(filename::String, tspan::Tuple)
     index_start = findmin(abs.(data_matrix[1, :] .- tspan[1]))
     index_end = findmin(abs.(data_matrix[1, :] .- tspan[2]))
 
-    if (tspan[1] < data_matrix[1, 1]) || (tspan[2] > data_matrix[1, end]) 
+    if (tspan[1] < data_matrix[1, 1]) || (tspan[2] > data_matrix[1, end])
         error("The selected input file does not match the time span required")
     end
     return data_matrix[:, index_start[2]:index_end[2]]
@@ -148,28 +171,29 @@ Compute daily average insolation
 """
 function calc_I!(u::Vector, p::Params, t::Real)
     if p.I_case == "constant"
-        u[10] = p.I_const
+        u[10] = p.Iconst
     elseif p.I_case == "artificial"
         u[10] = calc_artificial_insolation(p, t)
     elseif p.I_case == "laskar" # this option should be improved using Insolation.jl alone
         u[10] = calc_laskar_insolation(t,
-            lat=p.I_lat,
-            day=p.I_day,
+            lat=p.Ilat,
+            day=p.Iday,
             S0=p.I0,
             day_type=1,
             days_per_year=p.year_len)
     elseif p.I_case == "ISI"
         u[10] = calc_ISI_insolation(t, p.Ithreshold,
-        lat=p.I_lat,
-        S0=p.I0,
-        days_per_year=p.year_len)
+            lat=p.Ilat,
+            S0=p.I0,
+            days_per_year=p.year_len)
     elseif p.I_case == "caloric"
         u[10] = calc_caloric_insolation(t,
-        lat=p.I_lat,
-        S0=p.I0,
-        days_per_year=p.year_len)
+            lat=p.Ilat,
+            S0=p.I0,
+            days_per_year=p.year_len)
     elseif p.I_case == "input"
-        u[10] = InsolationData[2, InsolationData[1, :] .== t][1]
+        index = Int((t - (p.time_init - p.time_spinup)) / p.dt) + 1 # marks the position to read at each timestep
+        u[10] = InsolationData[2, index][1]
     else
         error("ERROR, insolation option not recognized")
     end

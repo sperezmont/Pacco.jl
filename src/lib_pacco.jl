@@ -11,16 +11,14 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
     calc_I!(u, p, t)
 
     # Translate Orbital Forcing to temperature
-    if p.active_climate
-        calc_R!(u, p)
-    else
+    if p.active_climate == false
         calc_Tsl!(u, p, t)
     end
     calc_Tref!(u, p, t)
 
     # Compute Ice-Sheet Geometry
-    calc_Z!(u, p)
-    calc_E!(u, p)
+    calc_z!(u, p)
+    calc_A!(u, p)
     calc_V!(u, p)
 
     if p.active_climate
@@ -30,17 +28,17 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
     calc_Tsurf!(u, p)
 
     # Compute Ice-Sheet Mass Balance
-    calc_A!(u, p)
-    calc_M!(u, p)
+    calc_s!(u, p)
+    calc_a!(u, p)
 
     if p.active_ice
         # Compute Ice-Sheet dynamics
         calc_taud!(u, p)
         calc_taub!(u, p)
-        calc_Ud!(u, p)
-        calc_Ub!(u, p)
-        calc_fstream_ref!(u, p)
-        u[26] = u[23] + u[9] * u[24]
+        calc_vd!(u, p)
+        calc_vb!(u, p)
+        calc_fstr_ref!(u, p)
+        u[25] = u[22] + u[9] * u[23]
 
         # Compute Ice-Sheet thermodynamics
         calc_Qdif!(u, p)
@@ -66,8 +64,8 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
         # -- regional air temperature
         dudt[1] = calc_Tdot(u, p)
 
-        # -- co2
-        dudt[2] = calc_co2dot(u, p, t)
+        # -- pCO2
+        dudt[2] = calc_pCO2dot(u, p, t)
 
         # -- ice age
         dudt[3] = calc_iceagedot()
@@ -87,16 +85,16 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     else
         (p.active_sed) ? (dudt[6] = calc_Hseddot(u, p)) : (dudt[6] = 0.0)
     end
-    
+
     # -- bed elevation
-    (p.active_iso) ? (dudt[7] = calc_Bdot(u, p)) : (dudt[7] = 0.0)
+    (p.active_iso) ? (dudt[7] = calc_zbdot(u, p)) : (dudt[7] = 0.0)
 
     if p.active_ice
         # -- ice temperature
         (p.active_ice) && (dudt[8] = calc_Ticedot(u))
 
         # -- streaming fraction
-        (p.active_ice) && (dudt[9] = calc_fstreamdot(u, p))
+        (p.active_ice) && (dudt[9] = calc_fstrdot(u, p))
     else
         dudt[8:9] .= 0.0
     end
@@ -105,14 +103,14 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     view(dudt, lprog+1:lsu) .= 0.0
 
     # Modify states to ensure physical meaning
-    view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.alpha_land, 0.0, 0.0, -Inf, 0.0, 0.0])
+    view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.alphaland, 0.0, 0.0, -Inf, 0.0, 0.0])
     view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, 1.0, Inf, p.degK, Inf])
 
     if u[5] == 0.0  # no ice
         u[3] = 0.0
-        u[4] = p.alpha_land
+        u[4] = p.alphaland
     elseif u[3] < 10.0 # first ice
-        u[4] = p.alpha_newice
+        u[4] = p.alphanewice
     end
 
     return nothing

@@ -8,37 +8,46 @@
 ########################
 """
     calc_Tdot(u, p)
-calculates air thermal relaxation through dTdt = ((Tref + R - cz * Z) - T) / τᵢ
+calculates air thermal relaxation through dTdt = ((Tref + RI + RCO2 - cz * Z) - T) / tauT
 """
 function calc_Tdot(u::Vector, p::Params)
-    return ((u[13] + u[11] - p.cz * u[14]) - u[1]) / p.tau_T
+    if p.I_case == "ISI"
+        RI = p.cisi * (u[10] - p.Iref)
+    elseif p.I_case == "caloric"
+        RI = p.ccal * (u[10] - p.Iref)
+    else
+        RI = p.ci * (u[10] - p.Iref)
+    end
+
+    RCO2 = p.cc * calc_rad_pCO2(u[2], p)
+    return (u[12] + RI + RCO2 - p.cz * u[13] - u[1]) / p.tauT
 end
 
 """
-    calc_co2dot(u, p, t)
-calculates co2 derivative through dco2dt = ((co2ref + ktco2 * (T - Tref)) - co2) / τco2
+    calc_pCO2dot(u, p, t)
+calculates pCO2 derivative through dpCO2dt = ((pCO2ref + ktpCO2 * (T - Tref)) - pCO2) / taupCO2
 """
-function calc_co2dot(u::Vector, p::Params, t::Real)
+function calc_pCO2dot(u::Vector, p::Params, t::Real)
     # -- anthropogenic forcing?
     if t < p.time_anth # unperturbed climate
-        return (p.co2_ref + p.ktco2 * (u[1] - u[13]) - u[2]) / p.tau_co2
+        return (p.pCO2ref + p.ktpCO2 * (u[1] - u[12]) - u[2]) / p.taupCO2
     else    # perturbed climate
         actual_diftime = t - p.time_anth
-        co2ref = p.co2_ref + p.co2_anth * (
+        pCO2ref = p.pCO2ref + p.pCO2anth * (
             0.75 / exp(actual_diftime / 365.0)  # ocean invasion
             + 0.135 / exp(actual_diftime / 5500.0)  # sea floor CaCO3 neutralization 
             + 0.035 / exp(actual_diftime / 8200.0)  # terrestrial floor CaCO3 neutralization
             + 0.08 / exp(actual_diftime / 200000.0) # silicate weathering
         )   # Archer 1997
-        new_co2ref = co2ref + p.ktco2 * (u[1] - u[13])
-        return (new_co2ref - u[2]) / p.tau_co2
+        new_pCO2ref = pCO2ref + p.ktpCO2 * (u[1] - u[12])
+        return (new_pCO2ref - u[2]) / p.taupCO2
     end
 
 end
 
 """
     calc_alphadot(u, p)
-calculates α derivative through dαdt = (αref - α) / τα
+calculates alpha derivative through dalphadt = (alpharef - alpha) / taualpha
 """
 function calc_alphadot(u::Vector, p::Params)
     if u[5] == 0.0  # no ice
@@ -46,7 +55,7 @@ function calc_alphadot(u::Vector, p::Params)
     elseif u[3] < 10.0 # first ice
         return 0.0
     else
-        return (u[17] - u[4]) / p.tau_alpha
+        return (u[16] - u[4]) / p.taualpha
     end
 end
 
@@ -62,33 +71,18 @@ end
 # Diagnostic variables 
 ########################
 """
-    calc_R!(u, p)
-calculates radiative forcing
-"""
-function calc_R!(u::Vector, p::Params)
-    if p.I_case == "ISI"
-        u[11] = p.cisi * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
-    elseif p.I_case == "caloric"
-        u[11] = p.ccal * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
-    else
-        u[11] = p.ci * (u[10] - p.I_ref) + p.cc * calc_rad_co2(u[2], p)
-    end
-    return nothing
-end
-
-"""
     calc_Tsl!(u, p, t)
 calculates sea level temperature
 """
 function calc_Tsl!(u::Vector, p::Params, t::Real)
     # First, normalize insolation
-    I_norm = 2.0 * (u[10] - p.I_min) / (p.I_max - p.I_min) - 1.0   # between 1 and -1, norm = 2
+    Inorm = 2.0 * (u[10] - p.Imin) / (p.Imax - p.Imin) - 1.0   # between 1 and -1, norm = 2
 
     # Second, compute anthropogenic forcing if time >= time_anth
     if (t >= p.time_anth)
-        u[12] = p.Tref0 + p.At * I_norm + p.At_anth / exp((t - p.time_anth) / p.tau_anth)
+        u[11] = p.Tref0 + p.At * Inorm + p.Atanth / exp((t - p.time_anth) / p.tauanth)
     else
-        u[12] = p.Tref0 + p.At * I_norm
+        u[11] = p.Tref0 + p.At * Inorm
     end
     return nothing
 end
@@ -100,25 +94,32 @@ calculates climatic reference temperature
 function calc_Tref!(u::Vector, p::Params, t::Real)
     # Anthropogenic forcing?
     if t < p.time_anth # unperturbed climate
-        u[13] = p.Tref0
+        u[12] = p.Tref0
     else    # perturbed climate
-        u[13] = p.Tref0 + p.cco2 * u[2] / p.co2_ref
+        u[12] = p.Tref0 + p.cpCO2 * u[2] / p.pCO2ref
     end
     return nothing
 end
-
 
 """
     calc_alpha_ref!(u, p)
 calculates reference value for albedo
 """
 function calc_alpha_ref!(u::Vector, p::Params)
-    if u[5] == 0.0  # no ice
-        u[17] = p.alpha_land  # alpha_ref is alpha_land
-    else
-        n = 1 # exponent number in albedo-age parameterisation
-        #alphaslope = (1+ (10-1)*u[6]) * p.alpha_slope
-        u[17] = max(p.alpha_newice - p.alpha_slope * u[3]^n, p.alpha_oldice) # αₙ - αₛ * t
+    if p.active_aging == true
+        if u[5] == 0.0  # no ice
+            u[16] = p.alphaland  # alpharef is alphaland
+        else
+            n = 1 # exponent number in albedo-age parameterisation
+            #alphaslope = (1+ (10-1)*u[6]) * p.alpha_slope
+            u[16] = max(p.alphanewice - p.kalpha * u[3]^n, p.alphaoldice) # alphaₙ - kalpha * t
+        end
+    elseif p.active_aging == false
+        if u[5] == 0.0  # no ice
+            u[16] = p.alphaland  # alpharef is alphaland
+        else
+            u[16] = p.alphanewice
+        end
     end
     return nothing
 end
@@ -129,9 +130,9 @@ calculates air temperature at ice sheet surface level
 """
 function calc_Tsurf!(u::Vector, p::Params)
     if p.active_climate
-        u[18] = u[1] - p.lapse_rate * u[14]    # reference is regional T
+        u[17] = u[1] - p.Γ * u[13]    # reference is regional T
     else
-        u[18] = u[12] - p.lapse_rate * u[14]    # reference is Tsl
+        u[17] = u[11] - p.Γ * u[13]    # reference is Tsl
     end
     return nothing
 end
@@ -140,9 +141,9 @@ end
 # Other variables 
 ########################
 """
-    calc_rad_co2(CO2)
-calculates the radiative forcing due to co2 (in W/m²), Myhre et al. (1998)
+    calc_rad_pCO2(CO2)
+calculates the radiative forcing due to pCO2 (in W/m²), Myhre et al. (1998)
 """
-function calc_rad_co2(CO2::Real, p)
-    return 5.35 * NaNMath.log(CO2 / p.co2_ref)
+function calc_rad_pCO2(CO2::Real, p)
+    return 5.35 * NaNMath.log(CO2 / p.pCO2ref)
 end
