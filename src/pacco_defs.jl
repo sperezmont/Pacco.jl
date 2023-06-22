@@ -3,14 +3,14 @@
 #     Aim: definition of states and parameters 
 # =============================
 # pronostic variables
-prognostic = ["T", "pCO2", "iceage", "alpha", "H", "Hsed", "zb", "Tice", "fstr"]
+prognostic = ["T", "C", "iceage", "albedo", "H", "Hsed", "B", "Tice", "fstr"]
 prognostic_longnames = ["Regional air temperature", "Carbon dioxide concentration",
     "Ice age", "System albedo", "Ice thickness", "Sediment layer thickness",
     "Bedrock elevation", "Ice temperature", "Streaming fraction"]
 
 diagnostic = ["I", "Tsl", "Tref",  # radiative forcing and climate response
-    "z", "A", "V",  # ice geometry
-    "alpha_ref", "Tsurf",   # climate parameters
+    "Z", "Surf", "Vol",  # ice geometry
+    "albedo_ref", "Tsurf",   # climate parameters
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
     "Qdif", "Qdrag"]   # ice thermodynamics
@@ -63,7 +63,7 @@ function load_defs(p)
     (p.time_init > p.time_end) && (error("time_init is greater than time_end"))
 
     # Assign initial conditions
-    u0 = vcat([p.T0, p.pCO20, p.iceage0, p.alpha0, p.H0, p.Hsed0, p.zb0, p.Tice0, p.fstr0], # prognostic states
+    u0 = vcat([p.T0, p.C0, p.iceage0, p.albedo0, p.H0, p.Hsed0, p.B0, p.Tice0, p.fstr0], # prognostic states
         zeros(ldiag)) # diagnostic variables
 
     calc_diagnostic_variables!(u0, p, p.time_init - p.time_spinup)
@@ -74,12 +74,12 @@ function load_defs(p)
         "time" => Dict("units" => "yr", "longame" => "Simulation Time", "group" => "Time"),
         # -- Prognostic variables
         "T" => Dict("units" => "K", "longame" => "Regional Temperature", "group" => "Thermodynamics"),
-        "pCO2" => Dict("units" => "ppm", "longame" => "pCO2 Concentration", "group" => "Climate"),
+        "C" => Dict("units" => "ppm", "longame" => "C Concentration", "group" => "Climate"),
         "iceage" => Dict("units" => "yr", "longame" => "Ice Age", "group" => "Climate"),
-        "alpha" => Dict("units" => "--", "longame" => "System albedo", "group" => "Climate"),
+        "albedo" => Dict("units" => "--", "longame" => "System albedo", "group" => "Climate"),
         "H" => Dict("units" => "m", "longame" => "Ice Thickness", "group" => "Dynamics"),
         "Hsed" => Dict("units" => "m", "longame" => "Sediment layer Thickness", "group" => "Dynamics"),
-        "zb" => Dict("units" => "m", "longame" => "Bedrock Elevation", "group" => "Dynamics"),
+        "B" => Dict("units" => "m", "longame" => "Bedrock Elevation", "group" => "Dynamics"),
         "Tice" => Dict("units" => "K", "longame" => "Ice Temperature", "group" => "Thermodynamics"),
         "fstr" => Dict("units" => "--", "longame" => "Stream Fraction", "group" => "Dynamics"),
         # -- Diagnostic variables
@@ -87,10 +87,10 @@ function load_defs(p)
         "R" => Dict("units" => "K", "longame" => "Temperature anomaly due to Radiative Forcing", "group" => "Climate"),
         "Tsl" => Dict("units" => "K", "longame" => "Sea-level Temperature", "group" => "Climate"),
         "Tref" => Dict("units" => "K", "longame" => "Reference Air Temperature", "group" => "Climate"),
-        "z" => Dict("units" => "m", "longame" => "Ice Surface Elevation", "group" => "Geometry"),
-        "A" => Dict("units" => "km²", "longame" => "Ice Extent", "group" => "Geometry"),
-        "V" => Dict("units" => "m SLE", "longame" => "Ice Volume", "group" => "Geometry"),
-        "alpha_ref" => Dict("units" => "--", "longame" => "System Reference albedo", "group" => "Climate"),
+        "Z" => Dict("units" => "m", "longame" => "Ice Surface Elevation", "group" => "Geometry"),
+        "Surf" => Dict("units" => "km²", "longame" => "Ice Extent", "group" => "Geometry"),
+        "Vol" => Dict("units" => "m SLE", "longame" => "Ice Volume", "group" => "Geometry"),
+        "albedo_ref" => Dict("units" => "--", "longame" => "System Reference albedo", "group" => "Climate"),
         "Tsurf" => Dict("units" => "K", "longame" => "Surface Temperature", "group" => "Climate"),
         "s" => Dict("units" => "m/a", "longame" => "Accumulation rate", "group" => "Thermodynamics"),
         "a" => Dict("units" => "m/a", "longame" => "Surface Ablation rate", "group" => "Thermodynamics"),
@@ -106,7 +106,7 @@ function load_defs(p)
         "Inorm" => Dict("units" => "W/m²", "longame" => "Normalized Insolation", "group" => "Forcing"),
         "Ianom" => Dict("units" => "W/m²", "longame" => "Insolation anomaly", "group" => "Forcing"),
         "m" => Dict("units" => "m/a", "longame" => "Mass Balance", "group" => "Thermodynamics"),
-        "RCO2" => Dict("units" => "W/m²", "longame" => "pCO2 radiative effect", "group" => "Climate"),
+        "RCO2" => Dict("units" => "W/m²", "longame" => "C radiative effect", "group" => "Climate"),
     )
     return u0, out_attr
 end

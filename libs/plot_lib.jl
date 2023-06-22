@@ -12,16 +12,16 @@ calculates spectrum and plots results from PACCO (given or not the variables to 
 * `experiment` experiment/experiments name/names (`string` or `vector of strings`)
 
 ### Optional arguments
-* `vars2plot::Vector = ["I", "H", "T", "pCO2", "V"]` vector of variables to plot
+* `vars2plot::Vector = ["I", "H", "T", "C", "Vol"]` vector of variables to plot
 * `plot_MPT::Bool = false` plot Mid-Pleistocene Transition?
 * `plot_MIS::Bool = false` plot Marine Isotope Stages?
 * `plot_PSD::Bool = true` calculate and plot Power Spectrum Density?
 * `times::Tuple = ()` start and end years (in years)
 * `time_anth::Real = 2000.0` when does Anthropocene start?
 * `plot_proxies::Bool = true` include proxy curves?
-* `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "pCO2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, pCO2/ and V/
+* `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, C/ and Vol/
 """
-function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "pCO2", "V"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "pCO2" => "luthi-etal_2008.nc", "V" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     proxy_path = pwd() .* "/data/"
 
@@ -359,13 +359,13 @@ plots all the states of PACCO `experiment`
 * `experiment::String` experiment name
 """
 function plot_pacco_states(experiment)
-    prognostic = ["T", "pCO2", "iceage", "alpha", "H", "Hsed", "zb", "Tice", "fstream"]
-    diagnostic = ["I", "R", "Tsl", "Tref",  # radiative forcing and climate response
-        "Z", "E", "V",  # ice geometry
-        "alpha_ref", "Tsurf",   # climate parameters
-        "A", "M",   # ice-sheet mass balance
-        "taud", "taub", "Ud", "Ub", "fstream_ref", "U", # ice dynamics
-        "Qdif", "Qdrag"]   # ice thermodynamics
+    prognostic = ["T", "C", "iceage", "albedo", "H", "Hsed", "B", "Tice", "fstr"]
+    diagnostic = ["I", "Tsl", "Tref",  # radiative forcing and climate response
+    "Z", "Surf", "Vol",  # ice geometry
+    "albedo_ref", "Tsurf",   # climate parameters
+    "s", "a",   # ice-sheet mass balance
+    "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
+    "Qdif", "Qdrag"]   # ice thermodynamics
     pacco_states = vcat(prognostic, diagnostic)
 
     path2data = pwd() * "/output/$(experiment)/pacco.nc"
@@ -392,23 +392,23 @@ function plot_pacco_comp_states(experiment::String)
     parameters2use = JLD2.load_object(pwd() * "/output/$(experiment)/params.jld2")
     data_frame = NCDataset(path2data, "r")
 
-    selected_alpha = Vector{Float32}(undef, length(data_frame["time"]))
+    selected_albedo = Vector{Float32}(undef, length(data_frame["time"]))
     for t in eachindex(data_frame["time"])
         if data_frame["MB"][t] <= 0
-            selected_alpha[t] = data_frame["alpha"][t]
+            selected_albedo[t] = data_frame["albedo"][t]
         else
-            selected_alpha[t] = parameters2use.alpha_newice
+            selected_albedo[t] = parameters2use.albedo_newice
         end
     end
 
     # Temperature evolution
     fig = Figure()
     ax = Axis(fig[1, 1], ylabel="Temperature evolution")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cz .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z/tau", color=:royalblue4)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* parameters2use.cZ .* data_frame["Z"] ./ parameters2use.tau_T, label="-cz⋅Z/tau", color=:royalblue4)
     lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .- data_frame["T"]) ./ parameters2use.tau_T, color=:olive, label="(Tref-T)/tau")
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.ci .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom", color=:orange)
-    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["pCO2"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(pCO2/280)", color=:maroon)
-    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.ci .* data_frame["Ianom"] .+ parameters2use.cc .* 5.35 .* NaNMath.log.(data_frame["pCO2"] ./ 280.0) - parameters2use.cz .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cI .* data_frame["Ianom"] ./ parameters2use.tau_T, label="cᵢ⋅Ianom", color=:orange)
+    lines!(ax, data_frame["time"] ./ 1e3, parameters2use.cC .* 5.35 .* NaNMath.log.(data_frame["C"] ./ 280.0) ./ parameters2use.tau_T, label="cc⋅5.35⋅log(C/280)", color=:maroon)
+    lines!(ax, data_frame["time"] ./ 1e3, (data_frame["Tref"] .+ parameters2use.cI .* data_frame["Ianom"] .+ parameters2use.cC .* 5.35 .* NaNMath.log.(data_frame["C"] ./ 280.0) - parameters2use.cZ .* data_frame["Z"] - data_frame["T"]) ./ parameters2use.tau_T, label="dT/dt", color=:grey20)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[2, 1], ylabel="T")
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["T"] .- data_frame["Tref"], color=:grey20, label="T")
@@ -427,7 +427,7 @@ function plot_pacco_comp_states(experiment::String)
     ax = Axis(fig[2, 1], ylabel="Size (m)")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["H"], color=:grey20, label="H")
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["Z"], color=:royalblue4, label="Z")
-    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["zb"], color=:violet, label="zb")
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["Beq"], color=:violet, label="Beq")
     fig[2, 2] = Legend(fig, ax, framevisible=false)
     save(pwd() * "/output/" * experiment * "/pacco_comp_states_H.png", fig)
 
@@ -437,7 +437,7 @@ function plot_pacco_comp_states(experiment::String)
     barplot!(ax, data_frame["time"] ./ 1e3, data_frame["MB"], color=:grey, label="MB")
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["A"], label="A", color="blue")
     lines!(ax, data_frame["time"] ./ 1e3, -1 .* data_frame["M"], label="M", color="red")
-    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.ki .* (1 .- selected_alpha) .* data_frame["Ianom"], 0.0), label="-kᵢ⋅(1-alpha)⋅Ianom", color=:orange)
+    lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.kI .* (1 .- selected_albedo) .* data_frame["Ianom"], 0.0), label="-kᵢ⋅(1-albedo)⋅Ianom", color=:orange)
     lines!(ax, data_frame["time"] ./ 1e3, -1 .* max.(parameters2use.lambda .* (data_frame["T"] .- data_frame["Tref"]), 0.0), label="-lambda⋅(T-Tref)", color=:maroon)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     save(pwd() * "/output/" * experiment * "/pacco_comp_states_MB.png", fig)
@@ -445,12 +445,12 @@ function plot_pacco_comp_states(experiment::String)
     # Albedo
     fig = Figure(resolution=(1000, 500))
     ax = Axis(fig[1, 1], ylabel="Albedo", yticklabelcolor=:green, ylabelcolor=:green)
-    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["alpha"], label="alpha", color=:olive, markersize=5)
-    scatter!(ax, data_frame["time"] ./ 1e3, selected_alpha, label="alpha selected", color=:green, markersize=5)
+    barplot!(ax, data_frame["time"] ./ 1e3, data_frame["albedo"], label="albedo", color=:olive, markersize=5)
+    scatter!(ax, data_frame["time"] ./ 1e3, selected_albedo, label="albedo selected", color=:green, markersize=5)
     fig[1, 2] = Legend(fig, ax, framevisible=false)
     ax = Axis(fig[1, 1], ylabel="iceage", yaxisposition=:right, ylabelcolor=:grey20)
     lines!(ax, data_frame["time"] ./ 1e3, data_frame["iceage"], color=:grey20)
-    save(pwd() * "/output/" * experiment * "/pacco_comp_states_alpha.png", fig)
+    save(pwd() * "/output/" * experiment * "/pacco_comp_states_albedo.png", fig)
 end
 
 """

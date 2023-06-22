@@ -8,41 +8,41 @@ computes diagnostic variables in `u` for time `t` using parameters in `p`
 """
 function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
     # Compute Orbital Forcing
-    calc_I!(u, p, t)
+    calc_insolation!(u, p, t)
 
     # Translate Orbital Forcing to temperature
     if p.active_climate == false
-        calc_Tsl!(u, p, t)
+        calc_sealevel_temperature!(u, p, t)
     end
-    calc_Tref!(u, p, t)
+    calc_reference_temperature!(u, p, t)
 
     # Compute Ice-Sheet Geometry
-    calc_z!(u, p)
-    calc_A!(u, p)
-    calc_V!(u, p)
+    calc_icesheet_elevation!(u, p)
+    calc_icesheet_area!(u, p)
+    calc_icesheet_volume!(u, p)
 
     if p.active_climate
         # Compute Climate variables
-        calc_alpha_ref!(u, p)
+        calc_reference_albedo!(u, p)
     end
-    calc_Tsurf!(u, p)
+    calc_surface_temperature!(u, p)
 
     # Compute Ice-Sheet Mass Balance
-    calc_s!(u, p)
-    calc_a!(u, p)
+    calc_snowfall!(u, p)
+    calc_ablation!(u, p)
 
     if p.active_ice
         # Compute Ice-Sheet dynamics
-        calc_taud!(u, p)
-        calc_taub!(u, p)
-        calc_vd!(u, p)
-        calc_vb!(u, p)
-        calc_fstr_ref!(u, p)
-        u[25] = u[22] + u[9] * u[23]
+        calc_driving_stress!(u, p)
+        calc_basal_stress!(u, p)
+        calc_deformational_velocity!(u, p)
+        calc_basal_velocity!(u, p)
+        calc_reference_streaming_fraction!(u, p)
+        u[25] = u[22] + u[9] * u[23]    # calcultas total velocity in the ice sheet
 
         # Compute Ice-Sheet thermodynamics
-        calc_Qdif!(u, p)
-        calc_Qdrag!(u, p)
+        calc_diffusional_heat!(u, p)
+        calc_dragging_heat!(u, p)
     end
     return nothing
 end
@@ -62,39 +62,39 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     ###########################
     if p.active_climate
         # -- regional air temperature
-        dudt[1] = calc_Tdot(u, p)
+        dudt[1] = calcdot_regional_temperature(u, p)
 
-        # -- pCO2
-        dudt[2] = calc_pCO2dot(u, p, t)
+        # -- C
+        dudt[2] = calcdot_carbon_dioxide(u, p, t)
 
         # -- ice age
-        dudt[3] = calc_iceagedot()
+        dudt[3] = calcdot_iceage()
 
         # -- albedo
-        dudt[4] = calc_alphadot(u, p)
+        dudt[4] = calcdot_albedo(u, p)
     else
         dudt[1:4] .= 0.0
     end
 
     # -- ice thickness
-    dudt[5] = calc_Hdot(u, p)
+    dudt[5] = calcdot_icethickness(u, p)
 
     # -- sediments layer thickness
     if t < p.time_init
         dudt[6] = 0.0
     else
-        (p.active_sed) ? (dudt[6] = calc_Hseddot(u, p)) : (dudt[6] = 0.0)
+        (p.active_sed) ? (dudt[6] = calcdot_sediment_thickness(u, p)) : (dudt[6] = 0.0)
     end
 
-    # -- bed elevation
-    (p.active_iso) ? (dudt[7] = calc_zbdot(u, p)) : (dudt[7] = 0.0)
+    # -- bedrock elevation
+    (p.active_iso) ? (dudt[7] = calcdot_bedrock_elevation(u, p)) : (dudt[7] = 0.0)
 
     if p.active_ice
         # -- ice temperature
-        (p.active_ice) && (dudt[8] = calc_Ticedot(u))
+        (p.active_ice) && (dudt[8] = calcdot_ice_temperature(u))
 
         # -- streaming fraction
-        (p.active_ice) && (dudt[9] = calc_fstrdot(u, p))
+        (p.active_ice) && (dudt[9] = calcdot_streaming_fraction(u, p))
     else
         dudt[8:9] .= 0.0
     end
@@ -103,14 +103,14 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     view(dudt, lprog+1:lsu) .= 0.0
 
     # Modify states to ensure physical meaning
-    view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.alphaland, 0.0, 0.0, -Inf, 0.0, 0.0])
+    view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, 0.0, 0.0])
     view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, 1.0, Inf, p.degK, Inf])
 
     if u[5] == 0.0  # no ice
         u[3] = 0.0
-        u[4] = p.alphaland
+        u[4] = p.albedo_land
     elseif u[3] < 10.0 # first ice
-        u[4] = p.alphanewice
+        u[4] = p.albedo_newice
     end
 
     return nothing
@@ -129,7 +129,7 @@ function pacco(u0::Vector, p::Params, tspan::Tuple)
     # Define and solve the problem
     prob = ODEProblem(dudt!, u0, tspan, p)
 
-    if (p.dt_case == "fixed") || (p.I_case == "input")
+    if (p.dt_case == "fixed") || (p.insol_case == "input")
         return solve(prob, Euler(), saveat=p.dt_out, dt=p.dt)
     elseif p.dt_case == "adaptive"
         return solve(prob, BS3(), saveat=p.dt_out)
@@ -149,8 +149,8 @@ runs experiment `experiment` using as source parameter file `nml_ice-clim.jl` an
         run_pacco("test1")
 Runs experiment `test1` using the default values of `p` located in `par/default_params.jl`
 
-        run_pacco("test1", p = Params(time_init = -2e6, Aref = 0.1, lambda = 0.1))
-Runs experiment `test1` using the default values of `p` located in `par/default_params.jl` and change those provided by `p = Params(time_init = -2e6, Aref = 0.1, lambda = 0.1)`
+        run_pacco("test1", p = Params(time_init = -2e6, sref = 0.1, lambda = 0.1))
+Runs experiment `test1` using the default values of `p` located in `par/default_params.jl` and change those provided by `p = Params(time_init = -2e6, sref = 0.1, lambda = 0.1)`
 
         run_pacco("test1", p = JLD2.load_object("path/to/julia/object/params.jld2"))
 Runs experiment `test1` and uses as parameters the ones stored in `"path/to/julia/object/params.jld2"`
@@ -164,7 +164,7 @@ function run_pacco(experiment::String; p::Params=Params(), returnsol=true)
     timespan = (p.time_init - p.time_spinup, p.time_end)
 
     ## Load input if desired
-    if p.I_case == "input"
+    if p.insol_case == "input"
         global InsolationData = read_insolation_from_file(p.I_input, timespan)    # defined as global in order to be accesible from the entire model
     end
 
