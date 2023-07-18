@@ -104,7 +104,7 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
 
     # Modify states to ensure physical meaning
     view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, 0.0, 0.0])
-    view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, 1.0, Inf, p.degK, Inf])
+    view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.degK, Inf])
 
     if u[5] == 0.0  # no ice
         u[3] = 0.0
@@ -165,7 +165,7 @@ function run_pacco(experiment::String; p::Params=Params(), returnsol=true)
 
     ## Load input if desired
     if p.insol_case == "input"
-        global InsolationData = read_insolation_from_file(p.I_input, timespan)    # defined as global in order to be accesible from the entire model
+        global InsolationData = read_insolation_from_file(p.insol_input, timespan)    # defined as global in order to be accesible from the entire model
     end
 
     ## Run pacco()

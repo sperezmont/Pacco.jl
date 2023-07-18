@@ -31,6 +31,7 @@ Base.@kwdef struct Params
     ## Cases
     dt_case::String = "adaptive"       # Time step mode: "adaptive", "fixed"
     insol_case::String = "laskar"      # Insolation case: "constant", "artificial", "laskar", "ISI", "caloric", "input"
+    carbon_case::String = "dynamic"    # Carbon cycle case: "dynamic", "constant", "trended" 
     dyn_case::String = "SIA"           # Ice flow approximation: "sia"
     basal_case::String = "weertmanq"   # parameterization of basal velocity: "weertman"
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
@@ -44,7 +45,7 @@ Base.@kwdef struct Params
     insol_min::Real = 425.0            # [W/m²] Insolation minimum value 
     insol_max::Real = 565.0            # [W/m²] Insolation maximum value
     insol_threshold = 300.0            # [W/m²] Insolation threshold value for integrated summer insolation, Huybers (2006) used 275 W/m²
-    insol_ref::Real = 480.0            # [W/m²] Present reference value for insolation 
+    insol_ref::Real = 480.0            # [W/m²] Reference value for insolation. For present day: 480.0 (solstice),  367.0 (caloric), 214.0 (annual) 
 
     Pobl::Real = 0.9                   # Power of obliquity (normalised to At)
     tauobl::Real = 41e3                # [yr] Obliquity period
@@ -67,6 +68,7 @@ Base.@kwdef struct Params
     tauC::Real = 10.0                  # [yr] Characteristic time for C evolution
     kCT::Real = 2.0                    # [K] sensitivity of reference temperature to C anthorpogenic input (conversion C to T) -- perhaps kCT and kTC should be the same? spm 
     kTC::Real = 7.0                    # [ppm/K] Proportionality between temperature and C forcing (conversion T to C)
+    kC::Real = -1e-5                   # [ppm/yr] Carbon dioxide imposed slope
 
     time_anth::Real = 2000.0           # [yr] Year in which we take into account the anthropogenic forcing
     C_anth::Real = 3000.0              # [Gt] Anthropogenic amount of CO2 produced
@@ -108,6 +110,8 @@ Base.@kwdef struct Params
     Cs::Real = 1e-7                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
 
     ## Hsed, sediment layer thickness
+    Hsed_max::Real = 100.0             # [m] Maximum amount of sediments
+    Hsed_min::Real = 0.0               # [m] Minimum amount of sediments
     f1::Real = 1.0e-7                  # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
     f2::Real = 1.0e-6                  # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 

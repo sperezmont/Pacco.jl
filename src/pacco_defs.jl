@@ -9,7 +9,7 @@ prognostic_longnames = ["Regional air temperature", "Carbon dioxide concentratio
     "Bedrock elevation", "Ice temperature", "Streaming fraction"]
 
 diagnostic = ["I", "Tsl", "Tref",  # radiative forcing and climate response
-    "Z", "Surf", "Vol",  # ice geometry
+    "z", "Surf", "Vol",  # ice geometry
     "albedo_ref", "Tsurf",   # climate parameters
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
@@ -87,7 +87,7 @@ function load_defs(p)
         "R" => Dict("units" => "K", "longame" => "Temperature anomaly due to Radiative Forcing", "group" => "Climate"),
         "Tsl" => Dict("units" => "K", "longame" => "Sea-level Temperature", "group" => "Climate"),
         "Tref" => Dict("units" => "K", "longame" => "Reference Air Temperature", "group" => "Climate"),
-        "Z" => Dict("units" => "m", "longame" => "Ice Surface Elevation", "group" => "Geometry"),
+        "z" => Dict("units" => "m", "longame" => "Ice Surface Elevation", "group" => "Geometry"),
         "Surf" => Dict("units" => "km²", "longame" => "Ice Extent", "group" => "Geometry"),
         "Vol" => Dict("units" => "m SLE", "longame" => "Ice Volume", "group" => "Geometry"),
         "albedo_ref" => Dict("units" => "--", "longame" => "System Reference albedo", "group" => "Climate"),

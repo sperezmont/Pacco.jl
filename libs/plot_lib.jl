@@ -196,8 +196,10 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
             xlims!(ax, times)
         end
 
-        if (max_time - min_time) > 2.0e6
+        if (max_time - min_time) > 3.0e6
             tstep = 300e3
+        elseif (max_time - min_time) > 2.0e6
+            tstep = 250e3
         elseif (max_time - min_time) > 1.0e6
             tstep = 200e3
         else
@@ -361,7 +363,7 @@ plots all the states of PACCO `experiment`
 function plot_pacco_states(experiment)
     prognostic = ["T", "C", "iceage", "albedo", "H", "Hsed", "B", "Tice", "fstr"]
     diagnostic = ["I", "Tsl", "Tref",  # radiative forcing and climate response
-    "Z", "Surf", "Vol",  # ice geometry
+    "z", "Surf", "Vol",  # ice geometry
     "albedo_ref", "Tsurf",   # climate parameters
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
@@ -371,7 +373,7 @@ function plot_pacco_states(experiment)
     path2data = pwd() * "/output/$(experiment)/pacco.nc"
     data_frame = NCDataset(path2data, "r")
     fig, k = Figure(resolution=(2000, 800)), 1
-    for i in 1:4, j in 1:7
+    for i in 1:4, j in 1:6
         ax = Axis(fig[i, j], ylabel=pacco_states[k])
         lines!(ax, data_frame["time"] ./ 1e3, data_frame[pacco_states[k]])
         k += 1

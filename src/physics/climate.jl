@@ -30,21 +30,29 @@ calculates carbon dioxide (C) derivative through
     dC/dt = ((Cref + kTC * (T - Tref)) - C) / tauC
 """
 function calcdot_carbon_dioxide(u::Vector, p::Params, t::Real)
-    # -- anthropogenic forcing?
-    if t < p.time_anth # unperturbed climate
-        return (p.Cref + p.kTC * (u[1] - u[12]) - u[2]) / p.tauC
-    else    # perturbed climate
-        actual_diftime = t - p.time_anth
-        Cref = p.Cref + p.C_anth * (
-            0.75 / exp(actual_diftime / 365.0)  # ocean invasion
-            + 0.135 / exp(actual_diftime / 5500.0)  # sea floor CaCO3 neutralization 
-            + 0.035 / exp(actual_diftime / 8200.0)  # terrestrial floor CaCO3 neutralization
-            + 0.08 / exp(actual_diftime / 200000.0) # silicate weathering
-        )   # Archer 1997
-        new_Cref = Cref + p.kTC * (u[1] - u[12])
-        return (new_Cref - u[2]) / p.tauC
-    end
+    if p.carbon_case in ["dynamic", "trended"]
+        if t < p.time_anth # unperturbed climate
+            reference_carbon = p.Cref + p.kTC * (u[1] - u[12]) 
+        else    # perturbed climate
+            actual_diftime = t - p.time_anth
+            Cref = p.Cref + p.C_anth * (
+                0.75 / exp(actual_diftime / 365.0)  # ocean invasion
+                + 0.135 / exp(actual_diftime / 5500.0)  # sea floor CaCO3 neutralization 
+                + 0.035 / exp(actual_diftime / 8200.0)  # terrestrial floor CaCO3 neutralization
+                + 0.08 / exp(actual_diftime / 200000.0) # silicate weathering
+            )   # Archer 1997
+            reference_carbon = Cref + p.kTC * (u[1] - u[12])
+        end
 
+        if p.carbon_case == "dynamic"
+            return (reference_carbon - u[2]) / p.tauC
+        elseif p.carbon_case == "trended"
+            return p.kC + (reference_carbon - u[2]) / p.tauC
+        end
+
+    elseif p.carbon_case == "constant"
+        return 0.0
+    end
 end
 
 """
