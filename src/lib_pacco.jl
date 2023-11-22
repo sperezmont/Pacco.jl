@@ -38,7 +38,7 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
         calc_deformational_velocity!(u, p)
         calc_basal_velocity!(u, p)
         calc_reference_streaming_fraction!(u, p)
-        u[25] = u[22] + u[9] * u[23]    # calcultas total velocity in the ice sheet
+        u[25] = u[22] + u[23]    # calculates total velocity in the ice sheet
 
         # Compute Ice-Sheet thermodynamics
         calc_diffusional_heat!(u, p)

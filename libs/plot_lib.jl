@@ -21,7 +21,7 @@ calculates spectrum and plots results from PACCO (given or not the variables to 
 * `plot_proxies::Bool = true` include proxy curves?
 * `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, C/ and Vol/
 """
-function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "spratt-lisiecki_2016.nc"))
+function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "bintanja-vandewal_2008.nc"))#"spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     proxy_path = pwd() .* "/data/"
 

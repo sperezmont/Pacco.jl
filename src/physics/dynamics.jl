@@ -98,7 +98,7 @@ calculates basal velocity
 """
 function calc_basal_velocity!(u::Vector, p::Params)
     if p.basal_case == "weertmanq"
-        u[23] = max(0.0, min(1.0, (u[6] - p.Hsed_min)/(p.Hsed_max - p.Hsed_min))) * p.Cs * u[21]^2.0#max(0.0, min(1.0, u[6])) * p.Cs * u[21]^2.0            # Pollard and DeConto (2012): vb = Cs' ⋅ τb²  
+        u[23] = u[9] * max(0.0, min(1.0, (u[6] - p.Hsed_min)/(p.Hsed_max - p.Hsed_min))) * p.Cs * u[21]^2.0#max(0.0, min(1.0, u[6])) * p.Cs * u[21]^2.0            # Pollard and DeConto (2012): vb = Cs' ⋅ τb²  
     else
         error("Ice-sheet basal velocity case not recognized")
     end

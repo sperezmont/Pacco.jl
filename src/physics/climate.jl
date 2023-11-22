@@ -196,10 +196,14 @@ function calc_ablation!(u::Vector, p::Params)
             u[19] = 0.0
         end
     elseif p.ablation_case == "ITM"
-        if (u[18] - u[19]) <= 0   # if m = s - a <= 0, use albedo(t)
+        if p.active_snow_on_ice # let snow cover hide the old ice (if smb is ≥ 0)
+            if (u[18] - u[19]) <= 0   # if m = s - a <= 0, use albedo(t)
+                u[19] = p.km + p.kI * max((1 - u[4]) * (u[10] - p.insol_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)    # albedo
+            else
+                u[19] = p.km + p.kI * max((1 - p.albedo_newice) * (u[10] - p.insol_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)   # albedoₙ
+            end
+        else    # use old ice albedo (time evolving albedo)
             u[19] = p.km + p.kI * max((1 - u[4]) * (u[10] - p.insol_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)    # albedo
-        else
-            u[19] = p.km + p.kI * max((1 - p.albedo_newice) * (u[10] - p.insol_ref), 0.0) + p.lambda * max(u[1] - p.Tthreshold, 0.0)   # albedoₙ
         end
 
     else

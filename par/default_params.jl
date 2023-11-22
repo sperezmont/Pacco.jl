@@ -1,10 +1,10 @@
 Base.@kwdef struct Params
     # Run Settings
-    time_init::Real = -1.5e6           # [yr] Starting time (model years)
+    time_init::Real = -3.0e6           # [yr] Starting time (model years)
     time_end::Real = 0.0               # [yr] Ending time (model years)
     dt::Real = 10.0                    # [yr] Time step if fixed time step is activated
     dt_out::Real = 1000.0              # [yr] Frequency of writing
-    time_spinup::Real = 5e5            # [yr] Time length employed to spinup the model
+    time_spinup::Real = 0.0            # [yr] Time length employed to spinup the model
 
     # Initial Conditions
     degK::Real = 273.15                # [K] kelvin to celsius change 
@@ -13,7 +13,7 @@ Base.@kwdef struct Params
     iceage0::Real = 0.0                # [a] Initial condition for ice age
     albedo0::Real = 0.2                # [--] Initial condition for model's albedo
     H0::Real = 0.0                     # [m] Initial condition for ice thickness
-    Hsed0::Real = 0.0                  # [m] Initial condition for sediments thickness (0-1)
+    Hsed0::Real = 30.0                 # [m] Initial condition for sediments thickness
     B0::Real = 500.0                   # [m] Inital condition for bed elevation
     Tice0::Real = -20.0 + degK         # [K] Initial condition for ice temperature 
     fstr0::Real = 0.4                  # [--] Initial condition for streaming fraction
@@ -23,10 +23,11 @@ Base.@kwdef struct Params
     # Run parameters 
     ## Switches
     active_iso::Bool = true            # Switch: include active isostatic rebound?
-    active_sed::Bool = false           # Switch: include interactive sediments?
+    active_sed::Bool = true            # Switch: include interactive sediments?
     active_climate::Bool = true        # Switch: include climate routines?
     active_ice::Bool = true            # Switch: include ice sheet dynamics?
     active_aging::Bool = true          # Switch: include ice aging?
+    active_snow_on_ice::Bool = true    # Switch: does snow accumulation affect ITM ablation?
 
     ## Cases
     dt_case::String = "adaptive"       # Time step mode: "adaptive", "fixed"
@@ -47,10 +48,10 @@ Base.@kwdef struct Params
     insol_threshold = 300.0            # [W/m²] Insolation threshold value for integrated summer insolation, Huybers (2006) used 275 W/m²
     insol_ref::Real = 480.0            # [W/m²] Reference value for insolation. For present day: 480.0 (solstice),  367.0 (caloric), 214.0 (annual) 
 
-    Pobl::Real = 0.9                   # Power of obliquity (normalised to At)
-    tauobl::Real = 41e3                # [yr] Obliquity period
     Ppre::Real = 0.0                   # Power of precession (normalised to At)
     taupre::Real = 23e3                # [yr] Precession period
+    Pobl::Real = 0.9                   # Power of obliquity (normalised to At)
+    tauobl::Real = 41e3                # [yr] Obliquity period
     Pexc::Real = 0.1                   # Power of excentricity (normalised to At)
     tauexc::Real = 100e3               # [yr] Excentricity period
     At::Real = 35.0                    # [ºC or K] Amplitude of temperature forcing (surface temperatures)
@@ -60,7 +61,7 @@ Base.@kwdef struct Params
     cISI::Real = 0.1                   # [K/Wm²] climate sensitivity to Integrated Summer Insolation 
     cCAL::Real = 0.5                   # [K/Wm²] climate sensitivity to Caloric season insolation
     cC::Real = 0.65                    # [K/Wm²] climate sensitivity to C (CO2, carbon dioxide)
-    cZ::Real = 0.00685                 # [K/m³] climate sensitivity to ice sheet elevation
+    cZ::Real = 0.007                   # [K/m³] climate sensitivity to ice sheet elevation
     tauT::Real = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
 
     ## C, CO2, Carbon dioxide
@@ -96,24 +97,25 @@ Base.@kwdef struct Params
     sref::Real = 0.3                   # [m/yr] Reference Accumulation for northern hemisphere (sref = smean + ka * ΔTmean)
     
     ### ȧ, ablation
-    lambda::Real = 0.064               # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt
+    lambda::Real = 0.1                 # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt
     Tthreshold::Real = -5.0 + degK     # [K] Temperature threshold that allows melting (default::Real = -5.0ºC)
     km::Real = 0.0                     # [m/yr] offset melting in ITM-like calculation
-    kI::Real = 0.025                   # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
+    kI::Real = 0.027                   # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
     ks::Real = 0.02                    # [m/yr/K] sensitivity parameter of snowfall accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
     ### Ice sheet dynamics
     Ath::Real = 20.0                   # [K] Thermal amplitude due to ice-sheet area (Northern Hemisphere)
     L::Real = 1e6                      # [m] Aspect ratio of the model representing the necessary scaling for converting dS/dx to H/L (typically 10³ km)
+    nu::Real = 300                     # [m yr⁻¹] Typical scale of sliding velocities
     Aflow::Real = 1e-16                # [Pa-3 a−1] Flow parameter of the Glen's flow law
     glen_n::Real = 3.0                 # [--] Glen's flow law exponent
-    Cs::Real = 1e-7                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
+    Cs::Real = 5e-5                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
 
     ## Hsed, sediment layer thickness
-    Hsed_max::Real = 100.0             # [m] Maximum amount of sediments
-    Hsed_min::Real = 0.0               # [m] Minimum amount of sediments
-    f1::Real = 1.0e-7                  # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
-    f2::Real = 1.0e-6                  # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
+    Hsed_max::Real = 30.0              # [m] Maximum amount of sediments (pre Pleistocene reconstructions ~30 m, Clark et al., 2006)
+    Hsed_min::Real = 5.0               # [m] Minimum amount of sediments (the mode of PD distribution is ~5 m, inferred from Laske and Masters, 1997)
+    f1::Real = 1.5e-7                  # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
+    f2::Real = 5.0e-6                  # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 
     ## B, bedrock elevation
     Beq::Real = 500.0                  # [m] equilibrium altitude of the bedrock
