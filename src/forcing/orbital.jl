@@ -12,11 +12,15 @@ function calc_artificial_insolation(p::Params, t::Real)
     insol_ref = (p.insol_max + p.insol_min) / 2
     Ains = (p.insol_max - p.insol_min) / 2
 
+    # Normalize powers
+    Psum = p.Ppre + p.Pobl + p.Pexc
+    Ppre, Pobl, Pexc = (p.Ppre, p.Pobl, p.Pexc) ./ Psum
+
     # Return artificial insolation -- I have to discuss this with jas
     return insol_ref + Ains * (
-        p.Pobl * cos(2.0 * pi * t / p.tauobl) +
-        p.Ppre * cos(2.0 * pi * t / p.taupre) +
-        p.Pexc * cos(2.0 * pi * t / p.tauexc))
+        Ppre * cos(2.0 * pi * t / p.taupre) +
+        Pobl * cos(2.0 * pi * t / p.tauobl) +
+        Pexc * cos(2.0 * pi * t / p.tauexc))
 end
 
 """

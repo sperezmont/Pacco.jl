@@ -36,7 +36,7 @@ Base.@kwdef struct Params
     dyn_case::String = "SIA"           # Ice flow approximation: "sia"
     basal_case::String = "weertmanq"   # parameterization of basal velocity: "weertman"
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
-    ablation_case::String = "ITM"      # Surface melting case: "PDD", "ITM"
+    ablation_case::String = "ITM"      # Surface melting case: "PDD", "ITM", "PDD-LIN"
 
     ## I, insol, Insolation
     insol_day::Real = 170.0            # Day in which calculate insolation

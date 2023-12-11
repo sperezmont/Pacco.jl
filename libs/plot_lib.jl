@@ -21,7 +21,7 @@ calculates spectrum and plots results from PACCO (given or not the variables to 
 * `plot_proxies::Bool = true` include proxy curves?
 * `proxy_files::Dict = Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "spratt-lisiecki_2016.nc")` dictionary with the names of the proxy files to use in T/, C/ and Vol/
 """
-function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "bintanja-vandewal_2008.nc"))#"spratt-lisiecki_2016.nc"))
+function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], plot_MPT::Bool=false, plot_MIS::Bool=false, plot_PSD::Bool=true, times::Tuple=(), time_anth::Real=2000.0, plot_legend::Bool=false, plot_proxies::Bool=true, proxy_files::Dict=Dict("T" => "barker-etal_2011.nc", "C" => "luthi-etal_2008.nc", "Vol" => "bintanja-vandewal_2008.nc"))#"spratt-lisiecki_2016.nc"))
     # 1. Define some local variables and check if ensemble
     proxy_path = pwd() .* "/data/"
 
@@ -163,7 +163,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
                 label = label * ", $(data_labels[e])"
             end
 
-            if vars2plot[v] in ["T", "Tsurf"]
+            if vars2plot[v] in ["T", "Tsurf", "Tsl"]
                 lines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
             else
                 lines!(ax, time_v[e][:], data_v[e][:], markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
@@ -178,12 +178,14 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
             end
         end
 
-        if typeof(experiment) == String
-            if length(data_to_load) == 1
+        if plot_legend
+            if typeof(experiment) == String
+                if length(data_to_load) == 1
+                    fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6 * fntsz)
+                end
+            else
                 fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6 * fntsz)
             end
-        else
-            fig[v, ncols+1] = Legend(fig, ax, framevisible=false, labelsize=0.6 * fntsz)
         end
 
         # -- 3.8 Formatting ...

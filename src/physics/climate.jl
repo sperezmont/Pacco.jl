@@ -140,13 +140,15 @@ end
 
 """
     calc_surface_temperature!(u, p)
-calculates air temperature at ice sheet surface level
+calculates air temperature at surface level
 """
 function calc_surface_temperature!(u::Vector, p::Params)
+    surface = u[5] + u[6] + u[7]    # always, even if there is no ice
+
     if p.active_climate
-        u[17] = u[1] - p.Γ * u[13]    # reference is regional T
+        u[17] = u[1] - p.Γ * surface    # reference is regional T
     else
-        u[17] = u[11] - p.Γ * u[13]    # reference is Tsl
+        u[17] = u[11] - p.Γ * surface    # reference is Tsl
     end
     return nothing
 end
@@ -192,6 +194,12 @@ function calc_ablation!(u::Vector, p::Params)
             else
                 u[19] = p.lambda * (u[17] - p.Tthreshold)   # lambda(Tsurf - Tthreshold)
             end
+        else
+            u[19] = 0.0
+        end
+    elseif p.ablation_case == "PDD-LIN" # PDD linear with sea level temperature
+        if u[11] >= (p.Tthreshold)
+            u[19] = p.lambda * (u[11] - p.Tthreshold)   # lambda(Tsl - Tthreshold)
         else
             u[19] = 0.0
         end
