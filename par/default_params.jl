@@ -15,7 +15,7 @@ Base.@kwdef struct Params
     H0::Real = 0.0                     # [m] Initial condition for ice thickness
     Hsed0::Real = 30.0                 # [m] Initial condition for sediments thickness
     B0::Real = 500.0                   # [m] Inital condition for bed elevation
-    Tice0::Real = -20.0 + degK         # [K] Initial condition for ice temperature 
+    Tice0::Real = -15.0 + degK         # [K] Initial condition for ice temperature 
     fstr0::Real = 0.4                  # [--] Initial condition for streaming fraction
 
     Tref0::Real = 0.0 + degK           # [K] Reference climatic temperature 
@@ -26,6 +26,7 @@ Base.@kwdef struct Params
     active_sed::Bool = true            # Switch: include interactive sediments?
     active_climate::Bool = true        # Switch: include climate routines?
     active_ice::Bool = true            # Switch: include ice sheet dynamics?
+    active_thermo::Bool = false        # Switch: include ice sheet thermodynamics?
     active_aging::Bool = true          # Switch: include ice aging?
     active_snow_on_ice::Bool = true    # Switch: does snow accumulation affect ITM ablation?
 
@@ -34,9 +35,12 @@ Base.@kwdef struct Params
     insol_case::String = "laskar"      # Insolation case: "constant", "artificial", "laskar", "ISI", "caloric", "input"
     carbon_case::String = "dynamic"    # Carbon cycle case: "dynamic", "constant", "trended" 
     dyn_case::String = "SIA"           # Ice flow approximation: "sia"
-    basal_case::String = "weertmanq"   # parameterization of basal velocity: "weertman"
+    basal_case::String = "weertmanq"   # parameterization of basal velocity: "weertman", "mb"
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
     ablation_case::String = "ITM"      # Surface melting case: "PDD", "ITM", "PDD-LIN"
+    diffusion_case::String = "2pts"    # Diffusion equation case: "2pts", "3pts"
+    streaming_case::String = "fixed"  # Reference streaming case: "fixed", "dynamic"
+    ref_streaming_case::String = "thermo"  # Reference streaming case: "theo", "thermo"
 
     ## I, insol, Insolation
     insol_day::Real = 170.0            # Day in which calculate insolation
@@ -57,11 +61,11 @@ Base.@kwdef struct Params
     At::Real = 35.0                    # [ºC or K] Amplitude of temperature forcing (surface temperatures)
 
     ## T, Regional air temperature
-    cI::Real = 0.1                     # [K/Wm²] climate sensitivity to insolation (laskar method)
-    cISI::Real = 0.1                   # [K/Wm²] climate sensitivity to Integrated Summer Insolation 
-    cCAL::Real = 0.5                   # [K/Wm²] climate sensitivity to Caloric season insolation
-    cC::Real = 0.65                    # [K/Wm²] climate sensitivity to C (CO2, carbon dioxide)
-    cZ::Real = 0.007                   # [K/m³] climate sensitivity to ice sheet elevation
+    cI::Real = 0.1                     # [Km²/W] climate sensitivity to insolation (laskar method)
+    cISI::Real = 1e-7                  # [Km²/J] climate sensitivity to Integrated Summer Insolation 
+    cCAL::Real = 1e-7                  # [Km²/J] climate sensitivity to Caloric season insolation
+    cC::Real = 0.65                    # [Km²/W] climate sensitivity to C (CO2, carbon dioxide)
+    cZ::Real = 0.007                   # [K/m] climate sensitivity to ice sheet elevation
     tauT::Real = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
 
     ## C, CO2, Carbon dioxide
@@ -95,18 +99,20 @@ Base.@kwdef struct Params
     Tsnow::Real = -11.6 + degK         # [K] Air temperature below which we consider full snowfall (Bales et al. 2009 take -11.4ºC, Robinson et al. 2010 take -7ºC)
     Train::Real = 7.4 + degK           # [K] Air temperature above which we consider full rain (Bales et al. 2009 take 7.4ºC, Robinson et al. 2010 take 7ºC)
     sref::Real = 0.3                   # [m/yr] Reference Accumulation for northern hemisphere (sref = smean + ka * ΔTmean)
-    
+    ks::Real = 0.02                    # [m/yr/K] sensitivity parameter of snowfall accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
+
     ### ȧ, ablation
     lambda::Real = 0.1                 # [m yr⁻¹ K⁻¹] Proportionality between positive temperatures and surface melt
     Tthreshold::Real = -5.0 + degK     # [K] Temperature threshold that allows melting (default::Real = -5.0ºC)
     km::Real = 0.0                     # [m/yr] offset melting in ITM-like calculation
     kI::Real = 0.027                   # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
-    ks::Real = 0.02                    # [m/yr/K] sensitivity parameter of snowfall accumulation to temperature (Clasuius clapeyron like) ! 0.004 the default?
 
     ### Ice sheet dynamics
     Ath::Real = 20.0                   # [K] Thermal amplitude due to ice-sheet area (Northern Hemisphere)
     L::Real = 1e6                      # [m] Aspect ratio of the model representing the necessary scaling for converting dS/dx to H/L (typically 10³ km)
-    nu::Real = 300                     # [m yr⁻¹] Typical scale of sliding velocities
+    basal_scale::Real = 10.0           # [m] Vertical scale of the basal interface (Robel et al., 2013, JGR)
+    hrz_vel_scale::Real = 300          # [m yr⁻¹] Typical scale of sliding velocities
+    vrt_vel_scale::Real = -0.01        # [m yr⁻¹] Typical scale of vertical velocities in the base
     Aflow::Real = 1e-16                # [Pa-3 a−1] Flow parameter of the Glen's flow law
     glen_n::Real = 3.0                 # [--] Glen's flow law exponent
     Cs::Real = 5e-5                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
@@ -114,42 +120,45 @@ Base.@kwdef struct Params
     ## Hsed, sediment layer thickness
     Hsed_max::Real = 30.0              # [m] Maximum amount of sediments (pre Pleistocene reconstructions ~30 m, Clark et al., 2006)
     Hsed_min::Real = 5.0               # [m] Minimum amount of sediments (the mode of PD distribution is ~5 m, inferred from Laske and Masters, 1997)
-    f1::Real = 1.5e-7                  # [--] fraction of the sediments that is removed beacause of U # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> f1 ~ 1e-6)
-    f2::Real = 5.0e-6                  # [--] fraction of the surface mass blance (M) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
+    fv::Real = 1.5e-7                  # [--] fraction of the sediments that is removed because of v # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> fv ~ 1e-6)
+    fa::Real = 5.0e-6                  # [--] fraction of the ablation (a) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 
     ## B, bedrock elevation
     Beq::Real = 500.0                  # [m] equilibrium altitude of the bedrock
     taubedrock::Real = 5000.0          # [years] relaxation time for the astenosphere
 
     ## Tice, ice temperature
-    Tmantle::Real = 0.0 + degK         # [K] Mantle temperature 
-    Hmantle::Real = 1000.0             # [m] Mantle thickness
-    Qgeo::Real = 50.0                  # [mW/m²] Geothermal heat flux
-    Tsb::Real = 5.0 + degK             # [K] Streaming boundary temperature, Represents the thermal state of the boundary between deformational and streaming part -- jas 
+    hgeo::Real = 50.0e-3               # [W/m²] Geothermal heat flux
+    Tstr::Real = 5.0 + degK            # [K] Streaming boundary temperature, Represents the thermal state of the boundary between deformational and streaming part -- jas 
+    cice::Real = 2009.0                # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
+    kthr::Real = 2.1                   # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
+    Tmp::Real = degK                   # [K] melting point temperature
 
     ## fstr, streaming fraction
     fstrmin::Real = 0.4                # [--] Mininimal Fraction of the ice sheet considered streaming
     fstrmax::Real = 0.4                # [--] Maximal Fraction of the ice sheet considered streaming
-    vkin::Real = 1000.0                # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (Payne 2004)
+    vkin::Real = 1000.0                # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (1500 m/yr, Payne 2004)
     taukin::Real = L / vkin            # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)    
 
     ### Earth constants
     year_len::Real = 365.2422          # year length in days
-    sec_year::Real = 31556926.0        # [s] Seconds in a year, EISMINT value
+    sec_year::Real = 31556926.0        # [s/yr] Seconds in a year, EISMINT value
     I0::Real = 1365.2                  # [Wm⁻²] Solar constant
     g::Real = 9.81                     # [m/s²] Gravitational acceleration
-    Surfoc::Real = 3.618e8                # [km²] Oceanic surface
-    rhoi::Real = 910.0                 # [kg/m³] Ice density 
-    rhow::Real = 1000.0                # [kg/m³] Water density
-    rhom::Real = 2700.0                # [kg/m³] Lithosphere density 
-    Γ::Real = 0.0065          # [K/m] Atmospheric lapse rate (Γ)
+    Surfoc::Real = 3.618e8             # [km²] Oceanic surface
+    rhoice::Real = 910.0               # [kg/m³] Ice density 
+    rhowater::Real = 1000.0            # [kg/m³] Water density
+    rhobed::Real = 2700.0                # [kg/m³] Lithosphere density 
+    Γ::Real = 0.0065                   # [K/m] Atmospheric lapse rate (Γ)
     Tfreezing::Real = 0.0 + degK       # [K] Reference freezing temperature
     Lv::Real = 2.5e6                   # [J kg⁻¹] Latent heat of vaporization http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
     Rd::Real = 287.0                   # [J K⁻¹kg⁻¹] Dry-air gas constant http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
     Rv::Real = 461.0                   # [J K⁻¹kg⁻¹] Water-vapor gas constant http://pressbooks-dev.oer.hawaii.edu/atmo/chapter/chapter-4-water-vapor/
-    cice::Real = 2009.0                   # [J Kg⁻¹K⁻¹] Ice specific heat capacity, EISMINT value 
-    kth::Real = 2.1                        # [J s⁻¹ m⁻¹ K⁻¹] Ice thermal conductivity, (2.1, EISMINT value from Huybrecths et al. (1996))
 
+    # Ice-sheet discretization constraints
+    ice_exists_thr::Real = 0.0            # [m] strict threshold where ice sheet does not exist
+    ice_is_big_thr::Real = 10.0           # [m] threshold for ice sheet to be considered big enough 
+    ice_is_old_thr::Real = 10.0           # [yr] threshold for ice sheet to be considered old enough 
 end
 
 ## Insolation (orbital) parameters

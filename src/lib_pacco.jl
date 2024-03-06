@@ -3,7 +3,7 @@
 #     Aim: main functions of PACCO
 # =============================
 """
-    calc_diagnostic_variables!(u, p, t)
+    calc_diagnostic_variables!(u, dudt, p, t)
 computes diagnostic variables in `u` for time `t` using parameters in `p`
 """
 function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
@@ -37,13 +37,20 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
         calc_basal_stress!(u, p)
         calc_deformational_velocity!(u, p)
         calc_basal_velocity!(u, p)
-        calc_reference_streaming_fraction!(u, p)
+
+        (p.active_thermo) && (calc_reference_streaming_fraction!(u, p)) # update reference streaming fraction
+
         u[25] = u[22] + u[23]    # calculates total velocity in the ice sheet
 
-        # Compute Ice-Sheet thermodynamics
-        calc_diffusional_heat!(u, p)
-        calc_dragging_heat!(u, p)
+        if p.active_thermo
+            # Compute Ice-Sheet thermodynamics
+            calc_conductive_heat!(u, p)
+            calc_dragging_heat!(u, p)
+            calc_geothermal_heat!(u, p)
+            calc_vertical_heat_advection!(u, p)
+        end
     end
+
     return nothing
 end
 
@@ -89,12 +96,12 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     # -- bedrock elevation
     (p.active_iso) ? (dudt[7] = calcdot_bedrock_elevation(u, p)) : (dudt[7] = 0.0)
 
-    if p.active_ice
+    if p.active_thermo
         # -- ice temperature
-        (p.active_ice) && (dudt[8] = calcdot_ice_temperature(u))
+        dudt[8] = calcdot_ice_temperature(u, p)
 
         # -- streaming fraction
-        (p.active_ice) && (dudt[9] = calcdot_streaming_fraction(u, p))
+        dudt[9] = calcdot_streaming_fraction(u, p)
     else
         dudt[8:9] .= 0.0
     end
@@ -104,13 +111,22 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
 
     # Modify states to ensure physical meaning
     view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, 0.0, 0.0])
-    view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.degK, Inf])
+    view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.Tmp, Inf])
 
-    if u[5] == 0.0  # no ice
-        u[3] = 0.0
-        u[4] = p.albedo_land
-    elseif u[3] < 10.0 # first ice
-        u[4] = p.albedo_newice
+    if u[5] == p.ice_exists_thr              # (m) no ice
+        u[3] = 0.0              # ice age is set to 0
+        u[4] = p.albedo_land    # albedo is land albedo
+        u[9] = p.fstrmin        # streaming is set to minimum
+        u[16] = p.albedo_land   # reference albedo is land albedo
+
+    elseif  u[5] < p.ice_is_big_thr         # (m) the ice sheet is small
+        u[3] = 0.0              # ice age is set to 0
+        u[4] = p.albedo_newice  # albedo is new ice        
+        u[9] = p.fstrmin        # streaming is set to minimum
+        u[16] = p.albedo_newice # to stop evolution
+
+    elseif (u[3] < p.ice_is_old_thr)        # (yr) the ice sheet is young 
+        u[4] = p.albedo_newice  # albedo is new ice
     end
 
     return nothing
@@ -178,6 +194,9 @@ function run_pacco(experiment::String; p::Params=Params(), returnsol=true)
     genout_nc(output_path, "/pacco.nc", out, p, out_attr)
 
     ## Done!
+    if returnsol
+        return out
+    end
 end
 
 """

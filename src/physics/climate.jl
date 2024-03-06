@@ -12,12 +12,24 @@ calculates air thermal relaxation through
     dT/dt = ((Tref + RI + RCO2 - cZ * Z) - T) / tauT
 """
 function calcdot_regional_temperature(u::Vector, p::Params)
-    if p.insol_case == "ISI"
+    if p.insol_case == "ISI"    # integrated summer insolation
         RI = p.cISI * (u[10] - p.insol_ref)
-    elseif p.insol_case == "caloric"
+
+    elseif p.insol_case == "caloric"    # seasons
         RI = p.cCAL * (u[10] - p.insol_ref)
-    else
+
+    elseif p.insol_case == "input"
+        insol_file = split(p.insol_input, "/")[3]
+        if (insol_file[1:3] == "ISI") || (insol_file[1:8] == "mean_ISI")
+            RI = p.cISI * (u[10] - p.insol_ref)
+        elseif (insol_file[1:7] == "caloric") || (insol_file[1:12] == "mean_caloric")
+            RI = p.cCAL * (u[10] - p.insol_ref)
+        else
+            RI = p.cI * (u[10] - p.insol_ref)
+        end
+    else    # SSI, summer solstice insolation
         RI = p.cI * (u[10] - p.insol_ref)
+
     end
 
     RCO2 = p.cC * calc_carbon_dioxide_rad(u[2])
@@ -61,9 +73,9 @@ calculates albedo derivative through
     dα/dt = (αref - α) / τα
 """
 function calcdot_albedo(u::Vector, p::Params)
-    if u[5] == 0.0  # no ice
+    if u[5] == p.ice_exists_thr  # no ice        
         return 0.0
-    elseif u[3] < 10.0 # first ice
+    elseif u[3] < p.ice_is_old_thr # first ice
         return 0.0
     else
         return (u[16] - u[4]) / p.tau_albedo
@@ -121,7 +133,7 @@ calculates reference value for albedo
 """
 function calc_reference_albedo!(u::Vector, p::Params)
     if p.active_aging == true
-        if u[5] == 0.0  # no ice
+        if u[5] == p.ice_exists_thr  # no ice
             u[16] = p.albedo_land  # albedoref is albedo_land
         else
             n = 1 # exponent number in albedo-age parameterisation
@@ -129,7 +141,7 @@ function calc_reference_albedo!(u::Vector, p::Params)
             u[16] = max(p.albedo_newice - p.k_albedo * u[3]^n, p.albedo_oldice) 
         end
     elseif p.active_aging == false
-        if u[5] == 0.0  # no ice
+        if u[5] == p.ice_exists_thr  # no ice
             u[16] = p.albedo_land  # albedoref is albedo_land
         else
             u[16] = p.albedo_newice
@@ -178,6 +190,8 @@ function calc_snowfall!(u::Vector, p::Params)
         else
             u[18] = max(p.sref + p.ks * (u[17] - u[12]), 0.0)   # sref + ks * (Tsurf - Tref)
         end
+    elseif p.ablation_case == "PDD-LIN"
+        u[18] = max(p.sref + p.ks * (u[11] - u[12]), 0.0)   # sref + ks * (Tsl - Tref)
     end
     return nothing
 end

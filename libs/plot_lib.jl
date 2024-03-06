@@ -163,8 +163,12 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
                 label = label * ", $(data_labels[e])"
             end
 
-            if vars2plot[v] in ["T", "Tsurf", "Tsl"]
-                lines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
+            if vars2plot[v] in ["T", "Tsl"]
+                if plot_proxies
+                    lines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
+                else
+                    lines!(ax, time_v[e][:], data_v[e][:], markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
+                end
             else
                 lines!(ax, time_v[e][:], data_v[e][:], markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
             end
@@ -369,7 +373,7 @@ function plot_pacco_states(experiment)
     "albedo_ref", "Tsurf",   # climate parameters
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
-    "Qdif", "Qdrag"]   # ice thermodynamics
+    "hdif", "Qdrag"]   # ice thermodynamics
     pacco_states = vcat(prognostic, diagnostic)
 
     path2data = pwd() * "/output/$(experiment)/pacco.nc"

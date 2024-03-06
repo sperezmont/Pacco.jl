@@ -13,13 +13,14 @@ diagnostic = ["I", "Tsl", "Tref",  # radiative forcing and climate response
     "albedo_ref", "Tsurf",   # climate parameters
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "v", # ice dynamics
-    "Qdif", "Qdrag"]   # ice thermodynamics
+    "hcond", "hvadv", "hdrag", "hgeo"   # ice thermodynamics
+    ]   
 diagnostic_longnames = ["Insolation", "Sea-level temperature", "Reference air temperature",
     "Ice-sheet surface elevation", "Ice-sheet area", "Ice-sheet volume",
     "Reference albedo", "Ice surface temperature",
     "Snowfall", "ablation",
     "Driving stress", "Basal stress", "Deformational velocity", "Basal velocity", "Reference streaming fraction", "Total velocity",
-    "Diffusive heat", "Dragging heat"]
+    "Conductive heat flux", "Vertical advection heat flux", "Drag heat flux", "Geothermal heat flux"]
 
 global states_u = vcat(prognostic, diagnostic)
 states_names = vcat(prognostic_longnames, diagnostic_longnames)
@@ -68,6 +69,28 @@ function load_defs(p)
 
     calc_diagnostic_variables!(u0, p, p.time_init - p.time_spinup)
 
+    # Check units for Insolation/Energy (I)
+    if p.insol_case in ["ISI", "caloric"]   
+        I_units, I_name = "J/m²", "Energy"
+        Inorm_units, Inorm_name = "J/m²", "Normalized Energy"
+        Ianom_units, Ianom_name = "J/m²", "Energy anomaly"
+    elseif p.insol_case == "input"
+        insol_file = split(p.insol_input, "/")[3]
+        if (insol_file[1:3] == "ISI") || (insol_file[1:8] == "mean_ISI") || (insol_file[1:7] == "caloric") || (insol_file[1:12] == "mean_caloric")
+            I_units, I_name = "J/m²", "Energy"
+            Inorm_units, Inorm_name = "J/m²", "Normalized Energy"
+            Ianom_units, Ianom_name = "J/m²", "Energy anomaly"
+        else
+            I_units, I_name = "W/m²", "Insolation"
+            Inorm_units, Inorm_name = "W/m²", "Normalized Insolation"
+            Ianom_units, Ianom_name = "W/m²", "Insolation anomaly"
+        end
+    else   
+        I_units, I_name = "W/m²", "Insolation"
+        Inorm_units, Inorm_name = "W/m²", "Normalized Insolation"
+        Ianom_units, Ianom_name = "W/m²", "Insolation anomaly"
+    end
+
     # Output file settings
     out_attr = Dict(
         # -- ctl
@@ -83,7 +106,7 @@ function load_defs(p)
         "Tice" => Dict("units" => "K", "longame" => "Ice Temperature", "group" => "Thermodynamics"),
         "fstr" => Dict("units" => "--", "longame" => "Stream Fraction", "group" => "Dynamics"),
         # -- Diagnostic variables
-        "I" => Dict("units" => "W/m²", "longame" => "Insolation", "group" => "Forcing"),
+        "I" => Dict("units" => I_units, "longame" => I_name, "group" => "Forcing"),
         "R" => Dict("units" => "K", "longame" => "Temperature anomaly due to Radiative Forcing", "group" => "Climate"),
         "Tsl" => Dict("units" => "K", "longame" => "Sea-level Temperature", "group" => "Climate"),
         "Tref" => Dict("units" => "K", "longame" => "Reference Air Temperature", "group" => "Climate"),
@@ -92,20 +115,22 @@ function load_defs(p)
         "Vol" => Dict("units" => "m SLE", "longame" => "Ice Volume", "group" => "Geometry"),
         "albedo_ref" => Dict("units" => "--", "longame" => "System Reference albedo", "group" => "Climate"),
         "Tsurf" => Dict("units" => "K", "longame" => "Surface Temperature", "group" => "Climate"),
-        "s" => Dict("units" => "m/a", "longame" => "Accumulation rate", "group" => "Thermodynamics"),
-        "a" => Dict("units" => "m/a", "longame" => "Surface Ablation rate", "group" => "Thermodynamics"),
+        "s" => Dict("units" => "m/yr", "longame" => "Accumulation rate", "group" => "Thermodynamics"),
+        "a" => Dict("units" => "m/yr", "longame" => "Surface Ablation rate", "group" => "Thermodynamics"),
         "taud" => Dict("units" => "Pa", "longame" => "Driving stress", "group" => "Dynamics"),
         "taub" => Dict("units" => "Pa", "longame" => "Basal stress", "group" => "Dynamics"),
-        "vd" => Dict("units" => "m/a", "longame" => "Deformational Velocity", "group" => "Dynamics"),
-        "vb" => Dict("units" => "m/a", "longame" => "Basal Velocity", "group" => "Dynamics"),
+        "vd" => Dict("units" => "m/yr", "longame" => "Deformational Velocity", "group" => "Dynamics"),
+        "vb" => Dict("units" => "m/yr", "longame" => "Basal Velocity", "group" => "Dynamics"),
         "fstr_ref" => Dict("units" => "--", "longame" => "Reference Stream Fraction", "group" => "Dynamics"),
-        "v" => Dict("units" => "m/a", "longame" => "Total Velocity", "group" => "Dynamics"),
-        "Qdif" => Dict("units" => "K/a", "longame" => "Diffusive heat flux", "group" => "Thermodynamics"),
-        "Qdrag" => Dict("units" => "K/a", "longame" => "Basal Friction Heating", "group" => "Thermodynamics"),
+        "v" => Dict("units" => "m/yr", "longame" => "Total Velocity", "group" => "Dynamics"),
+        "hcond" => Dict("units" => "W/m²", "longame" => "Conductive heat flux", "group" => "Thermodynamics"),
+        "hvadv" => Dict("units" => "W/m²", "longame" => "Vertical Heat advection flux", "group" => "Thermodynamics"),
+        "hdrag" => Dict("units" => "W/m²", "longame" => "Drag Heat flux", "group" => "Thermodynamics"),
+        "hgeo" => Dict("units" => "W/m²", "longame" => "Geothermal Heat flux", "group" => "Thermodynamics"),
         # -- Composite variables
-        "Inorm" => Dict("units" => "W/m²", "longame" => "Normalized Insolation", "group" => "Forcing"),
-        "Ianom" => Dict("units" => "W/m²", "longame" => "Insolation anomaly", "group" => "Forcing"),
-        "m" => Dict("units" => "m/a", "longame" => "Mass Balance", "group" => "Thermodynamics"),
+        "Inorm" => Dict("units" => Inorm_units, "longame" => Inorm_name, "group" => "Forcing"),
+        "Ianom" => Dict("units" => Ianom_units, "longame" => Ianom_name, "group" => "Forcing"),
+        "m" => Dict("units" => "m/yr", "longame" => "Mass Balance", "group" => "Thermodynamics"),
         "RCO2" => Dict("units" => "W/m²", "longame" => "C radiative effect", "group" => "Climate"),
     )
     return u0, out_attr

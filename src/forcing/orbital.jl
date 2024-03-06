@@ -101,7 +101,7 @@ calculates the integrated summer insolation (ISI) as defined in Leloup and Paill
 where tau is an insolation threshold that defines the summer days. It is selected as 275 W/m² in Huybers (2006) in order to produce an analogue of PDD for insolation,
 T must be ≥ 0 or it does not account, so in insolation, between 40º and 70ºN T == 0ºC if insolation = [250, 300] W/m². In Leloup and Paillard (2022) 300 and 400 W/m² are analyzed.
 """
-function calc_ISI_insolation(t::Real, tau::Real; lat::Real=65.0, I0::Real=1365.2, days_per_year::Real=365.2422, return_energy=false)
+function calc_ISI_insolation(t::Real, tau::Real; lat::Real=65.0, I0::Real=1365.2, days_per_year::Real=365.2422, return_energy=true)
     timestep = days_per_year / 365.0
     days = 1:timestep:days_per_year
 
@@ -126,7 +126,7 @@ end
     calc_caloric_insolation(t, lat=65.0, I0=1365.2, days_per_year=365.2422)
 calculates the caloric seasons insolation following  Tzedakis et al. (2017) and Milankovitch (1941)
 """
-function calc_caloric_insolation(t::Real; lat::Real=65.0, I0::Real=1365.2, days_per_year::Real=365.2422, return_energy=false)
+function calc_caloric_insolation(t::Real; lat::Real=65.0, I0::Real=1365.2, days_per_year::Real=365.2422, return_energy=true)
     insolations = Vector{Any}(undef, 365)
     half_year = Int(ceil(days_per_year / 2))
     timestep = days_per_year / 365.0
