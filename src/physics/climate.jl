@@ -11,29 +11,44 @@
 calculates air thermal relaxation through 
     dT/dt = ((Tref + RI + RCO2 - cZ * Z) - T) / tauT
 """
-function calcdot_regional_temperature(u::Vector, p::Params)
-    if p.insol_case == "ISI"    # integrated summer insolation
-        RI = p.cISI * (u[10] - p.insol_ref)
-
-    elseif p.insol_case == "caloric"    # seasons
-        RI = p.cCAL * (u[10] - p.insol_ref)
-
-    elseif p.insol_case == "input"
-        insol_file = split(p.insol_input, "/")[3]
-        if (insol_file[1:3] == "ISI") || (insol_file[1:8] == "mean_ISI")
+function calcdot_regional_temperature(u::Vector, p::Params, t::Real)
+    if p.regtemp_case in ["dynamic", "trend", "comp"]
+        if p.insol_case == "ISI"    # integrated summer insolation
             RI = p.cISI * (u[10] - p.insol_ref)
-        elseif (insol_file[1:7] == "caloric") || (insol_file[1:12] == "mean_caloric")
+
+        elseif p.insol_case == "caloric"    # seasons
             RI = p.cCAL * (u[10] - p.insol_ref)
-        else
+
+        elseif p.insol_case == "input"
+            insol_file = split(p.insol_input, "/")[3]
+            if (insol_file[1:3] == "ISI") || (insol_file[1:8] == "mean_ISI")
+                RI = p.cISI * (u[10] - p.insol_ref)
+            elseif (insol_file[1:7] == "caloric") || (insol_file[1:12] == "mean_caloric")
+                RI = p.cCAL * (u[10] - p.insol_ref)
+            else
+                RI = p.cI * (u[10] - p.insol_ref)
+            end
+        else    # SSI, summer solstice insolation
             RI = p.cI * (u[10] - p.insol_ref)
+
         end
-    else    # SSI, summer solstice insolation
-        RI = p.cI * (u[10] - p.insol_ref)
 
+        RCO2 = p.cC * calc_carbon_dioxide_rad(u[2])
+
+        if p.regtemp_case in ["dynamic", "comp"]
+            trend = 0.0
+        elseif p.regtemp_case == "trend"
+            trend = p.kT * (1 + (t - p.time_init) / p.tauT)
+        end
+        return trend + (u[12] + RI + RCO2 - p.cZ * u[13] - u[1]) / p.tauT
+
+    elseif p.regtemp_case == "constant"
+        return 0.0
+    elseif p.regtemp_case == "slope"
+        return p.kT 
+    else
+        error("ERROR, regional temperature case not recognized")
     end
-
-    RCO2 = p.cC * calc_carbon_dioxide_rad(u[2])
-    return (u[12] + RI + RCO2 - p.cZ * u[13] - u[1]) / p.tauT
 end
 
 """
@@ -42,7 +57,7 @@ calculates carbon dioxide (C) derivative through
     dC/dt = ((Cref + kTC * (T - Tref)) - C) / tauC
 """
 function calcdot_carbon_dioxide(u::Vector, p::Params, t::Real)
-    if p.carbon_case in ["dynamic", "trended"]
+    if p.carbon_case in ["dynamic", "trend", "comp"]
         if t < p.time_anth # unperturbed climate
             reference_carbon = p.Cref + p.kTC * (u[1] - u[12]) 
         else    # perturbed climate
@@ -56,14 +71,19 @@ function calcdot_carbon_dioxide(u::Vector, p::Params, t::Real)
             reference_carbon = Cref + p.kTC * (u[1] - u[12])
         end
 
-        if p.carbon_case == "dynamic"
-            return (reference_carbon - u[2]) / p.tauC
-        elseif p.carbon_case == "trended"
-            return p.kC + (reference_carbon - u[2]) / p.tauC
+        if p.carbon_case in ["dynamic", "comp"]
+            trend = 0.0
+        elseif p.carbon_case == "trend"
+            trend = p.kC * (1 + (t - p.time_init) / p.tauC)
         end
+        return trend + (reference_carbon - u[2]) / p.tauC
 
     elseif p.carbon_case == "constant"
         return 0.0
+    elseif p.carbon_case == "slope"
+        return p.kC
+    else
+        error("ERROR, carbon cycle case not recognized")
     end
 end
 

@@ -69,7 +69,7 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     ###########################
     if p.active_climate
         # -- regional air temperature
-        dudt[1] = calcdot_regional_temperature(u, p)
+        dudt[1] = calcdot_regional_temperature(u, p, t)
 
         # -- C
         dudt[2] = calcdot_carbon_dioxide(u, p, t)
@@ -112,6 +112,14 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     # Modify states to ensure physical meaning
     view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, 0.0, 0.0])
     view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.Tmp, Inf])
+
+    if p.regtemp_case == "comp" # two components in the signal
+        u[1] += p.kT * (t - p.time_init)
+    end
+
+    if p.carbon_case == "comp" # two components in the signal
+        u[2] += p.kC * (t - p.time_init)
+    end
 
     if u[5] == p.ice_exists_thr              # (m) no ice
         u[3] = 0.0              # ice age is set to 0

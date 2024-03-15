@@ -33,7 +33,8 @@ Base.@kwdef struct Params
     ## Cases
     dt_case::String = "adaptive"       # Time step mode: "adaptive", "fixed"
     insol_case::String = "laskar"      # Insolation case: "constant", "artificial", "laskar", "ISI", "caloric", "input"
-    carbon_case::String = "dynamic"    # Carbon cycle case: "dynamic", "constant", "trended" 
+    regtemp_case::String = "dynamic"   # Time step mode: "dynamic", "constant", "trend", "slope", "comp"
+    carbon_case::String = "dynamic"    # Carbon cycle case: "dynamic", "constant", "trend", "slope", "comp" 
     dyn_case::String = "SIA"           # Ice flow approximation: "sia"
     basal_case::String = "weertmanq"   # parameterization of basal velocity: "weertman", "mb"
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
@@ -67,6 +68,7 @@ Base.@kwdef struct Params
     cC::Real = 0.65                    # [Km²/W] climate sensitivity to C (CO2, carbon dioxide)
     cZ::Real = 0.007                   # [K/m] climate sensitivity to ice sheet elevation
     tauT::Real = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
+    kT::Real = -1.2e-6                 # [K/yr] Temperature imposed slope
 
     ## C, CO2, Carbon dioxide
     Cref::Real = 280.0                 # [ppm] Reference value for Cdot
