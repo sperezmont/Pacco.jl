@@ -179,7 +179,7 @@ Runs experiment `test1` using the default values of `p` located in `par/default_
         run_pacco("test1", p = JLD2.load_object("path/to/julia/object/params.jld2"))
 Runs experiment `test1` and uses as parameters the ones stored in `"path/to/julia/object/params.jld2"`
 """
-function run_pacco(experiment::String; p::Params=Params(), returnsol=true)
+function run_pacco(experiment::String; p::Params=Params(), returnsol=false)
     ## Now, load arguments
     output_path = pwd() * "/output/" * experiment * "/"
     isdir(output_path) || mkdir(output_path)

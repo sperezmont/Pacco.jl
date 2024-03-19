@@ -1,7 +1,7 @@
 Base.@kwdef struct Params
     # Run Settings
     time_init::Real = -3.0e6           # [yr] Starting time (model years)
-    time_end::Real = 0.0               # [yr] Ending time (model years)
+    time_end::Real = 0.0               # [yr] Ending time (model years), t0 in insolation is J2000 epoch
     dt::Real = 10.0                    # [yr] Time step if fixed time step is activated
     dt_out::Real = 1000.0              # [yr] Frequency of writing
     time_spinup::Real = 0.0            # [yr] Time length employed to spinup the model
@@ -51,7 +51,7 @@ Base.@kwdef struct Params
     insol_min::Real = 425.0            # [W/m²] Insolation minimum value 
     insol_max::Real = 565.0            # [W/m²] Insolation maximum value
     insol_threshold = 300.0            # [W/m²] Insolation threshold value for integrated summer insolation, Huybers (2006) used 275 W/m²
-    insol_ref::Real = 480.0            # [W/m²] Reference value for insolation. For present day: 480.0 (solstice),  367.0 (caloric), 214.0 (annual) 
+    insol_ref::Real = 480.0            # [W/m²] Reference value for insolation. For present day: 480.0 (solstice),  5.8e9 (caloric), 6.7e9 (annual) 
 
     Ppre::Real = 0.0                   # Power of precession (normalised to At)
     taupre::Real = 23e3                # [yr] Precession period
@@ -64,7 +64,7 @@ Base.@kwdef struct Params
     ## T, Regional air temperature
     cI::Real = 0.1                     # [Km²/W] climate sensitivity to insolation (laskar method)
     cISI::Real = 1e-7                  # [Km²/J] climate sensitivity to Integrated Summer Insolation 
-    cCAL::Real = 1e-7                  # [Km²/J] climate sensitivity to Caloric season insolation
+    cCAL::Real = 0.17e-7               # [Km²/J] climate sensitivity to Caloric season insolation
     cC::Real = 0.65                    # [Km²/W] climate sensitivity to C (CO2, carbon dioxide)
     cZ::Real = 0.007                   # [K/m] climate sensitivity to ice sheet elevation
     tauT::Real = 900.0                 # [yr] Characteristic time for temperature evolution w.r.t radiative forcing for northern hemisphere
