@@ -49,7 +49,7 @@ PACCO store the model variables in a netCDF file called `pacco.nc` so they can b
 plot_pacco(experiment/experiments, vars2plot)  
 ```
 Note: remember to use `?function` in Julia REPL if you need to know how to use model's functions
-# How to run ensembles
+<!-- # How to run ensembles
 To run ensembles we only need to use its own functions in `julia` REPL and wait
 
 If we want to use a Latin Hypercube Sampling method
@@ -60,7 +60,7 @@ or if we want to use strictly certain values
 ```julia
 run_pacco_ensemble(experiment, params2per) 
 ```
-Note: remember to use `?function` in Julia REPL if you need to know how to use model's functions
+Note: remember to use `?function` in Julia REPL if you need to know how to use model's functions -->
 
 # Documentation
 I am currently working on the documentation of the model.
@@ -82,6 +82,7 @@ mv default_params.jl default_params_orig.jl
 mv example_params.jl default_params.jl
 cd ..
 julia
+```
 ```julia
 include("Pacco.jl")   # now it includes the new struct loading the same parameter file
 ```

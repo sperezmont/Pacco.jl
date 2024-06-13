@@ -1,6 +1,6 @@
 Base.@kwdef struct Params
     # Run Settings
-    time_init::Real = -3.0e6           # [yr] Starting time (model years)
+    time_init::Real = -9.0e5           # [yr] Starting time (model years)
     time_end::Real = 0.0               # [yr] Ending time (model years), t0 in insolation is J2000 epoch
     dt::Real = 10.0                    # [yr] Time step if fixed time step is activated
     dt_out::Real = 1000.0              # [yr] Frequency of writing
@@ -16,22 +16,22 @@ Base.@kwdef struct Params
     Hsed0::Real = 30.0                 # [m] Initial condition for sediments thickness
     B0::Real = 500.0                   # [m] Inital condition for bed elevation
     Tice0::Real = -15.0 + degK         # [K] Initial condition for ice temperature 
-    fstr0::Real = 0.4                  # [--] Initial condition for streaming fraction
+    fstr0::Real = 0.0                  # [--] Initial condition for streaming fraction
 
     Tref0::Real = 0.0 + degK           # [K] Reference climatic temperature 
 
     # Run parameters 
     ## Switches
     active_iso::Bool = true            # Switch: include active isostatic rebound?
-    active_sed::Bool = true            # Switch: include interactive sediments?
+    active_sed::Bool = false           # Switch: include interactive sediments?
     active_climate::Bool = true        # Switch: include climate routines?
     active_ice::Bool = true            # Switch: include ice sheet dynamics?
-    active_thermo::Bool = false        # Switch: include ice sheet thermodynamics?
-    active_aging::Bool = true          # Switch: include ice aging?
-    active_snow_on_ice::Bool = true    # Switch: does snow accumulation affect ITM ablation?
+    active_thermo::Bool = true         # Switch: include ice sheet thermodynamics?
+    active_aging::Bool = false         # Switch: include ice aging?
+    active_snow_on_ice::Bool = false   # Switch: does snow accumulation affect ITM ablation?
 
     ## Cases
-    dt_case::String = "adaptive"       # Time step mode: "adaptive", "fixed"
+    dt_case::String = "fixed"          # Time step mode: "adaptive", "fixed"
     insol_case::String = "laskar"      # Insolation case: "constant", "artificial", "laskar", "ISI", "caloric", "input"
     regtemp_case::String = "dynamic"   # Time step mode: "dynamic", "constant", "trend", "slope", "comp"
     carbon_case::String = "dynamic"    # Carbon cycle case: "dynamic", "constant", "trend", "slope", "comp" 
@@ -40,7 +40,7 @@ Base.@kwdef struct Params
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
     ablation_case::String = "ITM"      # Surface melting case: "PDD", "ITM", "PDD-LIN"
     diffusion_case::String = "2pts"    # Diffusion equation case: "2pts", "3pts"
-    streaming_case::String = "fixed"  # Reference streaming case: "fixed", "dynamic"
+    streaming_case::String = "fixed"   # Reference streaming case: "fixed", "dynamic"
     ref_streaming_case::String = "thermo"  # Reference streaming case: "theo", "thermo"
 
     ## I, insol, Insolation
@@ -74,7 +74,7 @@ Base.@kwdef struct Params
     Cref::Real = 280.0                 # [ppm] Reference value for Cdot
     tauC::Real = 10.0                  # [yr] Characteristic time for C evolution
     kCT::Real = 2.0                    # [K] sensitivity of reference temperature to C anthorpogenic input (conversion C to T) -- perhaps kCT and kTC should be the same? spm 
-    kTC::Real = 7.0                    # [ppm/K] Proportionality between temperature and C forcing (conversion T to C)
+    kTC::Real = 5.0                    # [ppm/K] Proportionality between temperature and C forcing (conversion T to C)
     kC::Real = -1e-5                   # [ppm/yr] Carbon dioxide imposed slope
 
     time_anth::Real = 2000.0           # [yr] Year in which we take into account the anthropogenic forcing
@@ -117,11 +117,11 @@ Base.@kwdef struct Params
     vrt_vel_scale::Real = -0.01        # [m yr⁻¹] Typical scale of vertical velocities in the base
     Aflow::Real = 1e-16                # [Pa-3 a−1] Flow parameter of the Glen's flow law
     glen_n::Real = 3.0                 # [--] Glen's flow law exponent
-    Cs::Real = 5e-5                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
+    Cs::Real = 1e-5                    # [m yr⁻¹ Pa⁻²] Raw sliding parameter (between 10^(-10) and 10^(-5) in Pollard and deConto (2012) after Schoof (2007)) 1e-7 by default?? 
 
     ## Hsed, sediment layer thickness
     Hsed_max::Real = 30.0              # [m] Maximum amount of sediments (pre Pleistocene reconstructions ~30 m, Clark et al., 2006)
-    Hsed_min::Real = 5.0               # [m] Minimum amount of sediments (the mode of PD distribution is ~5 m, inferred from Laske and Masters, 1997)
+    Hsed_min::Real = 0.0               # [m] Minimum amount of sediments (the mode of PD distribution is ~5 m, inferred from Laske and Masters, 1997)
     fv::Real = 1.5e-7                  # [--] fraction of the sediments that is removed because of v # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> fv ~ 1e-6)
     fa::Real = 5.0e-6                  # [--] fraction of the ablation (a) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 
@@ -137,8 +137,8 @@ Base.@kwdef struct Params
     Tmp::Real = degK                   # [K] melting point temperature
 
     ## fstr, streaming fraction
-    fstrmin::Real = 0.4                # [--] Mininimal Fraction of the ice sheet considered streaming
-    fstrmax::Real = 0.4                # [--] Maximal Fraction of the ice sheet considered streaming
+    fstrmin::Real = 0.0                # [--] Mininimal Fraction of the ice sheet considered streaming
+    fstrmax::Real = 0.6                # [--] Maximal Fraction of the ice sheet considered streaming
     vkin::Real = 1000.0                # [m/yr] kinematic wave velocity (measures the speed of inland propagation of the ice streams for a given stress imbalance) (1500 m/yr, Payne 2004)
     taukin::Real = L / vkin            # kinematic wave typical time (time in which the streams are propagated towards the interior of the ice sheet)    
 
@@ -147,7 +147,7 @@ Base.@kwdef struct Params
     sec_year::Real = 31556926.0        # [s/yr] Seconds in a year, EISMINT value
     I0::Real = 1365.2                  # [Wm⁻²] Solar constant
     g::Real = 9.81                     # [m/s²] Gravitational acceleration
-    Surfoc::Real = 3.618e8             # [km²] Oceanic surface (Cogley et al., 2012)
+    Surfoc::Real = 3.618e8             # [km²] Oceanic surface
     rhoice::Real = 910.0               # [kg/m³] Ice density 
     rhowater::Real = 1000.0            # [kg/m³] Water density
     rhobed::Real = 2700.0                # [kg/m³] Lithosphere density 
@@ -159,7 +159,7 @@ Base.@kwdef struct Params
 
     # Ice-sheet discretization constraints
     ice_exists_thr::Real = 0.0            # [m] strict threshold where ice sheet does not exist
-    ice_is_big_thr::Real = 10.0           # [m] threshold for ice sheet to be considered big enough 
+    ice_is_big_thr::Real = 100.0          # [m] threshold for ice sheet to be considered big enough 
     ice_is_old_thr::Real = 10.0           # [yr] threshold for ice sheet to be considered old enough 
 end
 

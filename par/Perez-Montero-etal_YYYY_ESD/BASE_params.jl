@@ -1,6 +1,6 @@
 Base.@kwdef struct Params
     # Run Settings
-    time_init::Real = -3.0e6           # [yr] Starting time (model years)
+    time_init::Real = -9.0e5           # [yr] Starting time (model years)
     time_end::Real = 0.0               # [yr] Ending time (model years), t0 in insolation is J2000 epoch
     dt::Real = 10.0                    # [yr] Time step if fixed time step is activated
     dt_out::Real = 1000.0              # [yr] Frequency of writing
@@ -16,19 +16,19 @@ Base.@kwdef struct Params
     Hsed0::Real = 30.0                 # [m] Initial condition for sediments thickness
     B0::Real = 500.0                   # [m] Inital condition for bed elevation
     Tice0::Real = -15.0 + degK         # [K] Initial condition for ice temperature 
-    fstr0::Real = 0.4                  # [--] Initial condition for streaming fraction
+    fstr0::Real = 0.2                  # [--] Initial condition for streaming fraction
 
     Tref0::Real = 0.0 + degK           # [K] Reference climatic temperature 
 
     # Run parameters 
     ## Switches
     active_iso::Bool = true            # Switch: include active isostatic rebound?
-    active_sed::Bool = true            # Switch: include interactive sediments?
+    active_sed::Bool = false           # Switch: include interactive sediments?
     active_climate::Bool = true        # Switch: include climate routines?
     active_ice::Bool = true            # Switch: include ice sheet dynamics?
     active_thermo::Bool = false        # Switch: include ice sheet thermodynamics?
-    active_aging::Bool = true          # Switch: include ice aging?
-    active_snow_on_ice::Bool = true    # Switch: does snow accumulation affect ITM ablation?
+    active_aging::Bool = false         # Switch: include ice aging?
+    active_snow_on_ice::Bool = false   # Switch: does snow accumulation affect ITM ablation?
 
     ## Cases
     dt_case::String = "adaptive"       # Time step mode: "adaptive", "fixed"
@@ -40,7 +40,7 @@ Base.@kwdef struct Params
     snowfall_case::String = "linear"   # Clausius-Clapeyron approximation: "ins", "linear"
     ablation_case::String = "ITM"      # Surface melting case: "PDD", "ITM", "PDD-LIN"
     diffusion_case::String = "2pts"    # Diffusion equation case: "2pts", "3pts"
-    streaming_case::String = "fixed"  # Reference streaming case: "fixed", "dynamic"
+    streaming_case::String = "fixed"   # Reference streaming case: "fixed", "dynamic"
     ref_streaming_case::String = "thermo"  # Reference streaming case: "theo", "thermo"
 
     ## I, insol, Insolation
@@ -74,7 +74,7 @@ Base.@kwdef struct Params
     Cref::Real = 280.0                 # [ppm] Reference value for Cdot
     tauC::Real = 10.0                  # [yr] Characteristic time for C evolution
     kCT::Real = 2.0                    # [K] sensitivity of reference temperature to C anthorpogenic input (conversion C to T) -- perhaps kCT and kTC should be the same? spm 
-    kTC::Real = 7.0                    # [ppm/K] Proportionality between temperature and C forcing (conversion T to C)
+    kTC::Real = 5.0                    # [ppm/K] Proportionality between temperature and C forcing (conversion T to C)
     kC::Real = -1e-5                   # [ppm/yr] Carbon dioxide imposed slope
 
     time_anth::Real = 2000.0           # [yr] Year in which we take into account the anthropogenic forcing
@@ -147,7 +147,7 @@ Base.@kwdef struct Params
     sec_year::Real = 31556926.0        # [s/yr] Seconds in a year, EISMINT value
     I0::Real = 1365.2                  # [Wm⁻²] Solar constant
     g::Real = 9.81                     # [m/s²] Gravitational acceleration
-    Surfoc::Real = 3.618e8             # [km²] Oceanic surface (Cogley et al., 2012)
+    Surfoc::Real = 3.618e8             # [km²] Oceanic surface
     rhoice::Real = 910.0               # [kg/m³] Ice density 
     rhowater::Real = 1000.0            # [kg/m³] Water density
     rhobed::Real = 2700.0                # [kg/m³] Lithosphere density 

@@ -87,6 +87,8 @@ function calcdot_carbon_dioxide(u::Vector, p::Params, t::Real)
     end
 end
 
+
+
 """
     calcdot_albedo(u, p)
 calculates albedo derivative through 
