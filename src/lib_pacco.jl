@@ -6,7 +6,7 @@
     calc_diagnostic_variables!(u, dudt, p, t)
 computes diagnostic variables in `u` for time `t` using parameters in `p`
 """
-function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
+function calc_diagnostic_variables!(u::Vector{T}, p::Params{T}, t::T) where {T<:AbstractFloat}
     # Compute Orbital Forcing
     calc_insolation!(u, p, t)
 
@@ -15,8 +15,10 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
         calc_sealevel_temperature!(u, p, t)
     end
     calc_reference_temperature!(u, p, t)
+    calc_reference_carbon!(u, p, t)
 
     # Compute Ice-Sheet Geometry
+    calc_aspect_ratio!(u, p)
     calc_icesheet_elevation!(u, p)
     calc_icesheet_area!(u, p)
     calc_icesheet_volume!(u, p)
@@ -24,11 +26,14 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
     if p.active_climate
         # Compute Climate variables
         calc_reference_albedo!(u, p)
+        if p.albedo_case == "diagnostic"
+            u[albedo_idx] = u[albedo_ref_idx]
+        end
     end
     calc_surface_temperature!(u, p)
 
     # Compute Ice-Sheet Mass Balance
-    calc_snowfall!(u, p)
+    calc_snowfall!(u, p, t)
     calc_ablation!(u, p)
 
     if p.active_ice
@@ -36,14 +41,16 @@ function calc_diagnostic_variables!(u::Vector, p::Params, t::Real)
         calc_driving_stress!(u, p)
         calc_basal_stress!(u, p)
         calc_deformational_velocity!(u, p)
+        calc_beta!(u, p)
         calc_basal_velocity!(u, p)
 
         (p.active_thermo) && (calc_reference_streaming_fraction!(u, p)) # update reference streaming fraction
 
-        u[25] = u[22] + u[23]    # calculates total velocity in the ice sheet
+        u[v_idx] = u[vd_idx] + u[vb_idx]    # calculates total velocity in the ice sheet
 
         if p.active_thermo
             # Compute Ice-Sheet thermodynamics
+            calc_peclet_number!(u, p)
             calc_conductive_heat!(u, p)
             calc_dragging_heat!(u, p)
             calc_geothermal_heat!(u, p)
@@ -58,7 +65,7 @@ end
     dudt!(dudt, u, p, t)
 computes derivatives of prognostic variables in `u` using parameters in `p` at time `t`
 """
-function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
+function dudt!(dudt::Vector{T}, u::Vector{T}, p::Params{T}, t::T) where {T<:AbstractFloat}
     ###########################
     # Update diagnostics
     ###########################
@@ -69,72 +76,84 @@ function dudt!(dudt::Vector, u::Vector, p::Params, t::Real)
     ###########################
     if p.active_climate
         # -- regional air temperature
-        dudt[1] = calcdot_regional_temperature(u, p, t)
+        dudt[T_idx] = calcdot_regional_temperature(u, p, t)
 
         # -- C
-        dudt[2] = calcdot_carbon_dioxide(u, p, t)
+        dudt[C_idx] = calcdot_carbon_dioxide(u, p, t)
 
         # -- ice age
-        dudt[3] = calcdot_iceage()
+        dudt[iceage_idx] = calcdot_iceage()
 
         # -- albedo
-        dudt[4] = calcdot_albedo(u, p)
+        dudt[albedo_idx] = calcdot_albedo(u, p)
     else
-        dudt[1:4] .= 0.0
+        dudt[[T_idx, C_idx, iceage_idx, albedo_idx]] .= 0.0
     end
 
     # -- ice thickness
-    dudt[5] = calcdot_icethickness(u, p)
+    dudt[H_idx] = calcdot_icethickness(u, p)
 
     # -- sediments layer thickness
     if t < p.time_init
-        dudt[6] = 0.0
+        dudt[Hsed_idx] = 0.0
     else
-        (p.active_sed) ? (dudt[6] = calcdot_sediment_thickness(u, p)) : (dudt[6] = 0.0)
+        (p.active_sed) ? (dudt[Hsed_idx] = calcdot_sediment_thickness(u, p)) : (dudt[Hsed_idx] = 0.0)
     end
 
     # -- bedrock elevation
-    (p.active_iso) ? (dudt[7] = calcdot_bedrock_elevation(u, p)) : (dudt[7] = 0.0)
+    (p.active_iso) ? (dudt[B_idx] = calcdot_bedrock_elevation(u, p)) : (dudt[B_idx] = 0.0)
 
     if p.active_thermo
         # -- ice temperature
-        dudt[8] = calcdot_ice_temperature(u, p)
+        dudt[Tice_idx] = calcdot_ice_temperature(u, p)
 
         # -- streaming fraction
-        dudt[9] = calcdot_streaming_fraction(u, p)
+        dudt[fstr_idx] = calcdot_streaming_fraction(u, p)
     else
-        dudt[8:9] .= 0.0
+        dudt[[Tice_idx, fstr_idx]] .= 0.0
     end
 
     # -- diagnostic derivatives
     view(dudt, lprog+1:lsu) .= 0.0
 
     # Modify states to ensure physical meaning
-    view(u, 1:lprog) .= max.(view(u, 1:lprog), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, 0.0, 0.0])
-    view(u, 1:lprog) .= min.(view(u, 1:lprog), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.Tmp, Inf])
+    if p.active_climate
+        temp2use = u[T_idx]
+    else
+        temp2use = u[Tsurf_idx]
+    end
+
+    indexes = [T_idx, C_idx, iceage_idx, albedo_idx, H_idx, Hsed_idx, B_idx, Tice_idx, fstr_idx]
+    view(u, indexes) .= max.(view(u, indexes), [0.0, 1.0, 0.0, p.albedo_land, 0.0, 0.0, -Inf, temp2use, 0.0])
+    view(u, indexes) .= min.(view(u, indexes), [Inf, Inf, Inf, Inf, Inf, Inf, Inf, p.Tmp, Inf])
 
     if p.regtemp_case == "comp" # two components in the signal
-        u[1] += p.kT * (t - p.time_init)
+        u[T_idx] += p.kT * (t - p.time_init)
     end
 
     if p.carbon_case == "comp" # two components in the signal
-        u[2] += p.kC * (t - p.time_init)
+        u[C_idx] += p.kC * (t - p.time_init)
     end
 
-    if u[5] == p.ice_exists_thr              # (m) no ice
-        u[3] = 0.0              # ice age is set to 0
-        u[4] = p.albedo_land    # albedo is land albedo
-        u[9] = p.fstrmin        # streaming is set to minimum
-        u[16] = p.albedo_land   # reference albedo is land albedo
+    if u[H_idx] <= p.ice_exists_thr              # (m) no ice
+        u[iceage_idx] = 0.0              # ice age is set to 0
+        u[albedo_idx] = p.albedo_land    # albedo is land albedo
+        u[fstr_idx] = p.fstrmin        # streaming is set to minimum
+        u[albedo_ref_idx] = p.albedo_land   # reference albedo is land albedo
 
-    elseif  u[5] < p.ice_is_big_thr         # (m) the ice sheet is small
-        u[3] = 0.0              # ice age is set to 0
-        u[4] = p.albedo_newice  # albedo is new ice        
-        u[9] = p.fstrmin        # streaming is set to minimum
-        u[16] = p.albedo_newice # to stop evolution
+        u[Pe_idx] = 0.0
+        u[Tice_idx] = p.Tmp
 
-    elseif (u[3] < p.ice_is_old_thr)        # (yr) the ice sheet is young 
-        u[4] = p.albedo_newice  # albedo is new ice
+    elseif  u[H_idx] < p.ice_is_big_thr         # (m) the ice sheet is small
+        u[fstr_idx] = p.fstrmin        # streaming is set to minimum
+        u[Pe_idx] = 1.0 + 1e-1
+
+    elseif (u[iceage_idx] < p.ice_is_old_thr)        # (yr) the ice sheet is young 
+        u[albedo_idx] = p.albedo_newice  # albedo is new ice
+    end
+
+    if p.albedo_case == "diagnostic"
+        u[albedo_idx] = u[albedo_ref_idx]
     end
 
     return nothing
@@ -149,14 +168,12 @@ This option was selected because of the model's simplicity and the computational
 * https://docs.sciml.ai/DiffEqDocs/stable/solvers/ode_solve/ 
 * https://en.wikipedia.org/wiki/Bogacki%E2%80%93Shampine_method
 """
-function pacco(u0::Vector, p::Params, tspan::Tuple)
+function pacco(u0::Vector{T}, p::Params{T}, tspan::Tuple{T, T}) where {T<:AbstractFloat}
     # Define and solve the problem
-    prob = ODEProblem(dudt!, u0, tspan, p)
-
     if (p.dt_case == "fixed") || (p.insol_case == "input")
-        return solve(prob, Euler(), saveat=p.dt_out, dt=p.dt)
+        return solve(ODEProblem(dudt!, u0, tspan, p), Euler(), saveat=p.dt_out, dt=p.dt)
     elseif p.dt_case == "adaptive"
-        return solve(prob, BS3(), saveat=p.dt_out)
+        return solve(ODEProblem(dudt!, u0, tspan, p), BS3(), saveat=p.dt_out)
     else
         error("`dt_case = $(p.dt_case)` option not recognized")
     end
@@ -179,7 +196,7 @@ Runs experiment `test1` using the default values of `p` located in `par/default_
         run_pacco("test1", p = JLD2.load_object("path/to/julia/object/params.jld2"))
 Runs experiment `test1` and uses as parameters the ones stored in `"path/to/julia/object/params.jld2"`
 """
-function run_pacco(experiment::String; p::Params=Params(), returnsol=false)
+function run_pacco(experiment::String; p::Params{T}=Params(), returnsol=false) where {T<:AbstractFloat}
     ## Now, load arguments
     output_path = pwd() * "/output/" * experiment * "/"
     isdir(output_path) || mkdir(output_path)

@@ -49,7 +49,7 @@ println("Done!")
 
 # PACCO header
 printstyled("================================================================== \n", color=:light_blue)
-printstyled("| PACCO v1.0                                                     | \n", color=:bold)
+printstyled("| PACCO v0.7                                                     | \n", color=:bold)
 printstyled("|----------------------------------------------------------------| \n")
 printstyled("|    To run model:                                               | \n")
 printstyled("|      --> run_pacco(experiment; p)                              | \n")

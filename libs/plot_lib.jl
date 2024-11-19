@@ -90,7 +90,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
     # 3. Plot
     # -- 3.1 Create figure
     nrows, ncols = length(vars2plot), Int(plot_PSD) + 1
-    fgsz = (600 * nrows * 1.5, 600 * nrows)
+    fgsz = (600 * nrows * 1.5, 800 * nrows)
     fntsz = 0.02 * sqrt(fgsz[1]^2 + fgsz[2]^2)
     fig = Figure(resolution=fgsz)
     (length(data_to_load) > 1) ? (linewidth = 4) : (linewidth = 8)
@@ -163,7 +163,7 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
                 label = label * ", $(data_labels[e])"
             end
 
-            if vars2plot[v] in ["T", "Tsl"]
+            if vars2plot[v] in ["T", "Tsl", "Tice"]
                 if plot_proxies
                     lines!(ax, time_v[e][:], data_v[e][:] .- 273.15, markersize=4 * linewidth, linewidth=linewidth, color=pacco_colors[e], label=label)
                 else
@@ -250,6 +250,25 @@ function plot_pacco(experiment; vars2plot::Vector=["I", "H", "T", "C", "Vol"], p
         else
             save(pacco_path * "/output/" * experiment * "/" * "pacco_results.png", fig)
         end
+    elseif length(data_to_load) > 1
+        step = length(data_to_load) / 20
+        if step < 1
+            step = 1
+        else
+            step = Int(ceil(step))
+        end
+
+        ticks_selected = 1:step:length(data_to_load)
+        new_labels = string.(ticks_selected)
+
+        if length(data_to_load) > 1
+            Colorbar(fig[1:end, end+1], height=Relative(2/3), colormap=multi_colormap,
+                limits=(1, length(data_to_load)),
+                ticks=(ticks_selected, new_labels),
+                ticklabelsize=0.7 * fntsz
+            )
+        end
+        save(pacco_path * "/output/" * experiment[1] * "/" * "pacco-nruns_results.png", fig)
     else
         save(pacco_path * "/output/" * experiment[1] * "/" * "pacco-nruns_results.png", fig)
     end

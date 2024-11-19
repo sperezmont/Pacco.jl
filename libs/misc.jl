@@ -9,16 +9,23 @@
 writes the running information in `run-info.txt`
 """
 function write_run_info(outpath::String, expname::String, params)
-    isfile(outpath * "/run-info.txt") && rm(outpath * "/run-info.txt")
-    f = open(outpath * "/run-info.txt", "w")
-    write(f, "$(expname)\n")
-    write(f, "# Parameters used: \n")
+    isfile(outpath * "/params.jl") && rm(outpath * "/params.jl")
+    f = open(outpath * "/params.jl", "w")
+    write(f, "Base.@kwdef mutable struct Params{T<:AbstractFloat}\n")
 
     nms = fieldnames(typeof(params))
     for i in eachindex(nms)
         valuei = getfield(params, nms[i])
-        write(f, "  $(nms[i]) --> $(valuei)\n")
+
+        if typeof(valuei) == String
+            write(f, "  $(nms[i])::String = \"$(valuei)\" \n")
+        elseif typeof(valuei) == Bool
+            write(f, "  $(nms[i])::Bool = $(valuei)\n")
+        else
+            write(f, "  $(nms[i])::T = $(valuei)\n")
+        end
     end
+    write(f, "end \n")
     close(f)
 end
 

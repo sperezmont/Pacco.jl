@@ -173,31 +173,31 @@ Compute daily average insolation
 * `"caloric"` insolation for caloric season at `p.I_lat`
 * `"input"` reads insolation for a given `.jld2` file
 """
-function calc_insolation!(u::Vector, p::Params, t::Real)
+function calc_insolation!(u::Vector{T}, p::Params{T}, t::T) where {T<:AbstractFloat}
     if p.insol_case == "constant"
-        u[10] = p.insol_const
+        u[I_idx] = p.insol_const
     elseif p.insol_case == "artificial"
-        u[10] = calc_artificial_insolation(p, t)
+        u[I_idx] = calc_artificial_insolation(p, t)
     elseif p.insol_case == "laskar" # this option should be improved using Insolation.jl alone
-        u[10] = calc_laskar_insolation(t,
+        u[I_idx] = calc_laskar_insolation(t,
             lat=p.insol_lat,
             day=p.insol_day,
             I0=p.I0,
             day_type=1,
             days_per_year=p.year_len)
     elseif p.insol_case == "ISI"
-        u[10] = calc_ISI_insolation(t, p.insol_threshold,
+        u[I_idx] = calc_ISI_insolation(t, p.insol_threshold,
             lat=p.insol_lat,
             I0=p.I0,
             days_per_year=p.year_len)
     elseif p.insol_case == "caloric"
-        u[10] = calc_caloric_insolation(t,
+        u[I_idx] = calc_caloric_insolation(t,
             lat=p.insol_lat,
             I0=p.I0,
             days_per_year=p.year_len)
     elseif p.insol_case == "input"
         index = Int((t - (p.time_init - p.time_spinup)) / p.dt) + 1 # marks the position to read at each timestep
-        u[10] = InsolationData[2, index][1]
+        u[I_idx] = InsolationData[2, index][1]
     else
         error("ERROR, insolation option not recognized")
     end
