@@ -31,7 +31,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   basal_case::String = "weertmanq" 
   albedo_case::String = "prognostic" 
   snowfall_case::String = "linear" 
-  ablation_case::String = "PDD" 
+  ablation_case::String = "PDD-LIN" 
   diffusion_case::String = "2pts" 
   streaming_case::String = "fixed" 
   ref_streaming_case::String = "thermo" 
@@ -89,7 +89,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   Tthreshold::T = 268.15
   km::T = 0.0
   kI::T = 0.027
-  Ath::T = 20.0
+  Ath::T = 15.0
   L::T = 1.0e6
   hrz_scale_coeff::T = 0.9
   hrz_scale_exp::T = 2.0

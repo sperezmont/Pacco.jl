@@ -117,12 +117,12 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
     kI::T = 0.027                   # [m/yr/Wm²] sensitivity parameter of insolation melting ! 0.006 the default?
 
     ### Ice sheet dynamics
-    Ath::T = 20.0                   # [K] Thermal amplitude due to ice-sheet area (Northern Hemisphere)
+    Ath::T = 15.0                   # [K] Thermal amplitude due to ice-sheet area (Northern Hemisphere)
     L::T = 1e6                      # [m] Aspect ratio of the model representing the necessary scaling for converting dS/dx to H/L (typically 10³ km)
     hrz_scale_coeff::T = 0.1        # [m⁻¹] Coefficient for diagnostic L
     hrz_scale_exp::T = 2.0          # [--] Exponent for diagnostic L
-    hrz_scale_lb::T = 200e3         # [m] Lower bound for dynamic L
-    hrz_scale_ub::T = 10e6          # [m] Upper bound for dynamic L
+    hrz_scale_lb::T = 200e3         # [m] Lower bound for dynamic L: ~√50e3 [km] (rounded ice cap) 
+    hrz_scale_ub::T = 3e6           # [m] Upper bound for dynamic L: ~√(13-14e6) [km] (LIS/AIS), just check it does not saturate results!
     hrz_vel_scale::T = 300.0        # [m yr⁻¹] Typical scale of sliding velocities
     vrt_vel_scale::T = -0.01        # [m yr⁻¹] Typical scale of vertical velocities in the base
     Aflow::T = 1e-16                # [Pa-3 a−1] Flow parameter of the Glen's flow law
@@ -134,8 +134,8 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
     ## Hsed, sediment layer thickness
     Hsed_max::T = 30.0              # [m] Maximum amount of sediments (pre Pleistocene reconstructions ~30 m, Clark et al., 2006)
     Hsed_min::T = 5.0               # [m] Minimum amount of sediments (the mode of PD distribution is ~5 m, inferred from Laske and Masters, 1997)
-    fv::T = 1.5e-7                  # [--] fraction of the sediments that is removed because of v # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> fv ~ 1e-6)
-    fa::T = 5.0e-6                  # [--] fraction of the ablation (a) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
+    quarrying_frac::T = 1.5e-7                  # [--] fv, fraction of the sediments that is removed because of v # Golledge 2013 indicates a typical bed erosion of 10-3 mm/yr (for a speed of ~1 km/yr::Real ==> fv ~ 1e-6)
+    weathering_frac::T = 5.0e-6                  # [--] fp, fraction of the ablation (a) that increases the presence of sediments because of weathering (typical denudation rate ~ 10^(-5) m/yr
 
     ## B, bedrock elevation
     Beq::T = 500.0                  # [m] equilibrium altitude of the bedrock

@@ -29,7 +29,8 @@ calculates sediment layer thickness derivative through
     dHsed/dt = -fv * v + fa * a
 """
 function calcdot_sediment_thickness(u::Vector{T}, p::Params{T}) where {T<:AbstractFloat}
-    return -p.fv * u[v_idx] + p.fa * u[a_idx] # Hseddot = -fv * v + fa * a
+    #return -p.fv * u[v_idx] + p.fa * u[a_idx] # Hseddot = -fv * v + fa * a
+    return -p.quarrying_frac * u[v_idx] + p.weathering_frac * u[precipitation_idx] # Hseddot = -fv * v + fp * p
 end
 
 """

@@ -35,6 +35,11 @@ function calc_diagnostic_variables!(u::Vector{T}, p::Params{T}, t::T) where {T<:
     # Compute Ice-Sheet Mass Balance
     calc_snowfall!(u, p, t)
     calc_ablation!(u, p)
+    if u[H_idx] <= p.ice_exists_thr
+        u[precipitation_idx] = u[s_idx]
+    else
+        u[precipitation_idx] = 0.0
+    end
 
     if p.active_ice
         # Compute Ice-Sheet dynamics

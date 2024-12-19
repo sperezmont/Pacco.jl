@@ -89,12 +89,12 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   Tthreshold::T = 268.15
   km::T = 0.0
   kI::T = 4.5e-9
-  Ath::T = 20.0
+  Ath::T = 15.0
   L::T = 1.0e6
   hrz_scale_coeff::T = 0.9
   hrz_scale_exp::T = 2.0
   hrz_scale_lb::T = 200000.0
-  hrz_scale_ub::T = 4.0e6
+  hrz_scale_ub::T = 3.0e6
   hrz_vel_scale::T = 300.0
   vrt_vel_scale::T = -0.01
   Aflow::T = 1.0e-16
@@ -104,8 +104,8 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   sintheta::T = 0.001
   Hsed_max::T = 30.0
   Hsed_min::T = 5.0
-  fv::T = 1.4e-7
-  fa::T = 5.0e-6
+  quarrying_frac::T = 1.4e-7
+  weathering_frac::T = 3.0e-5
   Beq::T = 500.0
   taubedrock::T = 5000.0
   hgeo::T = 0.05

@@ -89,7 +89,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   Tthreshold::T = 268.15
   km::T = 0.0
   kI::T = 0.027
-  Ath::T = 20.0
+  Ath::T = 15.0
   L::T = 1.0e6
   hrz_scale_coeff::T = 0.9
   hrz_scale_exp::T = 2.0

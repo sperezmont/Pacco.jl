@@ -14,7 +14,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   B0::T = 0.0
   Tice0::T = 258.15
   fstr0::T = 0.2
-  active_iso::Bool = true
+  active_iso::Bool = false
   active_sed::Bool = false
   active_climate::Bool = false
   active_ice::Bool = true
@@ -89,7 +89,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   Tthreshold::T = 268.15
   km::T = 0.0
   kI::T = 0.027
-  Ath::T = 20.0
+  Ath::T = 15.0
   L::T = 1.0e6
   hrz_scale_coeff::T = 0.9
   hrz_scale_exp::T = 2.0

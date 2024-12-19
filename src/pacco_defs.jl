@@ -14,14 +14,14 @@ diagnostic = ["I", "Tsl", "Tref", "Cref",  # radiative forcing and climate respo
     "s", "a",   # ice-sheet mass balance
     "taud", "taub", "vd", "vb", "fstr_ref", "beta", "v", # ice dynamics
     "hcond", "hvadv", "hdrag", "hgeo",   # ice thermodynamics
-    "L", "Hb", "Pe", "albedo_eff"]    # misc   
+    "L", "Hb", "Pe", "albedo_eff", "precipitation"]    # misc   
 diagnostic_longnames = ["Insolation", "Sea-level temperature", "Reference air temperature", "Reference carbon dioxide",
     "Ice-sheet surface elevation", "Ice-sheet area", "Ice-sheet volume",
     "Reference albedo", "Ice surface temperature",
     "Snowfall", "ablation",
     "Driving stress", "Basal stress", "Deformational velocity", "Basal velocity", "Reference streaming fraction", "Basal velocity coefficient", "Total velocity",
     "Conductive heat flux", "Vertical advection heat flux", "Drag heat flux", "Geothermal heat flux",
-    "Ice-sheet aspect ratio", "Temperate layer thickness", "Peclet number", "Effective albedo"]
+    "Ice-sheet aspect ratio", "Temperate layer thickness", "Peclet number", "Effective albedo", "precipitation"]
 
 global T_idx, C_idx, iceage_idx, albedo_idx, H_idx, Hsed_idx, B_idx, Tice_idx, fstr_idx = 1, 2, 3, 4, 5, 6, 7, 8, 9
 global I_idx, Tsl_idx, Tref_idx, Cref_idx = 10, 11, 12, 13
@@ -31,7 +31,7 @@ global s_idx, a_idx = 19, 20
 global taud_idx, taub_idx, vd_idx, vb_idx, fstr_ref_idx, beta_idx, v_idx = 21, 22, 23, 24, 25, 26, 27
 global hcond_idx, hvadv_idx, hdrag_idx, hgeo_idx = 28, 29, 30, 31
 global L_idx, Hb_idx, Pe_idx = 32, 33, 34
-global albedo_eff_idx = 35
+global albedo_eff_idx, precipitation_idx = 35, 36
 
 global states_u = vcat(prognostic, diagnostic)
 states_names = vcat(prognostic_longnames, diagnostic_longnames)
@@ -144,6 +144,7 @@ function load_defs(p)
         "Hb" => Dict("units" => "m", "longame" => "Temperate layer thickness", "group" => "Geometry"),
         "Pe" => Dict("units" => "", "longame" => "Peclet number", "group" => "Thermodynamics"),
         "albedo_eff" => Dict("units" => "", "longame" => "Effective albedo", "group" => "Thermodynamics"),
+        "precipitation" => Dict("units" => "m/yr", "longame" => "Precipitation", "group" => "Thermodynamics"),
         # -- Composite variables
         "Inorm" => Dict("units" => Inorm_units, "longame" => Inorm_name, "group" => "Forcing"),
         "Ianom" => Dict("units" => Ianom_units, "longame" => Ianom_name, "group" => "Forcing"),
