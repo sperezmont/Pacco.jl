@@ -26,7 +26,7 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   regtemp_case::String = "dynamic" 
   carbon_case::String = "dynamic" 
   deformationalflow_case::String = "profile" 
-  plugflow_case::String = "profile" 
+  plugflow_case::String = "constant" 
   deformational_case::String = "glen58" 
   basal_case::String = "weertmanq" 
   albedo_case::String = "prognostic" 
@@ -104,8 +104,8 @@ Base.@kwdef mutable struct Params{T<:AbstractFloat}
   sintheta::T = 0.001
   Hsed_max::T = 30.0
   Hsed_min::T = 0.0
-  fv::T = 1.5e-7
-  fa::T = 5.0e-6
+  quarrying_frac::T = 1.5e-7
+  weathering_frac::T = 5.0e-6
   Beq::T = 0.0
   taubedrock::T = 5000.0
   hgeo::T = 0.05
